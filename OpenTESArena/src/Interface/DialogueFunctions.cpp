@@ -445,10 +445,21 @@ std::string DialogueFunctions::get_rf(const Game &game)
 	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 	ArenaRandom tempRandom(cityDef.rulerSeed);
 
-	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-	const std::string fullName = textAssetLibrary.generateNpcName(provinceIndex, cityDef.rulerIsMale, tempRandom);
-	const Buffer<std::string> tokens = String::split(fullName, ' ');
-	return tokens[0];
+	std::string str;
+	if (provinceIndex == ArenaLocationUtils::CENTER_PROVINCE_ID)
+	{
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		str = exeData.locations.centerProvinceRulerName;
+	}
+	else
+	{
+		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+		const std::string fullName = textAssetLibrary.generateNpcName(provinceIndex, cityDef.rulerIsMale, tempRandom);
+		const Buffer<std::string> tokens = String::split(fullName, ' ');
+		str = tokens[0];
+	}
+
+	return str;
 }
 
 std::string DialogueFunctions::get_rpn(const Game &game)

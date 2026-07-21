@@ -800,6 +800,7 @@ bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int climateSpeedTablesOffset = GetExeAddress(*section, "ClimateSpeedTables");
 	const int weatherSpeedTablesOffset = GetExeAddress(*section, "WeatherSpeedTables");
 	const int rulerTitlesOffset = GetExeAddress(*section, "RulerTitles");
+	const int centerProvinceRulerNameOffset = GetExeAddress(*section, "CenterProvinceRulerName");
 	const int distantMountainFilenamesOffset = GetExeAddress(*section, "DistantMountainFilenames");
 	const int animDistantMountainFilenamesOffset = GetExeAddress(*section, "AnimDistantMountainFilenames");
 	const int cloudFilenameOffset = GetExeAddress(*section, "CloudFilename");
@@ -827,6 +828,7 @@ bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	init2DInt8Array(this->climateSpeedTables, exeBytes, climateSpeedTablesOffset);
 	init2DInt8Array(this->weatherSpeedTables, exeBytes, weatherSpeedTablesOffset);
 	initStringArrayNullTerminated(this->rulerTitles, exeBytes, rulerTitlesOffset);
+	this->centerProvinceRulerName = GetExeStringNullTerminated(exeBytes, centerProvinceRulerNameOffset);
 	initStringArrayNullTerminated(this->distantMountainFilenames, exeBytes, distantMountainFilenamesOffset);
 	initStringArrayNullTerminated(this->animDistantMountainFilenames, exeBytes, animDistantMountainFilenamesOffset);
 	this->cloudFilename = GetExeStringNullTerminated(exeBytes, cloudFilenameOffset);

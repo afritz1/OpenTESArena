@@ -422,6 +422,9 @@ struct ExeDataLocations
 	// Ruler titles for cities.
 	std::string rulerTitles[14];
 
+	// Ruler name for the center province, replaces the randomly generated one in dialogue.
+	std::string centerProvinceRulerName;
+
 	// Filenames for mountains drawn on the horizon.
 	std::string distantMountainFilenames[3];
 

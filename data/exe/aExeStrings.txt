@@ -232,6 +232,7 @@ WeatherTable=0x3EC60
 ClimateSpeedTables=0x3EB96
 WeatherSpeedTables=0x3EBEA
 RulerTitles=0x3EAC7
+CenterProvinceRulerName=0x4406A
 DistantMountainFilenames=0x3F9A4
 AnimDistantMountainFilenames=0x43229
 CloudFilename=0x3F9C8
