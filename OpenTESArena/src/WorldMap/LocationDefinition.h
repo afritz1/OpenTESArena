@@ -32,6 +32,7 @@ struct LocationCityDefinition
 {
 	ArenaCityType type;
 	char typeDisplayName[16];
+	char typeDisplayNameLowercase[16];
 	char mapFilename[16]; // .MIF name for most/all cases for now.
 
 	uint32_t citySeed;
@@ -56,11 +57,11 @@ struct LocationCityDefinition
 	bool rulerIsMale;
 	bool palaceIsMainQuestDungeon;
 
-	void init(ArenaCityType type, const char *typeDisplayName, const char *mapFilename,
-		uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
-		uint32_t skySeed, ArenaClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
-		WEInt blockStartPosX, SNInt blockStartPosY, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
-		int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon);
+	void init(ArenaCityType type, const char *typeDisplayName, const char *typeDisplayNameLowercase, const char *mapFilename,
+		uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t skySeed,
+		ArenaClimateType climateType, const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+		const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal, bool premade,
+		bool rulerIsMale, bool palaceIsMainQuestDungeon);
 
 	uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;
 };

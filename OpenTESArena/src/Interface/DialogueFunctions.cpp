@@ -164,7 +164,7 @@ std::string DialogueFunctions::get_ct(const Game &game)
 	}
 
 	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-	return cityDef.typeDisplayName;
+	return cityDef.typeDisplayNameLowercase;
 }
 
 std::string DialogueFunctions::get_da(const Game &game)

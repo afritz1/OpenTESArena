@@ -391,6 +391,7 @@ struct ExeDataLocations
 
 	// City-state, town, village (stored twice), dungeon.
 	std::string locationTypes[5];
+	std::string locationTypesLowercase[5];
 
 	// Palace, bs, noble, ..., vilpal, tower. Used with *MENU voxel .MIF filenames.
 	std::string menuMifPrefixes[11];

@@ -221,6 +221,7 @@ ProvinceNames=0x394F8
 CharCreationProvinceNames=0x3E906
 ProvinceImgFilenames=0x40134
 LocationTypes=0x3D2F5
+LocationTypesLowercase=0x4441B
 MenuMifPrefixes=0x4416E
 CenterProvinceCityMifName=0x402BB
 StartDungeonName=0x405DB

@@ -14,15 +14,14 @@ void LocationCityMainQuestTempleOverride::init(int modelIndex, int suffixIndex, 
 	this->menuNamesIndex = menuNamesIndex;
 }
 
-void LocationCityDefinition::init(ArenaCityType type, const char *typeDisplayName,
-	const char *mapFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
-	uint32_t rulerSeed, uint32_t skySeed, ArenaClimateType climateType,
-	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-	const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
-	bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon)
+void LocationCityDefinition::init(ArenaCityType type, const char *typeDisplayName, const char *typeDisplayNameLowercase, const char *mapFilename,
+	uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t skySeed, ArenaClimateType climateType,
+	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
+	int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon)
 {
 	this->type = type;
 	std::snprintf(this->typeDisplayName, std::size(this->typeDisplayName), "%s", typeDisplayName);
+	std::snprintf(this->typeDisplayNameLowercase, std::size(this->typeDisplayNameLowercase), "%s", typeDisplayNameLowercase);
 	std::snprintf(this->mapFilename, std::size(this->mapFilename), "%s", mapFilename);
 
 	this->citySeed = citySeed;
@@ -96,31 +95,15 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		return ArenaLocationUtils::getLatitude(globalPoint);
 	}();
 
-	this->init(LocationDefinitionType::City, locationData.name,
-		locationData.x, locationData.y, latitude);
+	this->init(LocationDefinitionType::City, locationData.name, locationData.x, locationData.y, latitude);
 
-	const auto &exeData = binaryAssetLibrary.getExeData();
-	const std::string &typeDisplayName = [type, &exeData]() -> const std::string&
-	{
-		const int typeNameIndex = [type]()
-		{
-			switch (type)
-			{
-			case ArenaCityType::CityState:
-				return 0;
-			case ArenaCityType::Town:
-				return 1;
-			case ArenaCityType::Village:
-				return 2;
-			default:
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(type)));
-			}
-		}();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 
-		const auto &locationTypeNames = exeData.locations.locationTypes;
-		DebugAssertIndex(locationTypeNames, typeNameIndex);
-		return locationTypeNames[typeNameIndex];
-	}();
+	const int typeNameIndex = static_cast<int>(type);
+	const Span<const std::string> locationTypeNames = exeData.locations.locationTypes;
+	const Span<const std::string> locationTypeNamesLowercase = exeData.locations.locationTypesLowercase;
+	const std::string &typeDisplayName = locationTypeNames[typeNameIndex];
+	const std::string &typeDisplayNameLowercase = locationTypeNamesLowercase[typeNameIndex];
 
 	const int globalCityID = ArenaLocationUtils::getGlobalCityID(localCityID, provinceID);
 	const bool isCityState = type == ArenaCityType::CityState;
@@ -220,13 +203,11 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	}
 
 	const bool rulerIsMale = (rulerSeed & 0x3) != 0;
-	const bool palaceIsMainQuestDungeon =
-		(provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
+	const bool palaceIsMainQuestDungeon = (provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
 
-	this->city.init(type, typeDisplayName.c_str(), mapFilename.c_str(), citySeed, wildSeed,
-		provinceSeed, rulerSeed, skySeed, climateType, reservedBlocks, blockStartPosition.x,
-		blockStartPosition.y, mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade,
-		rulerIsMale, palaceIsMainQuestDungeon);
+	this->city.init(type, typeDisplayName.c_str(), typeDisplayNameLowercase.c_str(), mapFilename.c_str(), citySeed, wildSeed,
+		provinceSeed, rulerSeed, skySeed, climateType, reservedBlocks, blockStartPosition.x, blockStartPosition.y,
+		mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade, rulerIsMale, palaceIsMainQuestDungeon);
 }
 
 void LocationDefinition::initDungeon(int localDungeonID, int provinceID, const ArenaLocationData &locationData, const ArenaProvinceData &provinceData)

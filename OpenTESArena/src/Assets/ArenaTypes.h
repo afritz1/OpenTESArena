@@ -106,9 +106,9 @@ enum class ArenaLocationType
 // Types of city locations in a world map province.
 enum class ArenaCityType
 {
-	CityState,
-	Town,
-	Village
+	CityState = 0,
+	Town = 1,
+	Village = 2
 };
 
 // Used with enemy encounter logic.

@@ -789,6 +789,7 @@ bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int charCreationProvinceNamesOffset = GetExeAddress(*section, "CharCreationProvinceNames");
 	const int provinceImgFilenamesOffset = GetExeAddress(*section, "ProvinceImgFilenames");
 	const int locationTypesOffset = GetExeAddress(*section, "LocationTypes");
+	const int locationTypesLowercaseOffset = GetExeAddress(*section, "LocationTypesLowercase");
 	const int menuMifPrefixesOffset = GetExeAddress(*section, "MenuMifPrefixes");
 	const int centerProvinceCityMifNameOffset = GetExeAddress(*section, "CenterProvinceCityMifName");
 	const int startDungeonNameOffset = GetExeAddress(*section, "StartDungeonName");
@@ -817,6 +818,7 @@ bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	initStringArrayNullTerminated(this->charCreationProvinceNames, exeBytes, charCreationProvinceNamesOffset);
 	initStringArrayNullTerminated(this->provinceImgFilenames, exeBytes, provinceImgFilenamesOffset);
 	initStringArrayNullTerminated(this->locationTypes, exeBytes, locationTypesOffset);
+	initStringArrayNullTerminated(this->locationTypesLowercase, exeBytes, locationTypesLowercaseOffset);
 	initStringArrayNullTerminated(this->menuMifPrefixes, exeBytes, menuMifPrefixesOffset);
 	this->centerProvinceCityMifName = GetExeStringNullTerminated(exeBytes, centerProvinceCityMifNameOffset);
 	this->startDungeonName = GetExeStringNullTerminated(exeBytes, startDungeonNameOffset);
