@@ -56,6 +56,14 @@ bool DialogueManager::hasEntityBeenIntroduced() const
 	return false;
 }
 
+int DialogueManager::getEntityOccupationIndex() const
+{
+	const EntityInstance &entityInst = this->getEntityInstance();
+	// @todo store in entity instance
+	ArenaRandom tempRandom(entityInst.instanceID); // Hacky randomization for now
+	return tempRandom.next(100);
+}
+
 const std::string &DialogueManager::getTemplateDatEntryValueAtIndex(int entryKey, int index) const
 {
 	const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;
@@ -81,6 +89,7 @@ std::string DialogueManager::getSubstitutedText(const char *text, int maxCharsPe
 	// @todo optimize these string allocations
 	std::string newText = text;
 
+	// @todo need to sort substitution tokens by longest first so %t doesn't turn %tem into <ruler title>em.
 	for (const std::pair<const char*, DialogueFunction> &functionMapping : DialogueFunctions::FunctionMappings)
 	{
 		const char *substitutionToken = functionMapping.first;

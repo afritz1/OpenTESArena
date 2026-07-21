@@ -558,6 +558,11 @@ const LocationDefinition &GameState::getLocationDefinition() const
 	return provinceDef.getLocationDef(this->locationIndex);
 }
 
+int GameState::getLocationIndex() const
+{
+	return this->locationIndex;
+}
+
 ProvinceInstance &GameState::getProvinceInstance()
 {
 	return this->worldMapInst.getProvinceInstance(this->provinceIndex);

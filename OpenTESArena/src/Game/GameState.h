@@ -207,6 +207,7 @@ public:
 	ArenaBuildingType getBuildingType() const; // For enemy encounters.
 	const ProvinceDefinition &getProvinceDefinition() const;
 	const LocationDefinition &getLocationDefinition() const;
+	int getLocationIndex() const;
 	WorldMapInstance &getWorldMapInstance();
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();

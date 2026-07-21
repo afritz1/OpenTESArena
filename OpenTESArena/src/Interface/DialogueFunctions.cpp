@@ -1,7 +1,9 @@
 #include "DialogueFunctions.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Player/Player.h"
 #include "../Stats/CharacterRaceLibrary.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"
 
@@ -87,7 +89,15 @@ std::string DialogueFunctions::get_cp(const Game &game)
 
 std::string DialogueFunctions::get_ct(const Game &game)
 {
-	return "%ct";
+	const GameState &gameState = game.gameState;
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
+	if (locationDef.getType() != LocationDefinitionType::City)
+	{
+		return std::string();
+	}
+
+	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	return cityDef.typeDisplayName;
 }
 
 std::string DialogueFunctions::get_da(const Game &game)
@@ -119,7 +129,7 @@ std::string DialogueFunctions::get_doc(const Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	constexpr int baseEntryKey = 263;
-	const int keyOffset = 0; // @todo need a 0-99 random value stored in entity instance based on their occupation
+	const int keyOffset = dialogueManager.getEntityOccupationIndex();
 	return dialogueManager.getRandomTemplateDatEntryValue(baseEntryKey + keyOffset);
 }
 
@@ -186,12 +196,15 @@ std::string DialogueFunctions::get_hod(const Game &game)
 
 std::string DialogueFunctions::get_jok(const Game &game)
 {
-	return "%jok";
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	return dialogueManager.getRandomTemplateDatEntryValue(363);
 }
 
 std::string DialogueFunctions::get_lp(const Game &game)
 {
-	return "%lp";
+	const GameState &gameState = game.gameState;
+	const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+	return provinceDef.getName();
 }
 
 std::string DialogueFunctions::get_mi(const Game &game)
@@ -279,7 +292,7 @@ std::string DialogueFunctions::get_oc(const Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	constexpr int entryKey = 262;
-	const int index = 0; // @todo need a 0-99 random value stored in entity instance based on their occupation
+	const int index = dialogueManager.getEntityOccupationIndex();
 	return dialogueManager.getTemplateDatEntryValueAtIndex(entryKey, index);
 }
 
@@ -300,12 +313,12 @@ std::string DialogueFunctions::get_oth(const Game &game)
 
 std::string DialogueFunctions::get_pcn(const Game &game)
 {
-	return "%pcn";
+	return game.player.displayName;
 }
 
 std::string DialogueFunctions::get_pcf(const Game &game)
 {
-	return "%pcf";
+	return game.player.firstName;
 }
 
 std::string DialogueFunctions::get_pre(const Game &game)
@@ -377,7 +390,15 @@ std::string DialogueFunctions::get_suf(const Game &game)
 
 std::string DialogueFunctions::get_t(const Game &game)
 {
-	return "%t";
+	const GameState &gameState = game.gameState;
+	const int provinceID = gameState.getProvinceDefinition().getRaceID();
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
+	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const int localCityID = gameState.getLocationIndex();
+	const ArenaLocationType locationType = ArenaLocationUtils::getCityType(localCityID);
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	ArenaRandom random(game.arenaRandom.getSeed());
+	return binaryAssetLibrary.getRulerTitle(provinceID, locationType, cityDef.rulerIsMale, random);
 }
 
 std::string DialogueFunctions::get_tan(const Game &game)
