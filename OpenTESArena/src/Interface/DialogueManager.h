@@ -26,9 +26,11 @@ struct DialogueManager
 	const EntityInstance &getEntityInstance() const;
 	ArenaNpcPersonalityType getEntityPersonalityType() const;
 	bool hasEntityBeenIntroduced() const;
+	WorldDouble2 getEntityPosition() const;
 	int getEntityOccupationIndex() const;
-	// @todo getNearestEquipmentStoreName()
-	// @todo getNearestTempleName()
+	std::string getNearestEquipmentStoreName() const;
+	std::string getNearestTavernName() const;
+	std::string getNearestTempleName() const;
 
 	const std::string &getTemplateDatEntryValueAtIndex(int entryKey, int index) const;
 	const std::string &getRandomTemplateDatEntryValue(int entryKey) const;

@@ -24,7 +24,7 @@ namespace DialogueFunctions
 	std::string get_ccs(const Game &game); // current MQ city
 	std::string get_cll(const Game &game); // current MQ dungeon
 	std::string get_cn(const Game &game); // if in wilderness, current province name; otherwise, the current city name
-	std::string get_cn2(const Game &game); // the nearest settlement name(same city type as the current)
+	std::string get_cn2(const Game &game); // the nearest settlement name (same city type as the current)
 	std::string get_cp(const Game &game); // current MQ province
 	std::string get_ct(const Game &game); // current city type
 	std::string get_da(const Game &game); // Active quest deadline date (short format)
@@ -59,7 +59,7 @@ namespace DialogueFunctions
 	std::string get_nhd(const Game &game); // nearest holiday date, without the year
 	std::string get_non(const Game &game); // empty string
 	std::string get_nr(const Game &game); // (same as %ne)
-	std::string get_nt(const Game &game); // building name
+	std::string get_nt(const Game &game); // NPC's home tavern name
 	std::string get_o(const Game &game); // a rival faction name for the active quest, or "%qf"
 	std::string get_oap(const Game &game); // gold cost amount to get artifact info from NPC (see %nap)
 	std::string get_oc(const Game &game); // NPC occupation / profession
@@ -75,7 +75,7 @@ namespace DialogueFunctions
 	std::string get_qmn(const Game &game); // notification that quest object is nearby
 	std::string get_r(const Game &game); // relation type for the active quest ("daughter" etc.)
 	std::string get_ra(const Game &game); // PC race
-	std::string get_rcn(const Game &game); // random city - state name in the current province
+	std::string get_rcn(const Game &game); // random city-state name in the current province
 	std::string get_rf(const Game &game); // ruler first name, or "Uriel Septim" if Imp.city
 	std::string get_rpn(const Game &game); // random province name
 	std::string get_sn(const Game &game); // name of snake charmer NPC's pet

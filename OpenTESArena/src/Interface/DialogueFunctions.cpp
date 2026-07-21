@@ -1,6 +1,8 @@
 #include "DialogueFunctions.h"
 #include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
+#include "../Math/ArenaMathUtils.h"
 #include "../Player/Player.h"
 #include "../Stats/CharacterRaceLibrary.h"
 #include "../WorldMap/ArenaLocationUtils.h"
@@ -74,12 +76,77 @@ std::string DialogueFunctions::get_cll(const Game &game)
 
 std::string DialogueFunctions::get_cn(const Game &game)
 {
-	return "%cn";
+	const GameState &gameState = game.gameState;
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
+	return locationDef.getName();
 }
 
 std::string DialogueFunctions::get_cn2(const Game &game)
 {
-	return "%cn2";
+	const GameState &gameState = game.gameState;
+
+	auto getLocationGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
+	{
+		const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
+		return ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
+	};
+
+	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
+	const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
+	const LocationCityDefinition &playerCityDef = playerLocationDef.getCityDefinition();
+	const Int2 playerGlobalPoint = getLocationGlobalPoint(playerLocationDef, playerProvinceDef);
+
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition *closestProvinceDef = nullptr;
+	const LocationDefinition *closestLocationDef = nullptr;
+	for (int provinceIndex = 0; provinceIndex < provinceLibrary.getProvinceCount(); provinceIndex++)
+	{
+		const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+		for (int locationIndex = 0; locationIndex < provinceDef.getLocationCount(); locationIndex++)
+		{
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+			if (locationDef.getType() != LocationDefinitionType::City)
+			{
+				continue;
+			}
+
+			const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+			if (locationCityDef.type != playerCityDef.type)
+			{
+				continue;
+			}
+
+			if (&locationDef == &playerLocationDef)
+			{
+				continue;
+			}
+
+			if (closestLocationDef == nullptr)
+			{
+				closestProvinceDef = &provinceDef;
+				closestLocationDef = &locationDef;
+				continue;
+			}
+
+			const Int2 globalPoint = getLocationGlobalPoint(locationDef, provinceDef);
+			const Int2 closestGlobalPoint = getLocationGlobalPoint(*closestLocationDef, *closestProvinceDef);
+			const int distance = ArenaMathUtils::getApproximateEuclideanDistance(globalPoint, playerGlobalPoint);
+			const int closestDistance = ArenaMathUtils::getApproximateEuclideanDistance(closestGlobalPoint, playerGlobalPoint);
+			if (distance < closestDistance)
+			{
+				closestProvinceDef = &provinceDef;
+				closestLocationDef = &locationDef;
+			}
+		}
+	}
+
+	if (closestLocationDef == nullptr)
+	{
+		DebugLogErrorFormat("Couldn't find closest matching location to %s.", playerLocationDef.getName().c_str());
+		return std::string();
+	}
+
+	return closestLocationDef->getName();
 }
 
 std::string DialogueFunctions::get_cp(const Game &game)
@@ -155,7 +222,8 @@ std::string DialogueFunctions::get_ef(const Game &game)
 
 std::string DialogueFunctions::get_en(const Game &game)
 {
-	return "%en";
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	return dialogueManager.getNearestEquipmentStoreName();
 }
 
 std::string DialogueFunctions::get_fq(const Game &game)
@@ -275,7 +343,8 @@ std::string DialogueFunctions::get_nr(const Game &game)
 
 std::string DialogueFunctions::get_nt(const Game &game)
 {
-	return "%nt";
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	return dialogueManager.getNearestTavernName();
 }
 
 std::string DialogueFunctions::get_o(const Game &game)
@@ -360,12 +429,26 @@ std::string DialogueFunctions::get_ra(const Game &game)
 
 std::string DialogueFunctions::get_rcn(const Game &game)
 {
-	return "%rcn";
+	const GameState &gameState = game.gameState;
+	const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+	ArenaRandom tempRandom(game.arenaRandom.getSeed());
+	const int randomCityStateIndex = tempRandom.next(8);
+	const LocationDefinition &selectedLocationDef = provinceDef.getLocationDef(randomCityStateIndex);
+	return selectedLocationDef.getName();
 }
 
 std::string DialogueFunctions::get_rf(const Game &game)
 {
-	return "%rf";
+	const GameState &gameState = game.gameState;
+	const int provinceIndex = gameState.getProvinceDefinition().getRaceID();
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
+	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	ArenaRandom tempRandom(cityDef.rulerSeed);
+
+	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+	const std::string fullName = textAssetLibrary.generateNpcName(provinceIndex, cityDef.rulerIsMale, tempRandom);
+	const Buffer<std::string> tokens = String::split(fullName, ' ');
+	return tokens[0];
 }
 
 std::string DialogueFunctions::get_rpn(const Game &game)
@@ -413,7 +496,8 @@ std::string DialogueFunctions::get_tc(const Game &game)
 
 std::string DialogueFunctions::get_tem(const Game &game)
 {
-	return "%tem";
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	return dialogueManager.getNearestTempleName();
 }
 
 std::string DialogueFunctions::get_tg(const Game &game)
