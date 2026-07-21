@@ -1,4 +1,5 @@
-#include "DialogueFunctions.h"
+#include <cstring>
+
 #include "DialogueManager.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
@@ -9,6 +10,22 @@
 void DialogueManager::init(Game &game)
 {
 	this->game = &game;
+
+	const Span<const std::pair<const char*, DialogueFunction>> sourceMappings = DialogueFunctions::FunctionMappings;
+	this->sortedFunctionMappings.init(sourceMappings.getCount());
+	std::copy(sourceMappings.begin(), sourceMappings.end(), this->sortedFunctionMappings.begin());
+	std::sort(this->sortedFunctionMappings.begin(), this->sortedFunctionMappings.end(),
+		[](const std::pair<const char*, DialogueFunction> &a, const std::pair<const char*, DialogueFunction> &b)
+	{
+		const size_t aLength = std::strlen(a.first);
+		const size_t bLength = std::strlen(b.first);
+		if (aLength != bLength)
+		{
+			return aLength > bLength;
+		}
+
+		return std::strcmp(a.first, b.first) < 0;
+	});
 }
 
 void DialogueManager::beginDialogue(EntityInstanceID entityInstID)
@@ -89,8 +106,7 @@ std::string DialogueManager::getSubstitutedText(const char *text, int maxCharsPe
 	// @todo optimize these string allocations
 	std::string newText = text;
 
-	// @todo need to sort substitution tokens by longest first so %t doesn't turn %tem into <ruler title>em.
-	for (const std::pair<const char*, DialogueFunction> &functionMapping : DialogueFunctions::FunctionMappings)
+	for (const std::pair<const char*, DialogueFunction> &functionMapping : this->sortedFunctionMappings)
 	{
 		const char *substitutionToken = functionMapping.first;
 		const size_t substitutionTokenLength = std::strlen(substitutionToken);

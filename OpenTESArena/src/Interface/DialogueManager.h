@@ -2,12 +2,20 @@
 
 #include <string>
 
+#include "DialogueFunctions.h"
 #include "../Entities/EntityInstance.h"
+
+#include "components/utilities/Buffer.h"
 
 struct DialogueManager
 {
 	Game *game;
-	EntityInstanceID entityInstID; // The entity the player is talking to.
+
+	// Sorted by longest first so longer tokens match before shorter ones.
+	Buffer<std::pair<const char*, DialogueFunction>> sortedFunctionMappings;
+
+	// The entity the player is talking to.
+	EntityInstanceID entityInstID;
 	// @todo various global state like dlgGender that changes based on processing of certain tokens
 
 	void init(Game &game);
