@@ -43,7 +43,7 @@ namespace DialogueFunctions
 	std::string get_g(const Game &game); // he / she / it depending on dlgGender
 	std::string get_g2(const Game &game); // him / her / it depending on dlgGender
 	std::string get_g3(const Game &game); // his / her / its depending on dlgGender
-	std::string get_hc(const Game &game); // player's home city
+	std::string get_hc(const Game &game); // player's home province
 	std::string get_hod(const Game &game); // nearest holiday string : random normalized #169 + holidayId
 	std::string get_jok(const Game &game); // joke: random normalized #363
 	std::string get_lp(const Game &game); // current province
@@ -65,9 +65,9 @@ namespace DialogueFunctions
 	std::string get_oc(const Game &game); // NPC occupation / profession
 	std::string get_omq(const Game &game); // quest item for the active quest (depends on the destination)
 	std::string get_opp(const Game &game); // assassin from hostile guild
-	std::string get_oth(const Game &game); // oath: random line from oaths[prov].prov is the current province or random if imp.city
-	std::string get_pcn(const Game &game); // PC full name.Sets dlgGender
-	std::string get_pcf(const Game &game); // PC first name.Sets dlgGender
+	std::string get_oth(const Game &game); // oath: random line from oaths[prov].prov is the current province or random if imp. city
+	std::string get_pcn(const Game &game); // PC full name. Sets dlgGender
+	std::string get_pcf(const Game &game); // PC first name. Sets dlgGender
 	std::string get_pre(const Game &game); // NPC name prefix (from a special data structure)
 	std::string get_qc(const Game &game); // city where the active quest was taken
 	std::string get_qt(const Game &game); // description of the active quest type ("deliver something" etc.)
@@ -76,7 +76,7 @@ namespace DialogueFunctions
 	std::string get_r(const Game &game); // relation type for the active quest ("daughter" etc.)
 	std::string get_ra(const Game &game); // PC race
 	std::string get_rcn(const Game &game); // random city-state name in the current province
-	std::string get_rf(const Game &game); // ruler first name, or "Uriel Septim" if Imp.city
+	std::string get_rf(const Game &game); // ruler first name, or emperor's name if Imp. city
 	std::string get_rpn(const Game &game); // random province name
 	std::string get_sn(const Game &game); // name of snake charmer NPC's pet
 	std::string get_st(const Game &game); // "war/peace" based on algorithm

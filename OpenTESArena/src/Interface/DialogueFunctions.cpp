@@ -5,6 +5,7 @@
 #include "../Math/ArenaMathUtils.h"
 #include "../Player/Player.h"
 #include "../Stats/CharacterRaceLibrary.h"
+#include "../World/MapType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"
@@ -77,8 +78,18 @@ std::string DialogueFunctions::get_cll(const Game &game)
 std::string DialogueFunctions::get_cn(const Game &game)
 {
 	const GameState &gameState = game.gameState;
-	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	return locationDef.getName();
+	const MapType mapType = gameState.getActiveMapType();
+
+	if (mapType == MapType::Wilderness || (gameState.isActiveMapNested() && gameState.getExteriorMapType() == MapType::Wilderness))
+	{
+		const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+		return provinceDef.getName();
+	}
+	else
+	{
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
+		return locationDef.getName();
+	}
 }
 
 std::string DialogueFunctions::get_cn2(const Game &game)
@@ -254,7 +265,10 @@ std::string DialogueFunctions::get_g3(const Game &game)
 
 std::string DialogueFunctions::get_hc(const Game &game)
 {
-	return "%hc";
+	const Player &player = game.player;
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &playerHomeProvince = provinceLibrary.getProvinceDef(player.raceID);
+	return playerHomeProvince.getName();
 }
 
 std::string DialogueFunctions::get_hod(const Game &game)
@@ -464,12 +478,23 @@ std::string DialogueFunctions::get_rf(const Game &game)
 
 std::string DialogueFunctions::get_rpn(const Game &game)
 {
-	return "%rpn";
+	ArenaRandom tempRandom(game.arenaRandom.getSeed());
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const int randomProvinceIndex = tempRandom.next(provinceLibrary.getProvinceCount());
+	const ProvinceDefinition &selectedProvinceDef = provinceLibrary.getProvinceDef(randomProvinceIndex);
+	return selectedProvinceDef.getName();
 }
 
 std::string DialogueFunctions::get_sn(const Game &game)
 {
-	return "%sn";
+	const GameState &gameState = game.gameState;
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	const int provinceIndex = gameState.getProvinceDefinition().getRaceID();
+	ArenaRandom tempRandom(dialogueManager.entityInstID);
+	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+	const std::string fullName = textAssetLibrary.generateNpcName(provinceIndex, false, tempRandom);
+	const Buffer<std::string> tokens = String::split(fullName, ' ');
+	return tokens[0];
 }
 
 std::string DialogueFunctions::get_st(const Game &game)
