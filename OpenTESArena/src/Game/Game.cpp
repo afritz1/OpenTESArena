@@ -395,6 +395,8 @@ bool Game::init()
 		return false;
 	}
 
+	this->dialogueManager.init(*this);
+
 	this->defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(this->textureManager, this->renderer);
 
 	const char *globalUiContextName = UiLibrary::GlobalContextName;

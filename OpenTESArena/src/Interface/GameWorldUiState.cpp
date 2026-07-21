@@ -13,6 +13,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../Interface/DialogueManager.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -145,7 +146,6 @@ GameWorldUiState::GameWorldUiState()
 	this->actionTextRemainingSeconds = 0.0;
 	this->effectTextRemainingSeconds = 0.0;
 	this->playerHurtRemainingSeconds = 0.0;
-	this->conversationEntityInstID = -1;
 }
 
 void GameWorldUiState::init(Game &game)
@@ -452,6 +452,7 @@ void GameWorldUI::destroy()
 	Game &game = *state.game;
 	InputManager &inputManager = game.inputManager;
 	UiManager &uiManager = game.uiManager;
+	DialogueManager &dialogueManager = game.dialogueManager;
 	Renderer &renderer = game.renderer;
 
 	if (state.contextInstID >= 0)
@@ -506,7 +507,8 @@ void GameWorldUI::destroy()
 	state.maxSpellPoints = 0.0;
 	state.playerHurtRemainingSeconds = 0.0;
 	state.lootPopUpItemMappings.clear();
-	state.conversationEntityInstID = -1;
+
+	dialogueManager.endDialogue();
 
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, false);
 
@@ -1434,13 +1436,6 @@ void GameWorldUI::showPlayerHurt()
 	state.playerHurtRemainingSeconds = 1.0 / ArenaRenderUtils::FRAMES_PER_SECOND;
 }
 
-void GameWorldUI::setConversationEntityInstanceID(EntityInstanceID entityInstID)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	DebugAssert(state.conversationEntityInstID < 0);
-	state.conversationEntityInstID = entityInstID;
-}
-
 void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageBoxType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
@@ -2188,9 +2183,10 @@ void GameWorldUI::onCloseConversationButtonSelected(MouseButtonType mouseButtonT
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
+	DialogueManager &dialogueManager = game.dialogueManager;
 	uiManager.setContextEnabled(state.conversationModalContextInstID, false);
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
-	state.conversationEntityInstID = -1;
+	dialogueManager.endDialogue();
 	GameWorldUI::onPauseChanged(false);
 }
 
@@ -2199,50 +2195,14 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
+	DialogueManager &dialogueManager = game.dialogueManager;
 	uiManager.disableTopMostContext();
 
-	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-	const EntityInstance &entityInst = entityChunkManager.entities.get(state.conversationEntityInstID);
-	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-	const EntityDefinitionType entityDefType = entityDef.type;
-
-	ArenaNpcPersonalityType personalityType;
-	if (entityDefType == EntityDefinitionType::Citizen)
-	{
-		personalityType = ArenaNpcPersonalityType::Citizen;
-	}
-	else if (entityDefType == EntityDefinitionType::StaticNPC)
-	{
-		const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
-		DebugAssert(staticNpcEntityDef.type == StaticNpcEntityDefinitionType::General);
-		const StaticNpcGeneralEntityDefinition &staticNpcGeneralEntityDef = staticNpcEntityDef.general;
-		personalityType = staticNpcGeneralEntityDef.type;
-	}
-	else
-	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
-	}
-
-	const EntityNpcName &npcName = entityChunkManager.npcNames.get(entityInst.npcNameID);
-	const std::string &entityDisplayName = npcName.name;
-	const std::string entityFirstName = String::split(entityDisplayName)[0];
-
-	Random &random = game.random;
-	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-	const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
-	const bool hasBeenIntroducedPreviously = false; // @todo store in entity instance
-	const int hasBeenIntroducedPreviouslyEntryOffset = hasBeenIntroducedPreviously ? 15 : 0;
-	const int entryIndex = 100 + hasBeenIntroducedPreviouslyEntryOffset + static_cast<int>(personalityType);
-	const ArenaTemplateDatEntry &entry = templateDat.getEntry(entryIndex);
-	const Span<const std::string> entryValues = entry.values;
-	const int entryValuesRandomIndex = random.next(static_cast<int>(entry.values.size()));
-	const std::string &entryValue = entryValues[entryValuesRandomIndex];
-
-	// @todo move to a global dialog handling function
-	std::string text = entryValue;
-	text = String::replace(text, "%fn", entityFirstName);
-	text = String::replace(text, "%n", entityDisplayName);
-	text = String::distributeNewlines(text, 65);
+	const int hasBeenIntroducedEntryOffset = dialogueManager.hasEntityBeenIntroduced() ? 15 : 0;
+	const ArenaNpcPersonalityType personalityType = dialogueManager.getEntityPersonalityType();
+	const int entryIndex = 100 + hasBeenIntroducedEntryOffset + static_cast<int>(personalityType);	
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryIndex);
+	const std::string text = dialogueManager.getSubstitutedText(entryValue.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{

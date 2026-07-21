@@ -1568,7 +1568,7 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 
 void GameWorldUiController::onCitizenInteracted(Game &game, EntityInstanceID entityInstID)
 {
-	GameWorldUI::setConversationEntityInstanceID(entityInstID);
+	game.dialogueManager.beginDialogue(entityInstID);
 	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 }
 
@@ -1591,6 +1591,7 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID e
 {
 	const GameState &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
+	DialogueManager &dialogueManager = game.dialogueManager;
 
 	std::string interiorDisplayName;
 	if (mapDef.getMapType() == MapType::Interior)
@@ -1601,12 +1602,12 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID e
 
 	if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::General)
 	{
-		GameWorldUI::setConversationEntityInstanceID(entityInstID);
+		dialogueManager.beginDialogue(entityInstID);
 		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 	}
 	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper)
 	{
-		GameWorldUI::setConversationEntityInstanceID(entityInstID);
+		dialogueManager.beginDialogue(entityInstID);
 		GameWorldUI::showShopkeeperBackground(interiorDisplayName.c_str());
 
 		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
