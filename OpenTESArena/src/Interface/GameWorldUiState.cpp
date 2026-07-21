@@ -2306,7 +2306,15 @@ void GameWorldUI::onNpcRumorsWorkButtonSelected(MouseButtonType mouseButtonType)
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "Work rumors not implemented.";
+	DialogueManager &dialogueManager = game.dialogueManager;
+	constexpr int noWorkEntryKey = 160;
+
+	// @todo actual work rumors, requires quest support
+	const int entryKey = noWorkEntryKey;
+
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+	const std::string entryValueAndTBD = entryValue + " (quests not implemented)";
+	const std::string text = dialogueManager.getSubstitutedText(entryValueAndTBD.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2582,7 +2590,19 @@ void GameWorldUI::onNpcTavernRumorsGeneralButtonSelected(MouseButtonType mouseBu
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "Tavern general rumors not implemented.";
+	DialogueManager &dialogueManager = game.dialogueManager;
+	constexpr int uninterestingRumorEntryKey = 159;
+	constexpr int randomRumorEntryKey = 185;
+
+	Random &random = game.random;
+	int entryKey = uninterestingRumorEntryKey;
+	if (random.nextBool())
+	{
+		entryKey = randomRumorEntryKey;
+	}
+
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+	const std::string text = dialogueManager.getSubstitutedText(entryValue.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2600,7 +2620,15 @@ void GameWorldUI::onNpcTavernRumorsWorkButtonSelected(MouseButtonType mouseButto
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "Tavern work rumors not implemented.";
+	DialogueManager &dialogueManager = game.dialogueManager;
+	constexpr int bartenderNoWorkEntryKey = 196;
+
+	// @todo actual work rumors, requires quest support
+	const int entryKey = bartenderNoWorkEntryKey;
+
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+	const std::string entryValueAndTBD = entryValue + " (quests not implemented)";
+	const std::string text = dialogueManager.getSubstitutedText(entryValueAndTBD.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
