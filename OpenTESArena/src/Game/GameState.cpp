@@ -584,22 +584,29 @@ Span<const ArenaWeatherType> GameState::getWorldMapWeathers() const
 	return this->worldMapWeathers;
 }
 
-ArenaWeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
+int GameState::getLocationGlobalQuarter(int provinceIndex, int locationIndex) const
 {
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 	const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
-
 	const CityDataFile &cityDataFile = BinaryAssetLibrary::getInstance().getCityDataFile();
-	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityDataFile);
+	return ArenaLocationUtils::getGlobalQuarter(globalPoint, cityDataFile);
+}
+
+ArenaWeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
+{
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+	const int quarterIndex = this->getLocationGlobalQuarter(provinceIndex, locationIndex);
 	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
 	ArenaWeatherType weatherType = this->worldMapWeathers[quarterIndex];
 
 	if (locationDef.getType() == LocationDefinitionType::City)
 	{
-		// Filter the possible weathers (in case it's trying to have snow in a desert).
+		// Filter the possible weathers in case it's trying to have snow in a desert.
 		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
 		const ArenaClimateType climateType = locationCityDef.climateType;
 		weatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, climateType);

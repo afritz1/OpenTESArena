@@ -82,6 +82,9 @@ EquipmentPrefixes=0x366D1
 EquipmentSuffixes=0x3679E
 MagesGuildMenuName=0x42911
 
+[Dialogue]
+NeighborWarPeace=0x39B0C
+
 [Entities]
 AttributeNames=0x3E500
 CreatureNames=0x36DBE

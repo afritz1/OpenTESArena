@@ -2276,7 +2276,19 @@ void GameWorldUI::onNpcRumorsGeneralButtonSelected(MouseButtonType mouseButtonTy
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "General rumors not implemented.";
+	DialogueManager &dialogueManager = game.dialogueManager;
+	constexpr int uninterestingRumorEntryKey = 159;
+	constexpr int randomRumorEntryKey = 185;
+
+	Random &random = game.random;
+	int entryKey = uninterestingRumorEntryKey;
+	if (random.nextBool())
+	{
+		entryKey = randomRumorEntryKey;
+	}
+
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+	const std::string text = dialogueManager.getSubstitutedText(entryValue.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{

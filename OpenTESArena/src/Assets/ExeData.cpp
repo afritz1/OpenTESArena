@@ -462,6 +462,22 @@ bool ExeDataCityGeneration::init(Span<const std::byte> exeBytes, const KeyValueF
 	return true;
 }
 
+bool ExeDataDialogue::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Dialogue";
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
+		return false;
+	}
+
+	const int neighborWarPeaceOffset = GetExeAddress(*section, "NeighborWarPeace");
+	initStringArrayNullTerminated(this->neighborWarPeace, exeBytes, neighborWarPeaceOffset);
+
+	return true;
+}
+
 bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Entities";
@@ -1420,6 +1436,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->charClasses.init(exeBytes, keyValueFile);
 	success &= this->charCreation.init(exeBytes, keyValueFile);
 	success &= this->cityGen.init(exeBytes, keyValueFile);
+	success &= this->dialogue.init(exeBytes, keyValueFile);
 	success &= this->entities.init(exeBytes, keyValueFile);
 	success &= this->equipment.init(exeBytes, keyValueFile);
 	success &= this->items.init(exeBytes, keyValueFile);

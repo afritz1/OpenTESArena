@@ -499,7 +499,26 @@ std::string DialogueFunctions::get_sn(const Game &game)
 
 std::string DialogueFunctions::get_st(const Game &game)
 {
-	return "%st";
+	const GameState &gameState = game.gameState;
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
+	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const Span<const ArenaWeatherType> globalWeathers = gameState.getWorldMapWeathers();
+
+	// War/peace depends on weather which in theory is a slow-changing global variable.
+	const int provinceIndex = gameState.getProvinceDefinition().getRaceID();
+	const int locationIndex = gameState.getLocationIndex();
+	const int quarterIndex = gameState.getLocationGlobalQuarter(provinceIndex, locationIndex);
+	const ArenaWeatherType quarterWeather = globalWeathers[quarterIndex];
+	const uint32_t seed1 = cityDef.citySeed;
+	const uint32_t seed2 = (seed1 & 0xFF) + (static_cast<int>(quarterWeather) & 0x7);
+	const uint32_t seed = (seed1 & 0xFFFFFF00) | (seed2 & 0xFF);
+	ArenaRandom tempRandom(seed);
+	
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const int index = tempRandom.next(2);
+	DebugAssertIndex(exeData.dialogue.neighborWarPeace, index);
+	return exeData.dialogue.neighborWarPeace[index];
 }
 
 std::string DialogueFunctions::get_suf(const Game &game)

@@ -140,6 +140,14 @@ struct ExeDataCityGeneration
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
+struct ExeDataDialogue
+{
+	// Whether two provinces are at war/peace with each other.
+	std::string neighborWarPeace[2];
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataEntities
 {
 	std::string attributeNames[8]; // Strength, ... Luck.
@@ -776,6 +784,7 @@ struct ExeData
 	ExeDataCharacterClasses charClasses;
 	ExeDataCharacterCreation charCreation;
 	ExeDataCityGeneration cityGen;
+	ExeDataDialogue dialogue;
 	ExeDataEntities entities;
 	ExeDataEquipment equipment;
 	ExeDataItems items;

@@ -169,14 +169,14 @@ enum class ArenaClimateType
 // fog distance, music, etc.. If in a desert, snow is replaced by rain.
 enum class ArenaWeatherType
 {
-	Clear,
-	Overcast, // Always with fog.
-	Rain, // If rnd() < 24000 then thunderstorm.
-	Snow,
-	SnowOvercast, // Always with fog.
-	Rain2, // If rnd() < 24000 then thunderstorm.
-	Overcast2, // Always with fog?
-	SnowOvercast2 // If rnd() < 16000 then with fog.
+	Clear = 0,
+	Overcast = 1, // Always with fog.
+	Rain = 2, // If rnd() < 24000 then thunderstorm.
+	Snow = 3,
+	SnowOvercast = 4, // Always with fog.
+	Rain2 = 5, // If rnd() < 24000 then thunderstorm.
+	Overcast2 = 6, // Always with fog?
+	SnowOvercast2 = 7 // If rnd() < 16000 then with fog.
 };
 
 // NPCs that can say who they are, give directions, and talk about rumors.
