@@ -2310,15 +2310,27 @@ void GameWorldUI::onNpcRumorsWorkButtonSelected(MouseButtonType mouseButtonType)
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
+	const GameState &gameState = game.gameState;
 	DialogueManager &dialogueManager = game.dialogueManager;
-	constexpr int noWorkEntryKey = 160;
 
-	// @todo actual work rumors, requires quest support
-	const int entryKey = noWorkEntryKey;
+	std::string dialogueStr;
+	if (gameState.getActiveMapType() == MapType::Wilderness || (gameState.isActiveMapNested() && gameState.getExteriorMapType() == MapType::Wilderness))
+	{
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		dialogueStr = exeData.services.citizenRumorsModalWorkAskInTown;
+	}
+	else
+	{
+		constexpr int noWorkEntryKey = 160;
 
-	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
-	const std::string entryValueAndTBD = entryValue + " (quests not implemented)";
-	const std::string text = dialogueManager.getSubstitutedText(entryValueAndTBD.c_str());
+		// @todo actual work rumors, requires quest support
+		const int entryKey = noWorkEntryKey;
+
+		const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+		dialogueStr = entryValue + " (quests not implemented)";
+	}
+
+	const std::string text = dialogueManager.getSubstitutedText(dialogueStr.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
