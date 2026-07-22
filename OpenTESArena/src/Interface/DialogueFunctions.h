@@ -5,91 +5,92 @@
 
 class Game;
 
-using DialogueFunction = std::function<std::string(const Game&)>;
+using DialogueFunction = std::function<std::string(Game&)>;
 
-// Substitution token replacement functions for conversations.
+// Substitution token replacement functions for conversations. Some functions modify global dialogue
+// state like the current gender of a subject (not necessarily the conversation entity).
 namespace DialogueFunctions
 {
-	std::string get_a(const Game &game); // Active quest reward
-	std::string get_adj(const Game &game); // NPC name adjective (same structure as the prefix)
-	std::string get_adn(const Game &game); // artifact dungeon name
-	std::string get_adv(const Game &game); // NPC name adverb (same structure as the prefix)
-	std::string get_amn(const Game &game); // artifact dungeon name?
-	std::string get_an(const Game &game); // NPC name that gives artifact quest
-	std::string get_at(const Game &game); // Active quest dungeon type (Mine, Cavern, Labyrinth, ...)
-	std::string get_art(const Game &game); // current artifact name
-	std::string get_apr(const Game &game); // artifact province name
-	std::string get_arc(const Game &game); // artifact leaving player's possession
-	std::string get_ba(const Game &game); // Active quest bonus reward (unused)
-	std::string get_ccs(const Game &game); // current MQ city
-	std::string get_cll(const Game &game); // current MQ dungeon
-	std::string get_cn(const Game &game); // if in wilderness, current province name; otherwise, the current city name
-	std::string get_cn2(const Game &game); // the nearest settlement name (same city type as the current)
-	std::string get_cp(const Game &game); // current MQ province
-	std::string get_ct(const Game &game); // current city type
-	std::string get_da(const Game &game); // Active quest deadline date (short format)
-	std::string get_de(const Game &game); // Active quest deadline, in days
-	std::string get_des(const Game &game); // NPC description (same structure as the prefix)
-	std::string get_di(const Game &game); // cardinal direction to dlgPoint
-	std::string get_dit(const Game &game); // number of days quest NPC waits for player
-	std::string get_doc(const Game &game); // NPC occupation / profession details
-	std::string get_ds(const Game &game); // Active quest giver description (see below)
-	std::string get_du(const Game &game); // number of days quest NPC says fast travel will take
-	std::string get_dnl(const Game &game); // first word of %nc value
-	std::string get_ef(const Game &game); // used with building names?
-	std::string get_en(const Game &game); // NPC's home equipment store name
-	std::string get_fq(const Game &game); // active quest giver's first name (female if not quest giver seed & 3)
-	std::string get_fn(const Game &game); // NPC first name (similar to %n)
-	std::string get_g(const Game &game); // he / she / it depending on dlgGender
-	std::string get_g2(const Game &game); // him / her / it depending on dlgGender
-	std::string get_g3(const Game &game); // his / her / its depending on dlgGender
-	std::string get_hc(const Game &game); // player's home province
-	std::string get_hod(const Game &game); // nearest holiday string : random normalized #169 + holidayId
-	std::string get_jok(const Game &game); // joke: random normalized #363
-	std::string get_lp(const Game &game); // current province
-	std::string get_mi(const Game &game); // item name for the active noble quest
-	std::string get_mn(const Game &game); // monster name for the active quest
-	std::string get_mpr(const Game &game); // province where the artifact map is
-	std::string get_mt(const Game &game); // monster for the active quest ("Troll" etc.)
-	std::string get_n(const Game &game); // NPC name
-	std::string get_nap(const Game &game); // gold cost amount to get artifact info from NPC (see %oap)
-	std::string get_nc(const Game &game); // a local name for the active quest
-	std::string get_ne(const Game &game); // a local name for the active quest
-	std::string get_nh(const Game &game); // nearest holiday name
-	std::string get_nhd(const Game &game); // nearest holiday date, without the year
-	std::string get_non(const Game &game); // empty string
-	std::string get_nr(const Game &game); // (same as %ne)
-	std::string get_nt(const Game &game); // NPC's home tavern name
-	std::string get_o(const Game &game); // a rival faction name for the active quest, or "%qf"
-	std::string get_oap(const Game &game); // gold cost amount to get artifact info from NPC (see %nap)
-	std::string get_oc(const Game &game); // NPC occupation / profession
-	std::string get_omq(const Game &game); // quest item for the active quest (depends on the destination)
-	std::string get_opp(const Game &game); // assassin from hostile guild
-	std::string get_oth(const Game &game); // oath: random line from oaths[prov].prov is the current province or random if imp. city
-	std::string get_pcn(const Game &game); // PC full name. Sets dlgGender
-	std::string get_pcf(const Game &game); // PC first name. Sets dlgGender
-	std::string get_pre(const Game &game); // NPC name prefix (from a special data structure)
-	std::string get_qc(const Game &game); // city where the active quest was taken
-	std::string get_qt(const Game &game); // description of the active quest type ("deliver something" etc.)
-	std::string get_qf(const Game &game); // title + first name for the opponent in the active quest
-	std::string get_qmn(const Game &game); // notification that quest object is nearby
-	std::string get_r(const Game &game); // relation type for the active quest ("daughter" etc.)
-	std::string get_ra(const Game &game); // PC race
-	std::string get_rcn(const Game &game); // random city-state name in the current province
-	std::string get_rf(const Game &game); // ruler first name, or emperor's name if Imp. city
-	std::string get_rpn(const Game &game); // random province name
-	std::string get_sn(const Game &game); // name of snake charmer NPC's pet
-	std::string get_st(const Game &game); // "war/peace" based on algorithm
-	std::string get_suf(const Game &game); // NPC name suffix (same structure as the prefix)
-	std::string get_t(const Game &game); // ruler title
-	std::string get_tan(const Game &game); // $dlgDungeonName
-	std::string get_tc(const Game &game); // target city name for the active quest
-	std::string get_tem(const Game &game); // NPC's home temple name
-	std::string get_tg(const Game &game); // target faction name for the active quest
-	std::string get_ti(const Game &game); // (same as %du)
-	std::string get_tl(const Game &game); // target venue name for the active quest, or "%dnl"
-	std::string get_tq(const Game &game); // quest giver title for the active quest
-	std::string get_tt(const Game &game); // class of the npc for the active quest
+	std::string get_a(Game &game); // Active quest reward
+	std::string get_adj(Game &game); // NPC name adjective (same structure as the prefix)
+	std::string get_adn(Game &game); // artifact dungeon name
+	std::string get_adv(Game &game); // NPC name adverb (same structure as the prefix)
+	std::string get_amn(Game &game); // artifact dungeon name?
+	std::string get_an(Game &game); // NPC name that gives artifact quest
+	std::string get_at(Game &game); // Active quest dungeon type (Mine, Cavern, Labyrinth, ...)
+	std::string get_art(Game &game); // current artifact name
+	std::string get_apr(Game &game); // artifact province name
+	std::string get_arc(Game &game); // artifact leaving player's possession
+	std::string get_ba(Game &game); // Active quest bonus reward (unused)
+	std::string get_ccs(Game &game); // current MQ city
+	std::string get_cll(Game &game); // current MQ dungeon
+	std::string get_cn(Game &game); // if in wilderness, current province name; otherwise, the current city name
+	std::string get_cn2(Game &game); // the nearest settlement name (same city type as the current)
+	std::string get_cp(Game &game); // current MQ province
+	std::string get_ct(Game &game); // current city type
+	std::string get_da(Game &game); // Active quest deadline date (short format)
+	std::string get_de(Game &game); // Active quest deadline, in days
+	std::string get_des(Game &game); // NPC description (same structure as the prefix)
+	std::string get_di(Game &game); // cardinal direction to dlgPoint
+	std::string get_dit(Game &game); // number of days quest NPC waits for player
+	std::string get_doc(Game &game); // NPC occupation / profession details
+	std::string get_ds(Game &game); // Active quest giver description (see below)
+	std::string get_du(Game &game); // number of days quest NPC says fast travel will take
+	std::string get_dnl(Game &game); // first word of %nc value
+	std::string get_ef(Game &game); // used with building names?
+	std::string get_en(Game &game); // NPC's home equipment store name
+	std::string get_fq(Game &game); // active quest giver's first name (female if not quest giver seed & 3)
+	std::string get_fn(Game &game); // NPC first name (similar to %n)
+	std::string get_g(Game &game); // he / she / it depending on dlgGender
+	std::string get_g2(Game &game); // him / her / it depending on dlgGender
+	std::string get_g3(Game &game); // his / her / its depending on dlgGender
+	std::string get_hc(Game &game); // player's home province
+	std::string get_hod(Game &game); // nearest holiday string : random normalized #169 + holidayId
+	std::string get_jok(Game &game); // joke: random normalized #363
+	std::string get_lp(Game &game); // current province
+	std::string get_mi(Game &game); // item name for the active noble quest
+	std::string get_mn(Game &game); // monster name for the active quest
+	std::string get_mpr(Game &game); // province where the artifact map is
+	std::string get_mt(Game &game); // monster for the active quest ("Troll" etc.)
+	std::string get_n(Game &game); // NPC name
+	std::string get_nap(Game &game); // gold cost amount to get artifact info from NPC (see %oap)
+	std::string get_nc(Game &game); // a local name for the active quest
+	std::string get_ne(Game &game); // a local name for the active quest
+	std::string get_nh(Game &game); // nearest holiday name
+	std::string get_nhd(Game &game); // nearest holiday date, without the year
+	std::string get_non(Game &game); // empty string
+	std::string get_nr(Game &game); // (same as %ne)
+	std::string get_nt(Game &game); // NPC's home tavern name
+	std::string get_o(Game &game); // a rival faction name for the active quest, or "%qf"
+	std::string get_oap(Game &game); // gold cost amount to get artifact info from NPC (see %nap)
+	std::string get_oc(Game &game); // NPC occupation / profession
+	std::string get_omq(Game &game); // quest item for the active quest (depends on the destination)
+	std::string get_opp(Game &game); // assassin from hostile guild
+	std::string get_oth(Game &game); // oath: random line from oaths[prov].prov is the current province or random if imp. city
+	std::string get_pcn(Game &game); // PC full name. Sets dlgGender
+	std::string get_pcf(Game &game); // PC first name. Sets dlgGender
+	std::string get_pre(Game &game); // NPC name prefix (from a special data structure)
+	std::string get_qc(Game &game); // city where the active quest was taken
+	std::string get_qt(Game &game); // description of the active quest type ("deliver something" etc.)
+	std::string get_qf(Game &game); // title + first name for the opponent in the active quest
+	std::string get_qmn(Game &game); // notification that quest object is nearby
+	std::string get_r(Game &game); // relation type for the active quest ("daughter" etc.)
+	std::string get_ra(Game &game); // PC race
+	std::string get_rcn(Game &game); // random city-state name in the current province
+	std::string get_rf(Game &game); // ruler first name, or emperor's name if Imp. city
+	std::string get_rpn(Game &game); // random province name
+	std::string get_sn(Game &game); // name of snake charmer NPC's pet
+	std::string get_st(Game &game); // "war/peace" based on algorithm
+	std::string get_suf(Game &game); // NPC name suffix (same structure as the prefix)
+	std::string get_t(Game &game); // ruler title
+	std::string get_tan(Game &game); // $dlgDungeonName
+	std::string get_tc(Game &game); // target city name for the active quest
+	std::string get_tem(Game &game); // NPC's home temple name
+	std::string get_tg(Game &game); // target faction name for the active quest
+	std::string get_ti(Game &game); // (same as %du)
+	std::string get_tl(Game &game); // target venue name for the active quest, or "%dnl"
+	std::string get_tq(Game &game); // quest giver title for the active quest
+	std::string get_tt(Game &game); // class of the npc for the active quest
 
 	const std::pair<const char*, DialogueFunction> FunctionMappings[] =
 	{

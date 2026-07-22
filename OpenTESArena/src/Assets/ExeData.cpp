@@ -473,7 +473,16 @@ bool ExeDataDialogue::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	}
 
 	const int neighborWarPeaceOffset = GetExeAddress(*section, "NeighborWarPeace");
+	const int subjectPronounsOffset = GetExeAddress(*section, "SubjectPronouns");
+	const int objectPronounsOffset = GetExeAddress(*section, "ObjectPronouns");
+	const int possessivePronounsOffset = GetExeAddress(*section, "PossessivePronouns");
+	const int cardinalDirectionsOffset = GetExeAddress(*section, "CardinalDirections");
+
 	initStringArrayNullTerminated(this->neighborWarPeace, exeBytes, neighborWarPeaceOffset);
+	initStringArrayNullTerminated(this->subjectPronouns, exeBytes, subjectPronounsOffset);
+	initStringArrayNullTerminated(this->objectPronouns, exeBytes, objectPronounsOffset);
+	initStringArrayNullTerminated(this->possessivePronouns, exeBytes, possessivePronounsOffset);
+	initStringArrayNullTerminated(this->cardinalDirections, exeBytes, cardinalDirectionsOffset);
 
 	return true;
 }

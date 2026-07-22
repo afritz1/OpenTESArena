@@ -10,72 +10,79 @@
 
 #include "components/utilities/String.h"
 
-std::string DialogueFunctions::get_a(const Game &game)
+namespace
+{
+	constexpr int DialogueGenderMale = 0;
+	constexpr int DialogueGenderFemale = 1;
+	constexpr int DialogueGenderNeutral = 2;
+}
+
+std::string DialogueFunctions::get_a(Game &game)
 {
 	return "%a";
 }
 
-std::string DialogueFunctions::get_adj(const Game &game)
+std::string DialogueFunctions::get_adj(Game &game)
 {
 	return "%adj";
 }
 
-std::string DialogueFunctions::get_adn(const Game &game)
+std::string DialogueFunctions::get_adn(Game &game)
 {
 	return "%adn";
 }
 
-std::string DialogueFunctions::get_adv(const Game &game)
+std::string DialogueFunctions::get_adv(Game &game)
 {
 	return "%adv";
 }
 
-std::string DialogueFunctions::get_amn(const Game &game)
+std::string DialogueFunctions::get_amn(Game &game)
 {
 	return "%amn";
 }
 
-std::string DialogueFunctions::get_an(const Game &game)
+std::string DialogueFunctions::get_an(Game &game)
 {
 	return "%an";
 }
 
-std::string DialogueFunctions::get_at(const Game &game)
+std::string DialogueFunctions::get_at(Game &game)
 {
 	return "%at";
 }
 
-std::string DialogueFunctions::get_art(const Game &game)
+std::string DialogueFunctions::get_art(Game &game)
 {
 	return "%art";
 }
 
-std::string DialogueFunctions::get_apr(const Game &game)
+std::string DialogueFunctions::get_apr(Game &game)
 {
 	return "%apr";
 }
 
-std::string DialogueFunctions::get_arc(const Game &game)
+std::string DialogueFunctions::get_arc(Game &game)
 {
 	return "%arc";
 }
 
-std::string DialogueFunctions::get_ba(const Game &game)
+std::string DialogueFunctions::get_ba(Game &game)
 {
 	return "%ba";
 }
 
-std::string DialogueFunctions::get_ccs(const Game &game)
+std::string DialogueFunctions::get_ccs(Game &game)
 {
 	return "%ccs";
 }
 
-std::string DialogueFunctions::get_cll(const Game &game)
+std::string DialogueFunctions::get_cll(Game &game)
 {
 	return "%cll";
 }
 
-std::string DialogueFunctions::get_cn(const Game &game)
+std::string DialogueFunctions::get_cn(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const MapType mapType = gameState.getActiveMapType();
@@ -92,7 +99,7 @@ std::string DialogueFunctions::get_cn(const Game &game)
 	}
 }
 
-std::string DialogueFunctions::get_cn2(const Game &game)
+std::string DialogueFunctions::get_cn2(Game &game)
 {
 	const GameState &gameState = game.gameState;
 
@@ -160,12 +167,12 @@ std::string DialogueFunctions::get_cn2(const Game &game)
 	return closestLocationDef->getName();
 }
 
-std::string DialogueFunctions::get_cp(const Game &game)
+std::string DialogueFunctions::get_cp(Game &game)
 {
 	return "%cp";
 }
 
-std::string DialogueFunctions::get_ct(const Game &game)
+std::string DialogueFunctions::get_ct(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
@@ -178,32 +185,32 @@ std::string DialogueFunctions::get_ct(const Game &game)
 	return cityDef.typeDisplayNameLowercase;
 }
 
-std::string DialogueFunctions::get_da(const Game &game)
+std::string DialogueFunctions::get_da(Game &game)
 {
 	return "%da";
 }
 
-std::string DialogueFunctions::get_de(const Game &game)
+std::string DialogueFunctions::get_de(Game &game)
 {
 	return "%de";
 }
 
-std::string DialogueFunctions::get_des(const Game &game)
+std::string DialogueFunctions::get_des(Game &game)
 {
 	return "%des";
 }
 
-std::string DialogueFunctions::get_di(const Game &game)
+std::string DialogueFunctions::get_di(Game &game)
 {
 	return "%di";
 }
 
-std::string DialogueFunctions::get_dit(const Game &game)
+std::string DialogueFunctions::get_dit(Game &game)
 {
 	return "%dit";
 }
 
-std::string DialogueFunctions::get_doc(const Game &game)
+std::string DialogueFunctions::get_doc(Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	constexpr int baseEntryKey = 263;
@@ -211,59 +218,86 @@ std::string DialogueFunctions::get_doc(const Game &game)
 	return dialogueManager.getRandomTemplateDatEntryValue(baseEntryKey + keyOffset);
 }
 
-std::string DialogueFunctions::get_ds(const Game &game)
+std::string DialogueFunctions::get_ds(Game &game)
 {
 	return "%ds";
 }
 
-std::string DialogueFunctions::get_du(const Game &game)
+std::string DialogueFunctions::get_du(Game &game)
 {
 	return "%du";
 }
 
-std::string DialogueFunctions::get_dnl(const Game &game)
+std::string DialogueFunctions::get_dnl(Game &game)
 {
 	return "%dnl";
 }
 
-std::string DialogueFunctions::get_ef(const Game &game)
+std::string DialogueFunctions::get_ef(Game &game)
 {
 	return "%ef";
 }
 
-std::string DialogueFunctions::get_en(const Game &game)
+std::string DialogueFunctions::get_en(Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	return dialogueManager.getNearestEquipmentStoreName();
 }
 
-std::string DialogueFunctions::get_fq(const Game &game)
+std::string DialogueFunctions::get_fq(Game &game)
 {
 	return "%fq";
 }
 
-std::string DialogueFunctions::get_fn(const Game &game)
+std::string DialogueFunctions::get_fn(Game &game)
 {
 	const std::string entityName = DialogueFunctions::get_n(game);
 	return String::split(entityName)[0];
 }
 
-std::string DialogueFunctions::get_g(const Game &game)
+std::string DialogueFunctions::get_g(Game &game)
 {
-	return "%g";
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	if (!dialogueManager.isDialogueGenderValid())
+	{
+		DebugLogError("Dialogue gender is not set for %g.");
+		return "<missing subject gender>";
+	}
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> pronouns = exeData.dialogue.subjectPronouns;
+	return pronouns[dialogueManager.dialogueGender];
 }
 
-std::string DialogueFunctions::get_g2(const Game &game)
+std::string DialogueFunctions::get_g2(Game &game)
 {
-	return "%g2";
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	if (!dialogueManager.isDialogueGenderValid())
+	{
+		DebugLogError("Dialogue gender is not set for %g2.");
+		return "<missing object gender>";
+	}
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> pronouns = exeData.dialogue.objectPronouns;
+	return pronouns[dialogueManager.dialogueGender];
 }
 
-std::string DialogueFunctions::get_g3(const Game &game)
+std::string DialogueFunctions::get_g3(Game &game)
 {
-	return "%g3";
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	if (!dialogueManager.isDialogueGenderValid())
+	{
+		DebugLogError("Dialogue gender is not set for %g3.");
+		return "<missing possessive gender>";
+	}
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> pronouns = exeData.dialogue.possessivePronouns;
+	return pronouns[dialogueManager.dialogueGender];
 }
 
-std::string DialogueFunctions::get_hc(const Game &game)
+std::string DialogueFunctions::get_hc(Game &game)
 {
 	const Player &player = game.player;
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
@@ -271,45 +305,45 @@ std::string DialogueFunctions::get_hc(const Game &game)
 	return playerHomeProvince.getName();
 }
 
-std::string DialogueFunctions::get_hod(const Game &game)
+std::string DialogueFunctions::get_hod(Game &game)
 {
 	return "%hod";
 }
 
-std::string DialogueFunctions::get_jok(const Game &game)
+std::string DialogueFunctions::get_jok(Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	return dialogueManager.getRandomTemplateDatEntryValue(363);
 }
 
-std::string DialogueFunctions::get_lp(const Game &game)
+std::string DialogueFunctions::get_lp(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
 	return provinceDef.getName();
 }
 
-std::string DialogueFunctions::get_mi(const Game &game)
+std::string DialogueFunctions::get_mi(Game &game)
 {
 	return "%mi";
 }
 
-std::string DialogueFunctions::get_mn(const Game &game)
+std::string DialogueFunctions::get_mn(Game &game)
 {
 	return "%mn";
 }
 
-std::string DialogueFunctions::get_mpr(const Game &game)
+std::string DialogueFunctions::get_mpr(Game &game)
 {
 	return "%mpr";
 }
 
-std::string DialogueFunctions::get_mt(const Game &game)
+std::string DialogueFunctions::get_mt(Game &game)
 {
 	return "%mt";
 }
 
-std::string DialogueFunctions::get_n(const Game &game)
+std::string DialogueFunctions::get_n(Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	const EntityInstance &entityInst = dialogueManager.getEntityInstance();
@@ -320,58 +354,58 @@ std::string DialogueFunctions::get_n(const Game &game)
 	return npcName.name;
 }
 
-std::string DialogueFunctions::get_nap(const Game &game)
+std::string DialogueFunctions::get_nap(Game &game)
 {
 	return "%nap";
 }
 
-std::string DialogueFunctions::get_nc(const Game &game)
+std::string DialogueFunctions::get_nc(Game &game)
 {
 	return "%nc";
 }
 
-std::string DialogueFunctions::get_ne(const Game &game)
+std::string DialogueFunctions::get_ne(Game &game)
 {
 	return "%ne";
 }
 
-std::string DialogueFunctions::get_nh(const Game &game)
+std::string DialogueFunctions::get_nh(Game &game)
 {
 	return "%nh";
 }
 
-std::string DialogueFunctions::get_nhd(const Game &game)
+std::string DialogueFunctions::get_nhd(Game &game)
 {
 	return "%nhd";
 }
 
-std::string DialogueFunctions::get_non(const Game &game)
+std::string DialogueFunctions::get_non(Game &game)
 {
 	return "%non";
 }
 
-std::string DialogueFunctions::get_nr(const Game &game)
+std::string DialogueFunctions::get_nr(Game &game)
 {
 	return "%nr";
 }
 
-std::string DialogueFunctions::get_nt(const Game &game)
+std::string DialogueFunctions::get_nt(Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	return dialogueManager.getNearestTavernName();
 }
 
-std::string DialogueFunctions::get_o(const Game &game)
+std::string DialogueFunctions::get_o(Game &game)
 {
 	return "%o";
 }
 
-std::string DialogueFunctions::get_oap(const Game &game)
+std::string DialogueFunctions::get_oap(Game &game)
 {
 	return "%oap";
 }
 
-std::string DialogueFunctions::get_oc(const Game &game)
+std::string DialogueFunctions::get_oc(Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	constexpr int entryKey = 262;
@@ -379,69 +413,77 @@ std::string DialogueFunctions::get_oc(const Game &game)
 	return dialogueManager.getTemplateDatEntryValueAtIndex(entryKey, index);
 }
 
-std::string DialogueFunctions::get_omq(const Game &game)
+std::string DialogueFunctions::get_omq(Game &game)
 {
 	return "%omq";
 }
 
-std::string DialogueFunctions::get_opp(const Game &game)
+std::string DialogueFunctions::get_opp(Game &game)
 {
 	return "%opp";
 }
 
-std::string DialogueFunctions::get_oth(const Game &game)
+std::string DialogueFunctions::get_oth(Game &game)
 {
 	return "%oth";
 }
 
-std::string DialogueFunctions::get_pcn(const Game &game)
+std::string DialogueFunctions::get_pcn(Game &game)
 {
-	return game.player.displayName;
+	const Player &player = game.player;
+	DialogueManager &dialogueManager = game.dialogueManager;
+	dialogueManager.dialogueGender = player.male ? DialogueGenderMale : DialogueGenderFemale;
+
+	return player.displayName;
 }
 
-std::string DialogueFunctions::get_pcf(const Game &game)
+std::string DialogueFunctions::get_pcf(Game &game)
 {
+	const Player &player = game.player;
+	DialogueManager &dialogueManager = game.dialogueManager;
+	dialogueManager.dialogueGender = player.male ? DialogueGenderMale : DialogueGenderFemale;
+
 	return game.player.firstName;
 }
 
-std::string DialogueFunctions::get_pre(const Game &game)
+std::string DialogueFunctions::get_pre(Game &game)
 {
 	return "%pre";
 }
 
-std::string DialogueFunctions::get_qc(const Game &game)
+std::string DialogueFunctions::get_qc(Game &game)
 {
 	return "%qc";
 }
 
-std::string DialogueFunctions::get_qt(const Game &game)
+std::string DialogueFunctions::get_qt(Game &game)
 {
 	return "%qt";
 }
 
-std::string DialogueFunctions::get_qf(const Game &game)
+std::string DialogueFunctions::get_qf(Game &game)
 {
 	return "%qf";
 }
 
-std::string DialogueFunctions::get_qmn(const Game &game)
+std::string DialogueFunctions::get_qmn(Game &game)
 {
 	return "%qmn";
 }
 
-std::string DialogueFunctions::get_r(const Game &game)
+std::string DialogueFunctions::get_r(Game &game)
 {
 	return "%r";
 }
 
-std::string DialogueFunctions::get_ra(const Game &game)
+std::string DialogueFunctions::get_ra(Game &game)
 {
 	const Player &player = game.player;
 	const CharacterRaceDefinition &charRaceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceID);
 	return charRaceDef.singularName;
 }
 
-std::string DialogueFunctions::get_rcn(const Game &game)
+std::string DialogueFunctions::get_rcn(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
@@ -451,12 +493,13 @@ std::string DialogueFunctions::get_rcn(const Game &game)
 	return selectedLocationDef.getName();
 }
 
-std::string DialogueFunctions::get_rf(const Game &game)
+std::string DialogueFunctions::get_rf(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const int provinceIndex = gameState.getProvinceDefinition().getRaceID();
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
 	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const bool isRulerMale = cityDef.rulerIsMale;
 	ArenaRandom tempRandom(cityDef.rulerSeed);
 
 	std::string str;
@@ -468,15 +511,18 @@ std::string DialogueFunctions::get_rf(const Game &game)
 	else
 	{
 		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-		const std::string fullName = textAssetLibrary.generateNpcName(provinceIndex, cityDef.rulerIsMale, tempRandom);
+		const std::string fullName = textAssetLibrary.generateNpcName(provinceIndex, isRulerMale, tempRandom);
 		const Buffer<std::string> tokens = String::split(fullName, ' ');
 		str = tokens[0];
 	}
 
+	DialogueManager &dialogueManager = game.dialogueManager;
+	dialogueManager.dialogueGender = isRulerMale ? DialogueGenderMale : DialogueGenderFemale;
+
 	return str;
 }
 
-std::string DialogueFunctions::get_rpn(const Game &game)
+std::string DialogueFunctions::get_rpn(Game &game)
 {
 	ArenaRandom tempRandom(game.arenaRandom.getSeed());
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
@@ -485,7 +531,7 @@ std::string DialogueFunctions::get_rpn(const Game &game)
 	return selectedProvinceDef.getName();
 }
 
-std::string DialogueFunctions::get_sn(const Game &game)
+std::string DialogueFunctions::get_sn(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const DialogueManager &dialogueManager = game.dialogueManager;
@@ -497,7 +543,7 @@ std::string DialogueFunctions::get_sn(const Game &game)
 	return tokens[0];
 }
 
-std::string DialogueFunctions::get_st(const Game &game)
+std::string DialogueFunctions::get_st(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const DialogueManager &dialogueManager = game.dialogueManager;
@@ -521,12 +567,12 @@ std::string DialogueFunctions::get_st(const Game &game)
 	return exeData.dialogue.neighborWarPeace[index];
 }
 
-std::string DialogueFunctions::get_suf(const Game &game)
+std::string DialogueFunctions::get_suf(Game &game)
 {
 	return "%suf";
 }
 
-std::string DialogueFunctions::get_t(const Game &game)
+std::string DialogueFunctions::get_t(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const int provinceID = gameState.getProvinceDefinition().getRaceID();
@@ -539,43 +585,43 @@ std::string DialogueFunctions::get_t(const Game &game)
 	return binaryAssetLibrary.getRulerTitle(provinceID, locationType, cityDef.rulerIsMale, random);
 }
 
-std::string DialogueFunctions::get_tan(const Game &game)
+std::string DialogueFunctions::get_tan(Game &game)
 {
 	return "%tan";
 }
 
-std::string DialogueFunctions::get_tc(const Game &game)
+std::string DialogueFunctions::get_tc(Game &game)
 {
 	return "%tc";
 }
 
-std::string DialogueFunctions::get_tem(const Game &game)
+std::string DialogueFunctions::get_tem(Game &game)
 {
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	return dialogueManager.getNearestTempleName();
 }
 
-std::string DialogueFunctions::get_tg(const Game &game)
+std::string DialogueFunctions::get_tg(Game &game)
 {
 	return "%tg";
 }
 
-std::string DialogueFunctions::get_ti(const Game &game)
+std::string DialogueFunctions::get_ti(Game &game)
 {
 	return "%ti";
 }
 
-std::string DialogueFunctions::get_tl(const Game &game)
+std::string DialogueFunctions::get_tl(Game &game)
 {
 	return "%tl";
 }
 
-std::string DialogueFunctions::get_tq(const Game &game)
+std::string DialogueFunctions::get_tq(Game &game)
 {
 	return "%tq";
 }
 
-std::string DialogueFunctions::get_tt(const Game &game)
+std::string DialogueFunctions::get_tt(Game &game)
 {
 	return "%tt";
 }

@@ -87,6 +87,13 @@ namespace
 	}
 }
 
+DialogueManager::DialogueManager()
+{
+	this->game = nullptr;
+	this->entityInstID = -1;
+	this->dialogueGender = -1;
+}
+
 void DialogueManager::init(Game &game)
 {
 	this->game = &game;
@@ -116,6 +123,7 @@ void DialogueManager::beginDialogue(EntityInstanceID entityInstID)
 void DialogueManager::endDialogue()
 {
 	this->entityInstID = -1;
+	this->dialogueGender = -1;
 }
 
 const EntityInstance &DialogueManager::getEntityInstance() const
@@ -166,6 +174,11 @@ int DialogueManager::getEntityOccupationIndex() const
 	// @todo store in entity instance
 	ArenaRandom tempRandom(entityInst.instanceID); // Hacky randomization for now
 	return tempRandom.next(100);
+}
+
+bool DialogueManager::isDialogueGenderValid() const
+{
+	return this->dialogueGender >= 0;
 }
 
 std::string DialogueManager::getNearestEquipmentStoreName() const
@@ -224,7 +237,7 @@ const std::string &DialogueManager::getRandomTemplateDatEntryValue(int entryKey)
 	return entryValues[entryValuesRandomIndex];
 }
 
-std::string DialogueManager::getSubstitutedText(const char *text, int maxCharsPerLine) const
+std::string DialogueManager::getSubstitutedText(const char *text, int maxCharsPerLine)
 {
 	DebugAssert(this->entityInstID >= 0);
 	DebugAssert(maxCharsPerLine > 0);

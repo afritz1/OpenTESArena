@@ -84,6 +84,10 @@ MagesGuildMenuName=0x42567
 
 [Dialogue]
 NeighborWarPeace=0x3990C
+SubjectPronouns=0x39AA5
+ObjectPronouns=0x39AAF
+PossessivePronouns=0x39ABA
+CardinalDirections=0x39AC6
 
 [Entities]
 AttributeNames=0x40C29

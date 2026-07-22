@@ -145,6 +145,12 @@ struct ExeDataDialogue
 	// Whether two provinces are at war/peace with each other.
 	std::string neighborWarPeace[2];
 
+	std::string subjectPronouns[3]; // Male/female/neutral
+	std::string objectPronouns[3]; // Male/female/neutral
+	std::string possessivePronouns[3]; // Male/female/neutral
+
+	std::string cardinalDirections[8]; // North, ..., northwest. For NPCs giving directions.
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

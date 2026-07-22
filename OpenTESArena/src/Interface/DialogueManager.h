@@ -16,7 +16,9 @@ struct DialogueManager
 
 	// The entity the player is talking to.
 	EntityInstanceID entityInstID;
-	// @todo various global state like dlgGender that changes based on processing of certain tokens
+	int dialogueGender; // 0: male, 1: female, 2: neutral
+
+	DialogueManager();
 
 	void init(Game &game);
 
@@ -28,6 +30,7 @@ struct DialogueManager
 	bool hasEntityBeenIntroduced() const;
 	WorldDouble2 getEntityPosition() const;
 	int getEntityOccupationIndex() const;
+	bool isDialogueGenderValid() const;
 	std::string getNearestEquipmentStoreName() const;
 	std::string getNearestTavernName() const;
 	std::string getNearestTempleName() const;
@@ -36,5 +39,5 @@ struct DialogueManager
 	const std::string &getRandomTemplateDatEntryValue(int entryKey) const;
 
 	// Scans the text for substitution tokens and returns a fully replaced string for display.
-	std::string getSubstitutedText(const char *text, int maxCharsPerLine = 65) const;
+	std::string getSubstitutedText(const char *text, int maxCharsPerLine = 65);
 };
