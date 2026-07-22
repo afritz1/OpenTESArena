@@ -34,21 +34,21 @@ struct Rect;
 struct UiDrawCommandList;
 struct Window;
 
+enum class GameWorldUiButtonType
+{
+	CharacterSheet,
+	ToggleWeapon,
+	Map,
+	Steal,
+	Status,
+	Magic,
+	Logbook,
+	UseItem,
+	Camp
+};
+
 namespace GameWorldUiModel
 {
-	enum class ButtonType
-	{
-		CharacterSheet,
-		ToggleWeapon,
-		Map,
-		Steal,
-		Status,
-		Magic,
-		Logbook,
-		UseItem,
-		Camp
-	};
-
 	constexpr int BUTTON_COUNT = 9;
 
 	std::string getPlayerNameText(Game &game);
@@ -58,9 +58,9 @@ namespace GameWorldUiModel
 	OriginalInt2 getOriginalPlayerPositionArenaUnits(const WorldDouble3 &playerPos, MapType mapType);
 	std::string getPlayerPositionText(Game &game);
 
-	std::optional<ButtonType> getHoveredButtonType(Game &game);
-	bool isButtonTooltipAllowed(ButtonType buttonType, Game &game);
-	std::string getButtonTooltip(ButtonType buttonType);
+	std::optional<GameWorldUiButtonType> getHoveredButtonType(Game &game);
+	bool isButtonTooltipAllowed(GameWorldUiButtonType buttonType, Game &game);
+	std::string getButtonTooltip(GameWorldUiButtonType buttonType);
 
 	void setFreeLookActive(Game &game, bool active);
 
@@ -183,7 +183,7 @@ namespace GameWorldUiView
 	Rect getCampButtonRect();
 	Rect getScrollUpButtonRect();
 	Rect getScrollDownButtonRect();
-	Rect getButtonRect(GameWorldUiModel::ButtonType buttonType);
+	Rect getButtonRect(GameWorldUiButtonType buttonType);
 
 	const std::string StatusPopUpFontName = ArenaFontName::Arena;
 	const Color StatusPopUpTextColor(251, 239, 77);
@@ -278,7 +278,7 @@ namespace GameWorldUiView
 	void updateStatusBarsTexture(UiTextureID textureID, const Player &player, Renderer &renderer);
 
 	UiTextureID allocWeaponAnimTexture(const std::string &weaponFilename, int index, TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, const FontLibrary &fontLibrary, Renderer &renderer);
+	UiTextureID allocTooltipTexture(GameWorldUiButtonType buttonType, const FontLibrary &fontLibrary, Renderer &renderer);
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocPlayerHurtTexture(double sceneViewAspectRatio, bool isFullGameWindow, Renderer &renderer);
 	UiTextureID allocModernModeReticleTexture(TextureManager &textureManager, Renderer &renderer);

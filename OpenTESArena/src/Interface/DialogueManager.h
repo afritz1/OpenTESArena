@@ -7,12 +7,25 @@
 
 #include "components/utilities/Buffer.h"
 
+// Each entry in the "Where is..." list box.
+struct DialogueDirectionsEntry
+{
+	std::string displayString;
+	// @todo callback
+
+	DialogueDirectionsEntry();
+};
+
 struct DialogueManager
 {
 	Game *game;
 
 	// Sorted by longest first so longer tokens match before shorter ones.
 	Buffer<std::pair<const char*, DialogueFunction>> sortedFunctionMappings;
+
+	// Copies of dialogue directions for "Where is..." UI. Sometimes more entries (e.g. main quest) are appended afterwards.
+	std::vector<DialogueDirectionsEntry> cityDirectionsEntries;
+	std::vector<DialogueDirectionsEntry> wildernessDirectionsEntries;
 
 	// The entity the player is talking to.
 	EntityInstanceID entityInstID;

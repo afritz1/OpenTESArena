@@ -2,6 +2,7 @@
 #include <limits>
 
 #include "DialogueManager.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Voxels/VoxelChunkManager.h"
@@ -87,6 +88,11 @@ namespace
 	}
 }
 
+DialogueDirectionsEntry::DialogueDirectionsEntry()
+{
+
+}
+
 DialogueManager::DialogueManager()
 {
 	this->game = nullptr;
@@ -113,6 +119,23 @@ void DialogueManager::init(Game &game)
 
 		return std::strcmp(a.first, b.first) < 0;
 	});
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> sourceCityOptions = exeData.services.citizenWhereIsOptionsCity;
+	this->cityDirectionsEntries.resize(sourceCityOptions.getCount());
+	for (int i = 0; i < sourceCityOptions.getCount(); i++)
+	{
+		DialogueDirectionsEntry &dstEntry = this->cityDirectionsEntries[i];
+		dstEntry.displayString = sourceCityOptions[i];
+	}
+
+	const Span<const std::string> sourceWildernessOptions = exeData.services.citizenWhereIsOptionsWilderness;
+	this->wildernessDirectionsEntries.resize(sourceWildernessOptions.getCount());
+	for (int i = 0; i < sourceWildernessOptions.getCount(); i++)
+	{
+		DialogueDirectionsEntry &dstEntry = this->wildernessDirectionsEntries[i];
+		dstEntry.displayString = sourceWildernessOptions[i];
+	}
 }
 
 void DialogueManager::beginDialogue(EntityInstanceID entityInstID)

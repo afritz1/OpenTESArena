@@ -240,7 +240,7 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	return str;
 }
 
-std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
+std::optional<GameWorldUiButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
 {
 	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
@@ -255,7 +255,7 @@ std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonTy
 	const Int2 classicPosition = window.nativeToOriginal(mousePosition);
 	for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
 	{
-		const ButtonType buttonType = static_cast<ButtonType>(i);
+		const GameWorldUiButtonType buttonType = static_cast<GameWorldUiButtonType>(i);
 		const Rect buttonRect = GameWorldUiView::getButtonRect(buttonType);
 		if (buttonRect.contains(classicPosition))
 		{
@@ -266,9 +266,9 @@ std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonTy
 	return std::nullopt;
 }
 
-bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
+bool GameWorldUiModel::isButtonTooltipAllowed(GameWorldUiButtonType buttonType, Game &game)
 {
-	if (buttonType == ButtonType::Magic)
+	if (buttonType == GameWorldUiButtonType::Magic)
 	{
 		const Player &player = game.player;
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
@@ -282,27 +282,27 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 	}
 }
 
-std::string GameWorldUiModel::getButtonTooltip(ButtonType buttonType)
+std::string GameWorldUiModel::getButtonTooltip(GameWorldUiButtonType buttonType)
 {
 	switch (buttonType)
 	{
-	case ButtonType::CharacterSheet:
+	case GameWorldUiButtonType::CharacterSheet:
 		return "Character Sheet";
-	case ButtonType::ToggleWeapon:
+	case GameWorldUiButtonType::ToggleWeapon:
 		return "Draw/Sheathe Weapon";
-	case ButtonType::Map:
+	case GameWorldUiButtonType::Map:
 		return "Automap/World Map";
-	case ButtonType::Steal:
+	case GameWorldUiButtonType::Steal:
 		return "Steal";
-	case ButtonType::Status:
+	case GameWorldUiButtonType::Status:
 		return "Status";
-	case ButtonType::Magic:
+	case GameWorldUiButtonType::Magic:
 		return "Spells";
-	case ButtonType::Logbook:
+	case GameWorldUiButtonType::Logbook:
 		return "Logbook";
-	case ButtonType::UseItem:
+	case GameWorldUiButtonType::UseItem:
 		return "Use Item";
-	case ButtonType::Camp:
+	case GameWorldUiButtonType::Camp:
 		return "Camp";
 	default:
 		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(buttonType)));
@@ -673,27 +673,27 @@ Rect GameWorldUiView::getScrollDownButtonRect()
 	return Rect(208, ArenaRenderUtils::SCENE_VIEW_HEIGHT + 44, 9, 9);
 }
 
-Rect GameWorldUiView::getButtonRect(GameWorldUiModel::ButtonType buttonType)
+Rect GameWorldUiView::getButtonRect(GameWorldUiButtonType buttonType)
 {
 	switch (buttonType)
 	{
-	case GameWorldUiModel::ButtonType::CharacterSheet:
+	case GameWorldUiButtonType::CharacterSheet:
 		return GameWorldUiView::getCharacterSheetButtonRect();
-	case GameWorldUiModel::ButtonType::ToggleWeapon:
+	case GameWorldUiButtonType::ToggleWeapon:
 		return GameWorldUiView::getWeaponSheathButtonRect();
-	case GameWorldUiModel::ButtonType::Map:
+	case GameWorldUiButtonType::Map:
 		return GameWorldUiView::getMapButtonRect();
-	case GameWorldUiModel::ButtonType::Steal:
+	case GameWorldUiButtonType::Steal:
 		return GameWorldUiView::getStealButtonRect();
-	case GameWorldUiModel::ButtonType::Status:
+	case GameWorldUiButtonType::Status:
 		return GameWorldUiView::getStatusButtonRect();
-	case GameWorldUiModel::ButtonType::Magic:
+	case GameWorldUiButtonType::Magic:
 		return GameWorldUiView::getMagicButtonRect();
-	case GameWorldUiModel::ButtonType::Logbook:
+	case GameWorldUiButtonType::Logbook:
 		return GameWorldUiView::getLogbookButtonRect();
-	case GameWorldUiModel::ButtonType::UseItem:
+	case GameWorldUiButtonType::UseItem:
 		return GameWorldUiView::getUseItemButtonRect();
-	case GameWorldUiModel::ButtonType::Camp:
+	case GameWorldUiButtonType::Camp:
 		return GameWorldUiView::getCampButtonRect();
 	default:
 		DebugUnhandledReturnMsg(Rect, std::to_string(static_cast<int>(buttonType)));
@@ -1069,7 +1069,7 @@ UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFil
 	return textureID;
 }
 
-UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType buttonType,
+UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiButtonType buttonType,
 	const FontLibrary &fontLibrary, Renderer &renderer)
 {
 	const std::string text = GameWorldUiModel::getButtonTooltip(buttonType);

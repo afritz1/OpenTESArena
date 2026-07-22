@@ -1718,6 +1718,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 	const GameState &gameState = game.gameState;
 	const MapType mapType = gameState.getActiveMapType();
+	const DialogueManager &dialogueManager = game.dialogueManager;
 	const Player &player = game.player;
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ArenaTypes::Spellsg &standardSpells = binaryAssetLibrary.getStandardSpells();
@@ -1753,22 +1754,25 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxButtonUpPositionOffset = Int2(9, 7);
 		listBoxButtonDownPositionOffset = Int2(9, 102);
 
-		Span<const std::string> sourceItems;
+		std::vector<DialogueDirectionsEntry> directionsEntries;
 		if (mapType == MapType::City)
 		{
-			sourceItems = exeData.services.citizenWhereIsOptionsCity;
+			directionsEntries = dialogueManager.cityDirectionsEntries;
 		}
 		else if (mapType == MapType::Wilderness)
 		{
-			sourceItems = exeData.services.citizenWhereIsOptionsWilderness;
+			directionsEntries = dialogueManager.wildernessDirectionsEntries;
 		}
 
-		for (int i = 0; i < sourceItems.getCount(); i++)
+		// @todo append other entries for main quest dungeon etc.
+
+		for (int i = 0; i < static_cast<int>(directionsEntries.size()); i++)
 		{
-			listBoxItems.emplace_back(sourceItems[i]);
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			const DialogueDirectionsEntry &directionsEntry = directionsEntries[i];
+			listBoxItems.emplace_back(directionsEntry.displayString);
+			listBoxItemCallbacks.emplace_back([&uiManager, i, directionsEntry](MouseButtonType)
 			{
-				DebugLogFormat("Where is %d.", i);
+				DebugLogFormat("Where is %s.", directionsEntry.displayString.c_str());
 				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
 			});
 		}
