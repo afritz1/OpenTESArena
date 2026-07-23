@@ -2418,7 +2418,16 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 	DialogueManager &dialogueManager = game.dialogueManager;
 	uiManager.disableTopMostContext();
 
-	const int hasBeenIntroducedEntryOffset = dialogueManager.hasEntityBeenIntroduced() ? 15 : 0;
+	const EntityInstance &entityInst = dialogueManager.getEntityInstance();
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	EntityDialogueState &dialogueState = entityChunkManager.dialogueStates.get(entityInst.dialogueStateID);
+	const bool prevHasBeenIntroduced = dialogueState.hasBeenIntroduced;
+	if (!prevHasBeenIntroduced)
+	{
+		dialogueState.hasBeenIntroduced = true;
+	}
+
+	const int hasBeenIntroducedEntryOffset = prevHasBeenIntroduced ? 15 : 0;
 	const ArenaNpcPersonalityType personalityType = dialogueManager.getEntityPersonalityType();
 	const int entryIndex = 100 + hasBeenIntroducedEntryOffset + static_cast<int>(personalityType);	
 	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryIndex);

@@ -264,6 +264,12 @@ bool EntityCombatState::isInDeathState() const
 	return this->isDying || this->isDead;
 }
 
+EntityDialogueState::EntityDialogueState()
+{
+	this->isMale = false;
+	this->hasBeenIntroduced = false;
+}
+
 EntityLockState::EntityLockState()
 {
 	this->isLocked = false;
@@ -519,6 +525,19 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		const uint16_t citizenColorSeed = *initInfo.citizenColorSeed;
 		PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
 		paletteIndices = ArenaAnimUtils::transformCitizenColors(*initInfo.raceID, citizenColorSeed, binaryAssetLibrary.getExeData());
+	}
+
+	if (initInfo.dialogueGenderIsMale.has_value())
+	{
+		entityInst.dialogueStateID = this->dialogueStates.alloc();
+		if (entityInst.dialogueStateID < 0)
+		{
+			DebugCrash("Couldn't allocate EntityDialogueStateID.");
+		}
+
+		EntityDialogueState &dialogueState = this->dialogueStates.get(entityInst.dialogueStateID);
+		dialogueState.isMale = *initInfo.dialogueGenderIsMale;
+		dialogueState.hasBeenIntroduced = false;
 	}
 
 	if (initInfo.hasInventory)
@@ -1047,6 +1066,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					const bool isMale = GetStaticNpcPersonalityIsMale(staticNpcGeneralEntityDef.type);
 					const std::string npcNameStr = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
 					initInfo.npcName = EntityNpcName(npcNameStr.c_str());
+					initInfo.dialogueGenderIsMale = isMale;
 				}
 			}
 
@@ -1147,6 +1167,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);
 				citizenInitInfo.citizenColorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
 				citizenInitInfo.raceID = citizenRaceID;
+				citizenInitInfo.dialogueGenderIsMale = isMale;
 				citizenInitInfo.canBeKilled = true;
 				citizenInitInfo.hasInventory = false;
 				citizenInitInfo.hasCreatureSound = false;
@@ -2492,6 +2513,11 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 		if (entityInst.npcNameID >= 0)
 		{
 			this->npcNames.free(entityInst.npcNameID);
+		}
+
+		if (entityInst.dialogueStateID >= 0)
+		{
+			this->dialogueStates.free(entityInst.dialogueStateID);
 		}
 
 		if (entityInst.paletteIndicesInstID >= 0)

@@ -262,6 +262,12 @@ std::string DialogueFunctions::get_fq(Game &game)
 
 std::string DialogueFunctions::get_fn(Game &game)
 {
+	DialogueManager &dialogueManager = game.dialogueManager;
+	const EntityInstance &entityInst = dialogueManager.getEntityInstance();
+	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	const EntityDialogueState &dialogueState = entityChunkManager.dialogueStates.get(entityInst.dialogueStateID);
+	dialogueManager.dialogueGender = dialogueState.isMale ? DialogueGenderMale : DialogueGenderFemale;
+
 	const std::string entityName = DialogueFunctions::get_n(game);
 	return String::split(entityName)[0];
 }
@@ -356,11 +362,13 @@ std::string DialogueFunctions::get_mt(Game &game)
 
 std::string DialogueFunctions::get_n(Game &game)
 {
-	const DialogueManager &dialogueManager = game.dialogueManager;
-	const EntityInstance &entityInst = dialogueManager.getEntityInstance();
+	DialogueManager &dialogueManager = game.dialogueManager;
 
+	const EntityInstance &entityInst = dialogueManager.getEntityInstance();
 	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-	DebugAssert(entityInst.npcNameID >= 0);
+	const EntityDialogueState &dialogueState = entityChunkManager.dialogueStates.get(entityInst.dialogueStateID);
+	dialogueManager.dialogueGender = dialogueState.isMale ? DialogueGenderMale : DialogueGenderFemale;
+
 	const EntityNpcName &npcName = entityChunkManager.npcNames.get(entityInst.npcNameID);
 	return npcName.name;
 }

@@ -28,14 +28,14 @@ bool EntityInstance::isTransformStatic() const
 	return this->directionID < 0;
 }
 
-bool EntityInstance::canAcceptCombatHits() const
-{
-	return this->canBeKilledInCombat() || this->canBeLocked();
-}
-
 bool EntityInstance::canBeKilledInCombat() const
 {
 	return this->combatStateID >= 0;
+}
+
+bool EntityInstance::canAcceptCombatHits() const
+{
+	return this->canBeKilledInCombat() || this->canBeLocked();
 }
 
 bool EntityInstance::canUseElevatedPlatforms() const
@@ -64,6 +64,7 @@ void EntityInstance::clear()
 	this->behaviorStateID = -1;
 	this->combatStateID = -1;
 	this->npcNameID = -1;
+	this->dialogueStateID = -1;
 	this->paletteIndicesInstID = -1;
 	this->itemInventoryInstID = -1;
 	this->lockStateID = -1;

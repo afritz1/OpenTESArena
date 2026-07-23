@@ -13,6 +13,7 @@ using EntityAnimationInstanceID = int;
 using EntityBehaviorStateID = int;
 using EntityCombatStateID = int;
 using EntityNpcNameID = int;
+using EntityDialogueStateID = int;
 using EntityPaletteIndicesInstanceID = int;
 using EntityItemInventoryInstanceID = int;
 using EntityLockStateID = int;
@@ -28,6 +29,7 @@ struct EntityInstance
 	EntityBehaviorStateID behaviorStateID;
 	EntityCombatStateID combatStateID;
 	EntityNpcNameID npcNameID;
+	EntityDialogueStateID dialogueStateID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;
 	EntityLockStateID lockStateID;
@@ -43,8 +45,8 @@ struct EntityInstance
 	// Whether the entity is capable of moving and looking.
 	bool isTransformStatic() const;
 
-	bool canAcceptCombatHits() const;
 	bool canBeKilledInCombat() const;
+	bool canAcceptCombatHits() const;
 
 	// Whether the entity can be placed on raised platforms.
 	bool canUseElevatedPlatforms() const;

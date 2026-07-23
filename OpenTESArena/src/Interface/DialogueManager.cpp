@@ -205,8 +205,9 @@ ArenaNpcPersonalityType DialogueManager::getEntityPersonalityType() const
 bool DialogueManager::hasEntityBeenIntroduced() const
 {
 	const EntityInstance &entityInst = this->getEntityInstance();
-	// @todo retrieve from entity instance
-	return false;
+	const EntityChunkManager &entityChunkManager = this->game->sceneManager.entityChunkManager;
+	const EntityDialogueState &dialogueState = entityChunkManager.dialogueStates.get(entityInst.dialogueStateID);
+	return dialogueState.hasBeenIntroduced;
 }
 
 WorldDouble2 DialogueManager::getEntityPosition() const

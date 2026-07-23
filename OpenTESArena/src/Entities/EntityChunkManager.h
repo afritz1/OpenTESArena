@@ -54,6 +54,7 @@ struct EntityInitInfo
 	std::optional<EntityNpcName> npcName;
 	std::optional<uint16_t> citizenColorSeed;
 	std::optional<int> raceID;
+	std::optional<bool> dialogueGenderIsMale;
 	int humanEnemyLevel;
 	bool hasInventory;
 	bool hasCreatureSound;
@@ -136,6 +137,14 @@ struct EntityCombatState
 	bool isInDeathState() const;
 };
 
+struct EntityDialogueState
+{
+	bool isMale;
+	bool hasBeenIntroduced;
+
+	EntityDialogueState();
+};
+
 struct EntityLockState
 {
 	bool isLocked;
@@ -172,6 +181,7 @@ public:
 	using EntityBehaviorStatePool = KeyValuePool<EntityBehaviorStateID, EntityBehaviorState>;
 	using EntityCombatStatePool = KeyValuePool<EntityCombatStateID, EntityCombatState>;
 	using EntityNpcNamePool = KeyValuePool<EntityNpcNameID, EntityNpcName>;
+	using EntityDialogueStatePool = KeyValuePool<EntityDialogueStateID, EntityDialogueState>;
 	using EntityPaletteIndicesInstancePool = KeyValuePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
 	using EntityItemInventoryInstancePool = KeyValuePool<EntityItemInventoryInstanceID, ItemInventory>;
 	using EntityLockStatePool = KeyValuePool<EntityLockStateID, EntityLockState>;
@@ -185,6 +195,7 @@ public:
 	EntityBehaviorStatePool behaviorStates;
 	EntityCombatStatePool combatStates;
 	EntityNpcNamePool npcNames;
+	EntityDialogueStatePool dialogueStates;
 	EntityPaletteIndicesInstancePool paletteIndices;
 	EntityItemInventoryInstancePool itemInventories;
 	EntityLockStatePool lockStates;
