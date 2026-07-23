@@ -410,8 +410,22 @@ std::string DialogueFunctions::get_nr(Game &game)
 
 std::string DialogueFunctions::get_nt(Game &game)
 {
+	const GameState &gameState = game.gameState;
 	const DialogueManager &dialogueManager = game.dialogueManager;
-	return dialogueManager.getNearestTavernName();
+	const MapDefinition &mapDef = gameState.getActiveMapDef();
+
+	std::string nearestTavernName;
+	if (mapDef.getMapType() == MapType::Interior)
+	{
+		const MapDefinitionInterior &mapDefInterior = mapDef.getSubDefinition().interior;
+		nearestTavernName = mapDefInterior.displayName;
+	}
+	else
+	{
+		nearestTavernName = dialogueManager.getNearestTavernName();
+	}
+
+	return nearestTavernName;
 }
 
 std::string DialogueFunctions::get_o(Game &game)
@@ -444,7 +458,9 @@ std::string DialogueFunctions::get_opp(Game &game)
 
 std::string DialogueFunctions::get_oth(Game &game)
 {
-	return "%oth";
+	DialogueManager &dialogueManager = game.dialogueManager;
+	const int oathsEntryKey = dialogueManager.getOathsEntryKey();
+	return dialogueManager.getRandomTemplateDatEntryValue(oathsEntryKey);
 }
 
 std::string DialogueFunctions::get_pcn(Game &game)

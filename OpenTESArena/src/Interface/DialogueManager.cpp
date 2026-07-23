@@ -6,6 +6,7 @@
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Voxels/VoxelChunkManager.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -267,6 +268,17 @@ std::string DialogueManager::getNearestTempleName() const
 	}
 
 	return GetBuildingNameAtWorldVoxel(*nearestWorldVoxel, voxelChunkManager);
+}
+
+int DialogueManager::getOathsEntryKey() const
+{
+	const GameState &gameState = this->game->gameState;
+	const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+	const int provinceIndex = provinceDef.getRaceID();
+	
+	Random &random = this->game->random;
+	const int oathsProvinceID = (provinceIndex != ArenaLocationUtils::CENTER_PROVINCE_ID) ? provinceIndex : random.next(ArenaLocationUtils::CENTER_PROVINCE_ID);
+	return 364 + oathsProvinceID;
 }
 
 const std::string &DialogueManager::getTemplateDatEntryValueAtIndex(int entryKey, int index) const

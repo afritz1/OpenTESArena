@@ -1620,39 +1620,18 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID e
 	}
 	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::TavernPatron)
 	{
-		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-		const ArenaTemplateDatEntry &patronDialoguesEntry = textAssetLibrary.templateDat.getEntry(1430);
+		dialogueManager.beginDialogue(entityInstID);
 
-		Random &random = game.random;
-		const int patronDialoguesRandomIndex = random.next(patronDialoguesEntry.values.size());
-		std::string text = patronDialoguesEntry.values[patronDialoguesRandomIndex];
+		const std::string patronDialogueString = dialogueManager.getRandomTemplateDatEntryValue(1430);
+		const std::string text = dialogueManager.getSubstitutedText(patronDialogueString.c_str());
 
-		const Player &player = game.player;
-		const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
-		const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(player.raceID);
+		GameWorldPopUpClosedCallback callback = [&game, &dialogueManager]()
+		{
+			dialogueManager.endDialogue();
+			GameWorldUiController::onPopUpSelected(game);
+		};
 
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		const std::string &locationName = locationDef.getName();
-
-		const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
-		const std::string &provinceName = provinceDef.getName();
-		const int provinceID = provinceDef.getRaceID();
-
-		const int oathsProvinceID = (provinceID != ArenaLocationUtils::CENTER_PROVINCE_ID) ? provinceID : random.next(ArenaLocationUtils::CENTER_PROVINCE_ID);
-		const int oathsID = 364 + oathsProvinceID;
-		const ArenaTemplateDatEntry &oathsEntry = textAssetLibrary.templateDat.getEntry(oathsID);
-		const int oathsRandomIndex = random.next(oathsEntry.values.size());
-		const std::string &oathString = oathsEntry.values[oathsRandomIndex];
-
-		// @todo move this into a global dialogue processor, see "Dialog" wiki
-		text = String::replace(text, "%ra", charRaceDef.singularName);
-		text = String::replace(text, "%cn", locationName);
-		text = String::replace(text, "%lp", provinceName);
-		text = String::replace(text, "%oth", oathString);
-		text = String::replace(text, "%nt", interiorDisplayName);
-		text = String::distributeNewlines(text, 65);
-
-		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
 	}
 	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Ruler)
 	{

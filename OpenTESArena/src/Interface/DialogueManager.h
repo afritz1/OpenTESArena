@@ -64,6 +64,7 @@ struct DialogueManager
 	std::string getNearestEquipmentStoreName() const;
 	std::string getNearestTavernName() const;
 	std::string getNearestTempleName() const;
+	int getOathsEntryKey() const;
 
 	const std::string &getTemplateDatEntryValueAtIndex(int entryKey, int index) const;
 	const std::string &getRandomTemplateDatEntryValue(int entryKey) const;
