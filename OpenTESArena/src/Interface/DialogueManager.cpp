@@ -88,10 +88,21 @@ namespace
 	}
 }
 
-DialogueDirectionsEntry::DialogueDirectionsEntry()
+DialogueDirectionsEntry::DialogueDirectionsEntry(const std::string &displayString, ArenaMenuType menuType, bool showsDetailList)
+	: displayString(displayString)
 {
-
+	this->menuType = menuType;
+	this->showsDetailList = showsDetailList;
 }
+
+bool DialogueDirectionsEntry::isCityOnly() const
+{
+	const bool isWildernessWorkEntry = this->menuType == ArenaMenuType::None;
+	return (this->menuType == ArenaMenuType::MagesGuild) || (this->menuType == ArenaMenuType::Palace) || isWildernessWorkEntry;
+}
+
+DialogueDirectionsDetailEntry::DialogueDirectionsDetailEntry(const std::string &buildingName, WorldInt3 entranceWorldVoxel)
+	: buildingName(buildingName), entranceWorldVoxel(entranceWorldVoxel) { }
 
 DialogueManager::DialogueManager()
 {
@@ -122,20 +133,33 @@ void DialogueManager::init(Game &game)
 
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const Span<const std::string> sourceCityOptions = exeData.services.citizenWhereIsOptionsCity;
-	this->cityDirectionsEntries.resize(sourceCityOptions.getCount());
-	for (int i = 0; i < sourceCityOptions.getCount(); i++)
-	{
-		DialogueDirectionsEntry &dstEntry = this->cityDirectionsEntries[i];
-		dstEntry.displayString = sourceCityOptions[i];
-	}
+	const Span<const std::string> sourceWildernessOptions = exeData.services.citizenWhereIsOptionsWilderness;	
 
-	const Span<const std::string> sourceWildernessOptions = exeData.services.citizenWhereIsOptionsWilderness;
-	this->wildernessDirectionsEntries.resize(sourceWildernessOptions.getCount());
-	for (int i = 0; i < sourceWildernessOptions.getCount(); i++)
+	this->cityDirectionsEntries =
 	{
-		DialogueDirectionsEntry &dstEntry = this->wildernessDirectionsEntries[i];
-		dstEntry.displayString = sourceWildernessOptions[i];
-	}
+		DialogueDirectionsEntry(sourceCityOptions[0], ArenaMenuType::Tavern, true),
+		DialogueDirectionsEntry(sourceCityOptions[1], ArenaMenuType::Temple, true),
+		DialogueDirectionsEntry(sourceCityOptions[2], ArenaMenuType::Equipment, true),
+		DialogueDirectionsEntry(sourceCityOptions[3], ArenaMenuType::MagesGuild, false),
+		DialogueDirectionsEntry(sourceCityOptions[4], ArenaMenuType::Palace, false),
+		DialogueDirectionsEntry(sourceCityOptions[5], ArenaMenuType::CityGates, false),
+		DialogueDirectionsEntry(sourceCityOptions[6], ArenaMenuType::Tavern, false),
+		DialogueDirectionsEntry(sourceCityOptions[7], ArenaMenuType::Temple, false),
+		DialogueDirectionsEntry(sourceCityOptions[8], ArenaMenuType::Equipment, false),
+	};
+
+	this->wildernessDirectionsEntries =
+	{
+		DialogueDirectionsEntry(sourceWildernessOptions[0], ArenaMenuType::Tavern, true),
+		DialogueDirectionsEntry(sourceWildernessOptions[1], ArenaMenuType::Temple, true),
+		DialogueDirectionsEntry(sourceWildernessOptions[2], ArenaMenuType::Equipment, true),
+		DialogueDirectionsEntry(sourceWildernessOptions[3], ArenaMenuType::MagesGuild, false),
+		DialogueDirectionsEntry(sourceWildernessOptions[4], ArenaMenuType::Palace, false),
+		DialogueDirectionsEntry(sourceWildernessOptions[5], ArenaMenuType::None, false),
+		DialogueDirectionsEntry(sourceWildernessOptions[6], ArenaMenuType::Tavern, false),
+		DialogueDirectionsEntry(sourceWildernessOptions[7], ArenaMenuType::Temple, false),
+		DialogueDirectionsEntry(sourceWildernessOptions[8], ArenaMenuType::Dungeon, false),
+	};
 }
 
 void DialogueManager::beginDialogue(EntityInstanceID entityInstID)

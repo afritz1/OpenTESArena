@@ -151,6 +151,8 @@ struct ExeDataDialogue
 
 	std::string cardinalDirections[8]; // North, ..., northwest. For NPCs giving directions.
 
+	std::string directionIsCityOnly; // When a wilderness NPC says a building is only in the city.
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

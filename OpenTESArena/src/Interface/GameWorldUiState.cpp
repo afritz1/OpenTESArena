@@ -20,6 +20,8 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/TextEntry.h"
 #include "../UI/UiRenderSpace.h"
+#include "../World/ArenaInteriorUtils.h"
+#include "../World/CardinalDirection.h"
 #include "../World/MapType.h"
 
 #include "components/utilities/String.h"
@@ -110,6 +112,109 @@ namespace
 		}
 
 		return displayName;
+	}
+
+	std::vector<DialogueDirectionsDetailEntry> GetDirectionsDetailEntries(ArenaMenuType menuType, const VoxelChunkManager &voxelChunkManager)
+	{
+		std::vector<DialogueDirectionsDetailEntry> detailEntries;
+
+		const std::optional<ArenaInteriorType> interiorType = ArenaInteriorUtils::menuTypeToInteriorType(menuType);
+
+		// @todo search all transition voxels in scene that match menuType/interiorType (make sure to handle city gates and stuff)
+
+		DialogueDirectionsDetailEntry detailEntry("Test Building", WorldInt3());
+		detailEntries.emplace_back(std::move(detailEntry));
+
+		return detailEntries;
+	}
+
+	Double2 GetDirectionsDetailEntryDirection(const DialogueDirectionsDetailEntry &detailEntry, WorldInt3 playerWorldVoxel)
+	{
+		const WorldDouble2 detailEntryPositionXZ = VoxelUtils::getVoxelCenter(detailEntry.entranceWorldVoxel.getXZ());
+		const WorldDouble2 playerPositionXZ = VoxelUtils::getVoxelCenter(playerWorldVoxel.getXZ());
+		return (detailEntryPositionXZ - playerPositionXZ).normalized();
+	}
+
+	double GetDirectionsDetailEntryDistanceSqr(const DialogueDirectionsDetailEntry &detailEntry, WorldInt3 playerWorldVoxel)
+	{
+		const WorldDouble2 detailEntryPositionXZ = VoxelUtils::getVoxelCenter(detailEntry.entranceWorldVoxel.getXZ());
+		const WorldDouble2 playerPositionXZ = VoxelUtils::getVoxelCenter(playerWorldVoxel.getXZ());
+		return (detailEntryPositionXZ - playerPositionXZ).lengthSquared();
+	}
+
+	CardinalDirectionName GetDirectionsDetailEntryCardinalDirection(Double2 direction)
+	{
+		DebugAssert(direction.isNormalized());
+		return CardinalDirection::getDirectionName(direction);
+	}
+
+	// How far a citizen will attempt to give directions.
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE = 64.0;
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE_SQR = DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE * DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE;
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE = 16.0;
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE_SQR = DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE * DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE;
+
+	int GetNearestDirectionsDetailEntryIndex(Span<const DialogueDirectionsDetailEntry> detailEntries, WorldInt3 playerWorldVoxel, const VoxelChunkManager &voxelChunkManager)
+	{
+		int closestIndex = -1;
+		for (int i = 0; i < detailEntries.getCount(); i++)
+		{
+			if (closestIndex < 0)
+			{
+				closestIndex = i;
+				continue;
+			}
+
+			const DialogueDirectionsDetailEntry &currentDetailEntry = detailEntries[i];
+			const DialogueDirectionsDetailEntry &closestDetailEntry = detailEntries[closestIndex];
+			const double currentDetailEntryDistanceSqr = GetDirectionsDetailEntryDistanceSqr(currentDetailEntry, playerWorldVoxel);
+			const double closestDetailEntryDistanceSqr = GetDirectionsDetailEntryDistanceSqr(closestDetailEntry, playerWorldVoxel);
+			if (currentDetailEntryDistanceSqr < closestDetailEntryDistanceSqr)
+			{
+				closestIndex = i;
+			}
+		}
+
+		return closestIndex;
+	}
+
+	std::string GetSubstitutedTextForDirectionsEntry(const DialogueDirectionsDetailEntry *detailEntry, WorldInt3 playerWorldVoxel, DialogueManager &dialogueManager)
+	{
+		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+		const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
+
+		double detailEntryDistanceSqr = Constants::Infinity;
+		if (detailEntry != nullptr)
+		{
+			detailEntryDistanceSqr = GetDirectionsDetailEntryDistanceSqr(*detailEntry, playerWorldVoxel);
+		}
+
+		int entryKey = -1;
+		if (detailEntryDistanceSqr >= DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE_SQR)
+		{
+			// Too far away to know direction.
+			entryKey = 259;
+		}
+		else if (detailEntryDistanceSqr <= DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE_SQR)
+		{
+			// Close enough to mark on player's map.
+			entryKey = 261;
+		}
+		else
+		{
+			// Worth giving directions for.
+			entryKey = 260;
+		}
+
+		const std::string entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+		if (detailEntry != nullptr)
+		{
+			const Double2 direction = GetDirectionsDetailEntryDirection(*detailEntry, playerWorldVoxel);
+			const CardinalDirectionName cardinalDirectionName = GetDirectionsDetailEntryCardinalDirection(direction);
+			//dialogueManager.dialogueDirection = cardinalDirectionName; // @todo
+		}
+
+		return dialogueManager.getSubstitutedText(entryValue.c_str());
 	}
 }
 
@@ -507,6 +612,7 @@ void GameWorldUI::destroy()
 	state.maxSpellPoints = 0.0;
 	state.playerHurtRemainingSeconds = 0.0;
 	state.lootPopUpItemMappings.clear();
+	state.dialogueWhereIsDetailEntries.clear();
 
 	dialogueManager.endDialogue();
 
@@ -1712,18 +1818,19 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	Game &game = *state.game;
 	InputManager &inputManager = game.inputManager;
 	UiManager &uiManager = game.uiManager;
+	DialogueManager &dialogueManager = game.dialogueManager;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
 	uiManager.clearContextElements(state.conversationModalContextInstID, inputManager, renderer);
 
 	const GameState &gameState = game.gameState;
 	const MapType mapType = gameState.getActiveMapType();
-	const DialogueManager &dialogueManager = game.dialogueManager;
 	const Player &player = game.player;
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ArenaTypes::Spellsg &standardSpells = binaryAssetLibrary.getStandardSpells();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 
 	constexpr int sceneViewCenterY = ArenaRenderUtils::SCENE_VIEW_HEIGHT / 2;
 	constexpr int barterViewCenterY = 122 / 2;
@@ -1754,27 +1861,95 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxButtonUpPositionOffset = Int2(9, 7);
 		listBoxButtonDownPositionOffset = Int2(9, 102);
 
-		std::vector<DialogueDirectionsEntry> directionsEntries;
-		if (mapType == MapType::City)
-		{
-			directionsEntries = dialogueManager.cityDirectionsEntries;
-		}
-		else if (mapType == MapType::Wilderness)
-		{
-			directionsEntries = dialogueManager.wildernessDirectionsEntries;
-		}
+		const double ceilingScale = gameState.getActiveCeilingScale();
+		const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
 
-		// @todo append other entries for main quest dungeon etc.
-
-		for (int i = 0; i < static_cast<int>(directionsEntries.size()); i++)
+		GameWorldPopUpClosedCallback returnToCitizenMessageBoxCallback = [&uiManager]()
 		{
-			const DialogueDirectionsEntry &directionsEntry = directionsEntries[i];
-			listBoxItems.emplace_back(directionsEntry.displayString);
-			listBoxItemCallbacks.emplace_back([&uiManager, i, directionsEntry](MouseButtonType)
+			uiManager.disableTopMostContext();
+			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
+		};
+
+		if (state.dialogueWhereIsDetailEntries.empty())
+		{
+			std::vector<DialogueDirectionsEntry> directionsEntries;
+			if (mapType == MapType::City)
 			{
-				DebugLogFormat("Where is %s.", directionsEntry.displayString.c_str());
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+				directionsEntries = dialogueManager.cityDirectionsEntries;
+			}
+			else if (mapType == MapType::Wilderness)
+			{
+				directionsEntries = dialogueManager.wildernessDirectionsEntries;
+			}
+
+			for (int i = 0; i < static_cast<int>(directionsEntries.size()); i++)
+			{
+				const DialogueDirectionsEntry &directionsEntry = directionsEntries[i];
+				listBoxItems.emplace_back(directionsEntry.displayString);
+				listBoxItemCallbacks.emplace_back([&state, &uiManager, &dialogueManager, &exeData, &voxelChunkManager, mapType, playerWorldVoxel, returnToCitizenMessageBoxCallback, directionsEntry](MouseButtonType)
+				{
+					uiManager.disableTopMostContext();
+
+					if (directionsEntry.showsDetailList)
+					{
+						if (mapType == MapType::Wilderness)
+						{
+							GameWorldUI::showTextPopUp(exeData.services.citizenRumorsModalWorkAskInTown.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, returnToCitizenMessageBoxCallback);
+						}
+						else
+						{
+							state.dialogueWhereIsDetailEntries = GetDirectionsDetailEntries(directionsEntry.menuType, voxelChunkManager);
+							GameWorldUI::showConversationListBox(ConversationListBoxType::CitizenWhereIs);
+						}
+					}
+					else
+					{
+						std::string text;
+						if ((mapType == MapType::Wilderness) && directionsEntry.isCityOnly())
+						{
+							text = exeData.dialogue.directionIsCityOnly;
+						}
+						else
+						{
+							const std::vector<DialogueDirectionsDetailEntry> detailEntries = GetDirectionsDetailEntries(directionsEntry.menuType, voxelChunkManager);
+							const DialogueDirectionsDetailEntry *nearestDetailEntry = nullptr;
+							const int nearestDetailEntryIndex = GetNearestDirectionsDetailEntryIndex(detailEntries, playerWorldVoxel, voxelChunkManager);
+							if (nearestDetailEntryIndex >= 0)
+							{
+								nearestDetailEntry = &detailEntries[nearestDetailEntryIndex];
+							}
+
+							text = GetSubstitutedTextForDirectionsEntry(nearestDetailEntry, playerWorldVoxel, dialogueManager);
+						}
+
+						GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, returnToCitizenMessageBoxCallback);
+					}
+				});
+			}
+		}
+		else
+		{
+			for (const DialogueDirectionsDetailEntry &detailEntry : state.dialogueWhereIsDetailEntries)
+			{
+				listBoxItems.emplace_back(detailEntry.buildingName);
+				listBoxItemCallbacks.emplace_back([&uiManager, &dialogueManager, &voxelChunkManager, playerWorldVoxel, returnToCitizenMessageBoxCallback, detailEntry](MouseButtonType)
+				{
+					uiManager.disableTopMostContext();
+
+					const Span<const DialogueDirectionsDetailEntry> detailEntries(&detailEntry, 1);
+					const DialogueDirectionsDetailEntry *nearestDetailEntry = nullptr;
+					const int nearestDetailEntryIndex = GetNearestDirectionsDetailEntryIndex(detailEntries, playerWorldVoxel, voxelChunkManager);
+					if (nearestDetailEntryIndex >= 0)
+					{
+						nearestDetailEntry = &detailEntry;
+					}
+
+					const std::string text = GetSubstitutedTextForDirectionsEntry(nearestDetailEntry, playerWorldVoxel, dialogueManager);
+					GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, returnToCitizenMessageBoxCallback);
+				});
+			}
+
+			state.dialogueWhereIsDetailEntries.clear();
 		}
 
 		break;
@@ -2188,6 +2363,7 @@ void GameWorldUI::onCloseConversationButtonSelected(MouseButtonType mouseButtonT
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	DialogueManager &dialogueManager = game.dialogueManager;
+	state.dialogueWhereIsDetailEntries.clear();
 	uiManager.setContextEnabled(state.conversationModalContextInstID, false);
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
 	dialogueManager.endDialogue();

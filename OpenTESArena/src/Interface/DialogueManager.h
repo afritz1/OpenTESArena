@@ -7,13 +7,27 @@
 
 #include "components/utilities/Buffer.h"
 
+enum class ArenaMenuType;
+
 // Each entry in the "Where is..." list box.
 struct DialogueDirectionsEntry
 {
 	std::string displayString;
-	// @todo callback
+	ArenaMenuType menuType;
+	bool showsDetailList;
 
-	DialogueDirectionsEntry();
+	DialogueDirectionsEntry(const std::string &displayString, ArenaMenuType menuType, bool showsDetailList);
+
+	bool isCityOnly() const;
+};
+
+// Each entry in the "Where is..." list box after selecting an entry that shows a detailed list.
+struct DialogueDirectionsDetailEntry
+{
+	std::string buildingName;
+	WorldInt3 entranceWorldVoxel;
+
+	DialogueDirectionsDetailEntry(const std::string &buildingName, WorldInt3 entranceWorldVoxel);
 };
 
 struct DialogueManager

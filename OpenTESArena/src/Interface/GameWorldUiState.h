@@ -3,6 +3,7 @@
 #include <functional>
 #include <vector>
 
+#include "DialogueManager.h"
 #include "../Entities/EntityInstance.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/Rect.h"
@@ -113,6 +114,8 @@ struct GameWorldUiState
 	std::vector<GameWorldLootUiItemMapping> lootPopUpItemMappings;
 
 	std::string campManualHoursInputText; // Number of hours to manually rest.
+
+	std::vector<DialogueDirectionsDetailEntry> dialogueWhereIsDetailEntries; // After asking for all inns/temples/stores in "Where Is..." menu.
 
 	GameWorldUiState();
 

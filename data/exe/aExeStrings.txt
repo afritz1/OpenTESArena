@@ -88,6 +88,7 @@ SubjectPronouns=0x39AA5
 ObjectPronouns=0x39AAF
 PossessivePronouns=0x39ABA
 CardinalDirections=0x39AC6
+DirectionIsCityOnly=0x43AF6
 
 [Entities]
 AttributeNames=0x40C29
