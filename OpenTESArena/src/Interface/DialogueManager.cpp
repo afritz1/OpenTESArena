@@ -171,6 +171,7 @@ void DialogueManager::endDialogue()
 {
 	this->entityInstID = -1;
 	this->dialogueGender = -1;
+	this->dialogueDirection = std::nullopt;
 }
 
 const EntityInstance &DialogueManager::getEntityInstance() const

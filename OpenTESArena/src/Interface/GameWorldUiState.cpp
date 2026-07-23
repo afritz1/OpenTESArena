@@ -120,10 +120,50 @@ namespace
 
 		const std::optional<ArenaInteriorType> interiorType = ArenaInteriorUtils::menuTypeToInteriorType(menuType);
 
-		// @todo search all transition voxels in scene that match menuType/interiorType (make sure to handle city gates and stuff)
+		for (int chunkIndex = 0; chunkIndex < voxelChunkManager.getChunkCount(); chunkIndex++)
+		{
+			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtIndex(chunkIndex);
+			for (const std::pair<VoxelInt3, VoxelTransitionDefID> &pair : voxelChunk.transitionDefIndices)
+			{
+				const VoxelInt3 voxel = pair.first;
+				const VoxelTransitionDefID transitionDefID = pair.second;
+				const TransitionDefinition &transitionDef = voxelChunk.transitionDefs[transitionDefID];
 
-		DialogueDirectionsDetailEntry detailEntry("Test Building", WorldInt3());
-		detailEntries.emplace_back(std::move(detailEntry));
+				bool isMatch = false;
+				if (transitionDef.type == TransitionType::CityGate)
+				{
+					isMatch = menuType == ArenaMenuType::CityGates;
+				}
+				else if (transitionDef.type == TransitionType::EnterInterior)
+				{
+					if (interiorType.has_value())
+					{
+						const InteriorEntranceTransitionDefinition &interiorEntranceTransitionDef = transitionDef.interiorEntrance;
+						isMatch = interiorEntranceTransitionDef.interiorGenInfo.interiorType == *interiorType;
+					}
+				}
+
+				if (isMatch)
+				{
+					std::string buildingName = "<missing building name>";
+					VoxelBuildingNameID buildingNameID;
+					if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
+					{
+						buildingName = voxelChunk.buildingNames[buildingNameID];
+					}
+
+					const WorldInt3 worldVoxel = VoxelUtils::coordToWorldVoxel(CoordInt3(voxelChunk.position, voxel));
+					DialogueDirectionsDetailEntry detailEntry(buildingName, worldVoxel);
+					detailEntries.emplace_back(std::move(detailEntry));
+				}
+			}
+		}
+
+		std::sort(detailEntries.begin(), detailEntries.end(),
+			[](const DialogueDirectionsDetailEntry &a, const DialogueDirectionsDetailEntry &b)
+		{
+			return a.buildingName.compare(b.buildingName) < 0;
+		});
 
 		return detailEntries;
 	}
@@ -149,7 +189,7 @@ namespace
 	}
 
 	// How far a citizen will attempt to give directions.
-	constexpr double DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE = 64.0;
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE = 128.0;
 	constexpr double DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE_SQR = DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE * DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE;
 	constexpr double DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE = 16.0;
 	constexpr double DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE_SQR = DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE * DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE;
@@ -211,7 +251,7 @@ namespace
 		{
 			const Double2 direction = GetDirectionsDetailEntryDirection(*detailEntry, playerWorldVoxel);
 			const CardinalDirectionName cardinalDirectionName = GetDirectionsDetailEntryCardinalDirection(direction);
-			//dialogueManager.dialogueDirection = cardinalDirectionName; // @todo
+			dialogueManager.dialogueDirection = cardinalDirectionName;
 		}
 
 		return dialogueManager.getSubstitutedText(entryValue.c_str());
@@ -1857,7 +1897,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(28, 20);
 		listBoxFontName = ArenaFontName::Arena;
 		listBoxTextureWidth = 185;
-		listBoxTextureHeight = 82;
+		listBoxTextureHeight = 81;
 		listBoxButtonUpPositionOffset = Int2(9, 7);
 		listBoxButtonDownPositionOffset = Int2(9, 102);
 

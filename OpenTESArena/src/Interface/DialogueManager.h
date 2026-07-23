@@ -1,9 +1,11 @@
 #pragma once
 
+#include <optional>
 #include <string>
 
 #include "DialogueFunctions.h"
 #include "../Entities/EntityInstance.h"
+#include "../World/CardinalDirectionName.h"
 
 #include "components/utilities/Buffer.h"
 
@@ -44,6 +46,7 @@ struct DialogueManager
 	// The entity the player is talking to.
 	EntityInstanceID entityInstID;
 	int dialogueGender; // 0: male, 1: female, 2: neutral
+	std::optional<CardinalDirectionName> dialogueDirection; // For NPCs giving directions.
 
 	DialogueManager();
 

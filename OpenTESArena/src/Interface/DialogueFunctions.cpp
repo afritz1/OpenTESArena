@@ -202,7 +202,18 @@ std::string DialogueFunctions::get_des(Game &game)
 
 std::string DialogueFunctions::get_di(Game &game)
 {
-	return "%di";
+	const DialogueManager &dialogueManager = game.dialogueManager;
+	const std::optional<CardinalDirectionName> &directionName = dialogueManager.dialogueDirection;
+	if (!directionName.has_value())
+	{
+		DebugLogError("Dialogue direction is not set for %di.");
+		return "<missing direction>";
+	}
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> cardinalDirectionStrings = exeData.dialogue.cardinalDirections;
+	const int index = static_cast<int>(*directionName);
+	return cardinalDirectionStrings[index];
 }
 
 std::string DialogueFunctions::get_dit(Game &game)
