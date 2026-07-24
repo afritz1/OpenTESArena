@@ -1884,6 +1884,34 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
 	};
 
+	auto makeListBoxItemPurchaseCallback = [&game, &uiManager, &itemLibrary](ItemDefinitionID itemDefID, int itemGoldPrice, const GameWorldPopUpClosedCallback &popUpClosedCallback)
+	{
+		return [&game, &uiManager, &itemLibrary, itemDefID, itemGoldPrice, popUpClosedCallback](MouseButtonType)
+		{
+			uiManager.disableTopMostContext();
+
+			const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(itemDefID);
+			const std::string selectedItemDisplayName = selectedItemDef.getDisplayName(1);
+
+			Player &player = game.player;
+			ItemInventory &playerInventory = player.inventory;
+			const bool canPlayerAffordPurchase = player.gold >= itemGoldPrice;
+			if (canPlayerAffordPurchase)
+			{
+				playerInventory.insert(itemDefID);
+				player.gold -= itemGoldPrice;
+
+				const std::string text = String::format("Bought %s for %d gold.\n(TODO bartering)", selectedItemDisplayName.c_str(), itemGoldPrice);
+				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+			}
+			else
+			{
+				const std::string text = String::format("TODO %s is too expensive.", selectedItemDisplayName.c_str());
+				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+			}
+		};
+	};
+
 	int listBoxImageY = barterViewCenterY;
 	UiPivotType listBoxImagePivotType = UiPivotType::Middle;
 	std::string listBoxTextureName;
@@ -2015,9 +2043,8 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			return itemDef.type == ItemType::Weapon;
 		});
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
-			const ItemDefinitionID sourceItemDefID = sourceItemDefIDs[i];
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
 			const WeaponItemDefinition &sourceWeaponDef = sourceItemDef.weapon;
 			const std::string weaponDisplayName = sourceItemDef.getDisplayName(1);
@@ -2032,30 +2059,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			std::vector<std::string> weaponTextColumns = { weaponDisplayName, weaponHandednessString, weaponWeightString, weaponPriceString, weaponPriceUnitString };
 			listBoxItemTextColumns.emplace_back(std::move(weaponTextColumns));
 
-			listBoxItemCallbacks.emplace_back([&game, &uiManager, &itemLibrary, returnToEquipmentStoreMessageBoxCallback, sourceItemDefID, weaponPrice](MouseButtonType)
-			{
-				uiManager.disableTopMostContext();
-
-				const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(sourceItemDefID);
-				const std::string selectedItemDisplayName = selectedItemDef.getDisplayName(1);
-
-				Player &player = game.player;
-				ItemInventory &playerInventory = player.inventory;
-				const bool canPlayerAffordPurchase = player.gold >= weaponPrice;
-				if (canPlayerAffordPurchase)
-				{
-					playerInventory.insert(sourceItemDefID);
-					player.gold -= weaponPrice;
-
-					const std::string text = String::format("Bought %s for %d gold.\n(TODO bartering)", selectedItemDisplayName.c_str(), weaponPrice);
-					GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToEquipmentStoreMessageBoxCallback);
-				}
-				else
-				{
-					const std::string text = String::format("TODO %s is too expensive.", selectedItemDisplayName.c_str());
-					GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, returnToEquipmentStoreMessageBoxCallback);
-				}
-			});
+			listBoxItemCallbacks.emplace_back(makeListBoxItemPurchaseCallback(sourceItemDefID, weaponPrice, returnToEquipmentStoreMessageBoxCallback));
 		}
 
 		break;
@@ -2067,6 +2071,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 275;
 		listBoxTextureHeight = 72;
+		listBoxColumnPixelXOffsets = { 0, 154, 203, 218, 253 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
 
@@ -2076,15 +2081,22 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			return (itemDef.type == ItemType::Armor) || (itemDef.type == ItemType::Shield);
 		});
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Buy armor.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
+			const ArmorItemDefinition &sourceArmorDef = sourceItemDef.armor;
+			const std::string armorDisplayName = sourceItemDef.getDisplayName(1);
+			const double armorWeightKgs = sourceItemDef.getWeight();
+			const int armorPrice = 1; // @todo calculate armor gold price
+
+			const std::string armorProtectedSlotString = "TODO";
+			const std::string armorWeightString = String::format("%-.1f", armorWeightKgs);
+			const std::string armorPriceString = String::format("%10d", armorPrice);
+			const std::string armorPriceUnitString = "gp";
+			std::vector<std::string> armorTextColumns = { armorDisplayName, armorProtectedSlotString, armorWeightString, armorPriceString, armorPriceUnitString };
+			listBoxItemTextColumns.emplace_back(std::move(armorTextColumns));
+
+			listBoxItemCallbacks.emplace_back(makeListBoxItemPurchaseCallback(sourceItemDefID, armorPrice, returnToEquipmentStoreMessageBoxCallback));
 		}
 
 		break;
