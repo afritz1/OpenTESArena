@@ -116,22 +116,6 @@ void DialogueManager::init(Game &game)
 {
 	this->game = &game;
 
-	const Span<const std::pair<const char*, DialogueFunction>> sourceMappings = DialogueFunctions::FunctionMappings;
-	this->sortedFunctionMappings.init(sourceMappings.getCount());
-	std::copy(sourceMappings.begin(), sourceMappings.end(), this->sortedFunctionMappings.begin());
-	std::sort(this->sortedFunctionMappings.begin(), this->sortedFunctionMappings.end(),
-		[](const std::pair<const char*, DialogueFunction> &a, const std::pair<const char*, DialogueFunction> &b)
-	{
-		const size_t aLength = std::strlen(a.first);
-		const size_t bLength = std::strlen(b.first);
-		if (aLength != bLength)
-		{
-			return aLength > bLength;
-		}
-
-		return std::strcmp(a.first, b.first) < 0;
-	});
-
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const Span<const std::string> sourceCityOptions = exeData.services.citizenWhereIsOptionsCity;
 	const Span<const std::string> sourceWildernessOptions = exeData.services.citizenWhereIsOptionsWilderness;	
@@ -303,22 +287,38 @@ std::string DialogueManager::getSubstitutedText(const char *text, int maxCharsPe
 	DebugAssert(this->entityInstID >= 0);
 	DebugAssert(maxCharsPerLine > 0);
 
-	// @todo optimize these string allocations
-	std::string newText = text;
+	const Span<const std::pair<const char*, DialogueFunction>> functionMappings = DialogueFunctions::FunctionMappings;
 
-	for (const std::pair<const char*, DialogueFunction> &functionMapping : this->sortedFunctionMappings)
+	std::string newText = text;
+	size_t index = newText.find('%');
+	while (index != std::string::npos)
 	{
-		const char *substitutionToken = functionMapping.first;
-		const size_t substitutionTokenLength = std::strlen(substitutionToken);
-		const DialogueFunction &substitutionFunction = functionMapping.second;
-		
-		size_t tokenIndex = newText.find(substitutionToken);
-		while (tokenIndex != std::string::npos)
+		size_t indexChange = 1;
+
+		std::string_view token(newText.data() + index, std::min<int>(4, newText.size() - index));
+		while (token.length() > 1)
 		{
-			const std::string replacementString = substitutionFunction(*this->game);
-			newText.replace(tokenIndex, substitutionTokenLength, replacementString);
-			tokenIndex = newText.find(substitutionToken, tokenIndex + replacementString.length());
+			const std::string tokenSlice(token);
+			const auto mappingIter = std::find_if(functionMappings.begin(), functionMappings.end(),
+				[&tokenSlice](const std::pair<const char*, DialogueFunction> &pair)
+			{
+				return pair.first == tokenSlice;
+			});
+
+			if (mappingIter != functionMappings.end())
+			{
+				const size_t substitutionTokenLength = tokenSlice.size();
+				const DialogueFunction &substitutionFunction = mappingIter->second;
+				const std::string replacementString = substitutionFunction(*this->game);
+				newText.replace(index, substitutionTokenLength, replacementString);
+				indexChange = substitutionTokenLength;
+				break;
+			}
+
+			token.remove_suffix(1);
 		}
+
+		index = newText.find('%', index + indexChange);
 	}
 
 	return String::distributeNewlines(newText, maxCharsPerLine);

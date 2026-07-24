@@ -36,9 +36,6 @@ struct DialogueManager
 {
 	Game *game;
 
-	// Sorted by longest first so longer tokens match before shorter ones.
-	Buffer<std::pair<const char*, DialogueFunction>> sortedFunctionMappings;
-
 	// Copies of dialogue directions for "Where is..." UI. Sometimes more entries (e.g. main quest) are appended afterwards.
 	std::vector<DialogueDirectionsEntry> cityDirectionsEntries;
 	std::vector<DialogueDirectionsEntry> wildernessDirectionsEntries;
