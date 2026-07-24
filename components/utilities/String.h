@@ -33,6 +33,7 @@ namespace String
 		const int charCount = std::snprintf(nullptr, 0, formatStr, args...);
 		std::string buffer(charCount + 1, '\0');
 		std::snprintf(buffer.data(), buffer.size(), formatStr, args...);
+		buffer.resize(charCount); // Avoid literally storing null terminator in the string.
 		return buffer;
 	}
 
