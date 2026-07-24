@@ -371,6 +371,10 @@ ThievingSuccess=0x4325B
 ThievingSuccessChest=0x432A1
 ThievingFailure=0x43250
 ThievingFailureChest=0x4328D
+ThievingEntranceNoGuardsChance=0x4082
+ThievingPickpocketJunkThreshold=0x1E455
+ThievingPickpocketMaxGold=0x1E464
+ThievingMagicallyHeldLockDifficultyThreshold=0x21F47
 
 [Travel]
 LocationFormatTexts=0x374AD

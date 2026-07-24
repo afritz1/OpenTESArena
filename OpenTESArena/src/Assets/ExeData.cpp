@@ -15,6 +15,19 @@
 
 namespace
 {
+	uint8_t readU8(Span<const std::byte> exeBytes, int exeAddress)
+	{
+		return static_cast<uint8_t>(exeBytes[exeAddress]);
+	}
+
+	uint16_t readU16(Span<const std::byte> exeBytes, int exeAddress)
+	{
+		const uint16_t lo = static_cast<uint16_t>(exeBytes[exeAddress]);
+		const uint16_t hi = static_cast<uint16_t>(exeBytes[exeAddress + 1]);
+
+		return (lo | (hi << 8));
+	}
+
 	static constexpr char PAIR_SEPARATOR = ',';
 
 	template<typename T, size_t Length>
@@ -1235,12 +1248,20 @@ bool ExeDataThieving::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int thievingSuccessChestOffset = GetExeAddress(*section, "ThievingSuccessChest");
 	const int thievingFailureOffset = GetExeAddress(*section, "ThievingFailure");
 	const int thievingFailureChestOffset = GetExeAddress(*section, "ThievingFailureChest");
+	const int thievingEntranceNoGuardsChanceOffset = GetExeAddress(*section, "ThievingEntranceNoGuardsChance");
+	const int thievingPickpocketJunkThresholdOffset = GetExeAddress(*section, "ThievingPickpocketJunkThreshold");
+	const int thievingPickpocketMaxGoldOffset = GetExeAddress(*section, "ThievingPickpocketMaxGold");
+	const int thievingMagicallyHeldLockDifficultyThresholdOffset = GetExeAddress(*section, "ThievingMagicallyHeldLockDifficultyThreshold");
 
 	this->thievingInteractionType = GetExeStringNullTerminated(exeBytes, thievingInteractionTypeOffset);
 	this->thievingSuccess = GetExeStringNullTerminated(exeBytes, thievingSuccessOffset);
 	this->thievingSuccessChest = GetExeStringNullTerminated(exeBytes, thievingSuccessChestOffset);
 	this->thievingFailure = GetExeStringNullTerminated(exeBytes, thievingFailureOffset);
 	this->thievingFailureChest = GetExeStringNullTerminated(exeBytes, thievingFailureChestOffset);
+	this->thievingEntranceNoGuardsChance = readU8(exeBytes,thievingEntranceNoGuardsChanceOffset);
+	this->thievingPickpocketJunkThreshold = readU16(exeBytes,thievingPickpocketJunkThresholdOffset);
+	this->thievingPickpocketMaxGold = readU8(exeBytes,thievingPickpocketMaxGoldOffset);
+	this->thievingMagicallyHeldLockDifficultyThreshold = readU8(exeBytes, thievingMagicallyHeldLockDifficultyThresholdOffset);
 
 	return true;
 }

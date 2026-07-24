@@ -669,6 +669,18 @@ struct ExeDataThieving
 	std::string thievingFailure;
 	std::string thievingFailureChest;
 
+	// Chance that no guards will spawn when the player fails an attempt to pick a locked entrance.
+	uint8_t thievingEntranceNoGuardsChance;
+
+	// Compared against a random number when pickpocketing to determine whether a junk message is shown or gold pieces are received.
+	uint16_t thievingPickpocketJunkThreshold;
+
+	// Maximum amount of gold pieces the player can get from a pickpocket attempt.
+	uint8_t thievingPickpocketMaxGold;
+
+	// Locks with difficulty levels of this value or higher show the "magically-held lock" message when examined.
+	uint8_t thievingMagicallyHeldLockDifficultyThreshold;
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
