@@ -1875,6 +1875,18 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	constexpr int sceneViewCenterY = ArenaRenderUtils::SCENE_VIEW_HEIGHT / 2;
 	constexpr int barterViewCenterY = 122 / 2;
 
+	GameWorldPopUpClosedCallback returnToCitizenMessageBoxCallback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
+	};
+
+	GameWorldPopUpClosedCallback returnToEquipmentStoreMessageBoxCallback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
+	};
+
 	int listBoxImageY = barterViewCenterY;
 	UiPivotType listBoxImagePivotType = UiPivotType::Middle;
 	std::string listBoxTextureName;
@@ -1903,12 +1915,6 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 		const double ceilingScale = gameState.getActiveCeilingScale();
 		const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
-
-		GameWorldPopUpClosedCallback returnToCitizenMessageBoxCallback = [&uiManager]()
-		{
-			uiManager.disableTopMostContext();
-			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
-		};
 
 		if (state.dialogueWhereIsDetailEntries.empty())
 		{
@@ -2000,7 +2006,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(30, 28);
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 275;
-		listBoxTextureHeight = 80;
+		listBoxTextureHeight = 72;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
 
@@ -2012,12 +2018,39 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			const ItemDefinitionID sourceItemDefID = sourceItemDefIDs[i];
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
+			const WeaponItemDefinition &sourceWeaponDef = sourceItemDef.weapon;
+			const std::string weaponDisplayName = sourceItemDef.getDisplayName(1);
+			const int weaponHandedness = sourceWeaponDef.handCount;
+			const double weaponWeightKgs = sourceItemDef.getWeight();
+			const int weaponPrice = sourceWeaponDef.basePrice;
+			const std::string displayString = String::format("%-48s%8d%12.1f%8d gp", weaponDisplayName.c_str(), weaponHandedness, weaponWeightKgs, weaponPrice); // @todo UiListBox column support
+
+			listBoxItems.emplace_back(displayString);
+			listBoxItemCallbacks.emplace_back([&game, &uiManager, &itemLibrary, returnToEquipmentStoreMessageBoxCallback, sourceItemDefID, weaponPrice](MouseButtonType)
 			{
-				DebugLogFormat("Buy weapon.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+				uiManager.disableTopMostContext();
+
+				const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(sourceItemDefID);
+				const std::string selectedItemDisplayName = selectedItemDef.getDisplayName(1);
+
+				Player &player = game.player;
+				ItemInventory &playerInventory = player.inventory;
+				const bool canPlayerAffordPurchase = player.gold >= weaponPrice;
+				if (canPlayerAffordPurchase)
+				{
+					playerInventory.insert(sourceItemDefID);
+					player.gold -= weaponPrice;
+
+					const std::string text = String::format("Bought %s\n(TODO bartering)", selectedItemDisplayName.c_str());					
+					GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToEquipmentStoreMessageBoxCallback);
+				}
+				else
+				{
+					const std::string text = String::format("TODO %s is too expensive.", selectedItemDisplayName.c_str());
+					GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, returnToEquipmentStoreMessageBoxCallback);
+				}
 			});
 		}
 
@@ -2029,7 +2062,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(30, 28);
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 275;
-		listBoxTextureHeight = 80;
+		listBoxTextureHeight = 72;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
 
@@ -2058,7 +2091,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 155;
-		listBoxTextureHeight = 65;
+		listBoxTextureHeight = 56;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
@@ -2091,7 +2124,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 155;
-		listBoxTextureHeight = 65;
+		listBoxTextureHeight = 56;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
