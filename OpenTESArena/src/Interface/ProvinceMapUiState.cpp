@@ -1072,12 +1072,13 @@ void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValu
 			const int locationDefIndex = locationInst.getLocationDefIndex();
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 
-			UiListBoxItem listBoxItem;
-			listBoxItem.text = locationInst.getName(locationDef);
-			listBoxItem.callback = [locationIndex](MouseButtonType)
+			UiListBoxItemCallback listBoxItemCallback = [locationIndex](MouseButtonType)
 			{
 				ProvinceMapUI::onSearchResultsListLocationSelected(locationIndex);
 			};
+
+			UiListBoxItem listBoxItem;
+			listBoxItem.init(locationInst.getName(locationDef), std::nullopt, listBoxItemCallback);
 
 			uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 		}

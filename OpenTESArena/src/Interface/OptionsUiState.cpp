@@ -218,9 +218,7 @@ void OptionsUI::onTabButtonSelected(OptionsUiModel::Tab tab)
 	{
 		OptionsUiModel::Option &option = *optionGroup[i];
 
-		UiListBoxItem listBoxItem;
-		listBoxItem.text = GetOptionDisplayText(option);
-		listBoxItem.callback = [&uiManager, listBoxElementInstID, i, &option](MouseButtonType mouseButtonType)
+		UiListBoxItemCallback listBoxItemCallback = [&uiManager, listBoxElementInstID, i, &option](MouseButtonType mouseButtonType)
 		{
 			if (mouseButtonType == MouseButtonType::Left)
 			{
@@ -234,6 +232,9 @@ void OptionsUI::onTabButtonSelected(OptionsUiModel::Tab tab)
 			const std::string newOptionDisplayText = GetOptionDisplayText(option);
 			uiManager.setListBoxItemText(listBoxElementInstID, i, newOptionDisplayText.c_str());
 		};
+
+		UiListBoxItem listBoxItem;
+		listBoxItem.init(GetOptionDisplayText(option), std::nullopt, listBoxItemCallback);
 
 		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 	}

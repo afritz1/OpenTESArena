@@ -1226,8 +1226,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 		};
 
 		UiListBoxItem listBoxItem;
-		listBoxItem.text = std::move(itemDisplayName);
-		listBoxItem.callback = listBoxItemCallback;
+		listBoxItem.init(itemDisplayName, std::nullopt, listBoxItemCallback);
 		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 	}
 
@@ -1892,9 +1891,10 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	std::string listBoxFontName;
 	int listBoxTextureWidth = 0;
 	int listBoxTextureHeight = 0;
+	std::vector<int> listBoxColumnPixelXOffsets = { 0 };
 	Int2 listBoxButtonUpPositionOffset;
 	Int2 listBoxButtonDownPositionOffset;
-	std::vector<std::string> listBoxItems;
+	std::vector<std::vector<std::string>> listBoxItemTextColumns;
 	std::vector<UiListBoxItemCallback> listBoxItemCallbacks;
 
 	switch (listBoxType)
@@ -1929,7 +1929,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			for (int i = 0; i < static_cast<int>(directionsEntries.size()); i++)
 			{
 				const DialogueDirectionsEntry &directionsEntry = directionsEntries[i];
-				listBoxItems.emplace_back(directionsEntry.displayString);
+				listBoxItemTextColumns.emplace_back(std::vector<std::string> { directionsEntry.displayString });
 				listBoxItemCallbacks.emplace_back([&state, &uiManager, &dialogueManager, &exeData, &voxelChunkManager, mapType, playerWorldVoxel, returnToCitizenMessageBoxCallback, directionsEntry](MouseButtonType)
 				{
 					uiManager.disableTopMostContext();
@@ -1975,7 +1975,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		{
 			for (const DialogueDirectionsDetailEntry &detailEntry : state.dialogueWhereIsDetailEntries)
 			{
-				listBoxItems.emplace_back(detailEntry.buildingName);
+				listBoxItemTextColumns.emplace_back(std::vector<std::string> { detailEntry.buildingName });
 				listBoxItemCallbacks.emplace_back([&uiManager, &dialogueManager, &voxelChunkManager, playerWorldVoxel, returnToCitizenMessageBoxCallback, detailEntry](MouseButtonType)
 				{
 					uiManager.disableTopMostContext();
@@ -2005,6 +2005,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 275;
 		listBoxTextureHeight = 72;
+		listBoxColumnPixelXOffsets = { 0, 170, 197, 218, 253 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
 
@@ -2023,9 +2024,14 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			const int weaponHandedness = sourceWeaponDef.handCount;
 			const double weaponWeightKgs = sourceItemDef.getWeight();
 			const int weaponPrice = sourceWeaponDef.basePrice;
-			const std::string displayString = String::format("%-48s%8d%12.1f%8d gp", weaponDisplayName.c_str(), weaponHandedness, weaponWeightKgs, weaponPrice); // @todo UiListBox column support
 
-			listBoxItems.emplace_back(displayString);
+			const std::string weaponHandednessString = String::format("%-8d", weaponHandedness);
+			const std::string weaponWeightString = String::format("%-.1f", weaponWeightKgs);
+			const std::string weaponPriceString = String::format("%10d", weaponPrice);
+			const std::string weaponPriceUnitString = "gp";
+			std::vector<std::string> weaponTextColumns = { weaponDisplayName, weaponHandednessString, weaponWeightString, weaponPriceString, weaponPriceUnitString };
+			listBoxItemTextColumns.emplace_back(std::move(weaponTextColumns));
+
 			listBoxItemCallbacks.emplace_back([&game, &uiManager, &itemLibrary, returnToEquipmentStoreMessageBoxCallback, sourceItemDefID, weaponPrice](MouseButtonType)
 			{
 				uiManager.disableTopMostContext();
@@ -2041,7 +2047,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 					playerInventory.insert(sourceItemDefID);
 					player.gold -= weaponPrice;
 
-					const std::string text = String::format("Bought %s\n(TODO bartering)", selectedItemDisplayName.c_str());					
+					const std::string text = String::format("Bought %s for %d gold.\n(TODO bartering)", selectedItemDisplayName.c_str(), weaponPrice);
 					GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToEquipmentStoreMessageBoxCallback);
 				}
 				else
@@ -2073,7 +2079,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
 				DebugLogFormat("Buy armor.");
@@ -2106,7 +2112,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
 				DebugLogFormat("Sell item.");
@@ -2143,7 +2149,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
 				DebugLogFormat("Repair item.");
@@ -2172,7 +2178,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
 				DebugLogFormat("Buy potion.");
@@ -2201,7 +2207,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
 				DebugLogFormat("Buy magic item.");
@@ -2233,7 +2239,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 		for (int i = 0; i < static_cast<int>(spellNames.size()); i++)
 		{
-			listBoxItems.emplace_back(spellNames[i]);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { spellNames[i] });
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
 				DebugLogFormat("Buy spell.");
@@ -2257,7 +2263,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (int i = 0; i < drinkNames.getCount(); i++)
 		{
 			const std::string &drinkName = drinkNames[i];
-			listBoxItems.emplace_back(drinkName);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { drinkName });
 			listBoxItemCallbacks.emplace_back([&uiManager, &exeData, drinkName](MouseButtonType)
 			{
 				uiManager.disableTopMostContext();
@@ -2291,7 +2297,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		Span<const std::string> roomTypes = exeData.services.tavernRoomTypes;
 		for (int i = 0; i < roomTypes.getCount(); i++)
 		{
-			listBoxItems.emplace_back(roomTypes[i]);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { roomTypes[i] });
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
 				DebugLogFormat("Rent room %d.", i);
@@ -2313,7 +2319,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 		if (player.effectsState.isDiseased())
 		{
-			listBoxItems.emplace_back(exeData.status.effectNames[0]);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { exeData.status.effectNames[0] });
 			listBoxItemCallbacks.emplace_back([&uiManager](MouseButtonType)
 			{
 				DebugLogFormat("Cure disease.");
@@ -2348,15 +2354,16 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	UiListBoxInitInfo listBoxInitInfo;
 	listBoxInitInfo.textureWidth = listBoxTextureWidth;
 	listBoxInitInfo.textureHeight = listBoxTextureHeight;
+	listBoxInitInfo.columnPixelXOffsets = listBoxColumnPixelXOffsets;
 	listBoxInitInfo.itemPixelSpacing = 0;
 	listBoxInitInfo.fontName = listBoxFontName;
 	listBoxInitInfo.defaultTextColor = Color(190, 113, 0);
 	const UiElementInstanceID listBoxElementInstID = uiManager.createListBox(listBoxElementInitInfo, listBoxInitInfo, state.conversationModalContextInstID, renderer);
 
-	for (int i = 0; i < static_cast<int>(listBoxItems.size()); i++)
+	for (int i = 0; i < static_cast<int>(listBoxItemTextColumns.size()); i++)
 	{
 		UiListBoxItem listBoxItem;
-		listBoxItem.text = listBoxItems[i];
+		listBoxItem.textColumns = listBoxItemTextColumns[i];
 		listBoxItem.callback = listBoxItemCallbacks[i];
 		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 	}

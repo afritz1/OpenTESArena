@@ -250,9 +250,7 @@ void CharacterEquipmentUI::create(Game &game)
 		const InventoryUiModel::ItemUiDefinition &itemUiDef = itemUiDefs.get(i);
 
 		UiListBoxItem listBoxItem;
-		listBoxItem.text = itemUiDef.text;
-		listBoxItem.overrideColor = itemUiDef.color;
-		listBoxItem.callback = MakeInventoryListBoxItemCallback(game, inventoryListBoxElementInstID, i);
+		listBoxItem.init(itemUiDef.text, itemUiDef.color, MakeInventoryListBoxItemCallback(game, inventoryListBoxElementInstID, i));
 
 		uiManager.insertBackListBoxItem(inventoryListBoxElementInstID, std::move(listBoxItem));
 	}

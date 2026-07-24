@@ -111,8 +111,11 @@ public:
 
 	UiElementInstanceID createListBox(const UiElementInitInfo &initInfo, const UiListBoxInitInfo &listBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);
 	int getListBoxItemCount(UiElementInstanceID elementInstID) const;
+	int getListBoxColumnCount(UiElementInstanceID elementInstID) const;
+	int getListBoxColumnPixelXOffset(UiElementInstanceID elementInstID, int column) const;
 	Rect getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const;
 	const UiListBoxItemCallback &getListBoxItemCallback(UiElementInstanceID elementInstID, int itemIndex) const;
+	void setListBoxItemTextAtColumn(UiElementInstanceID elementInstID, int index, int column, const char *text);
 	void setListBoxItemText(UiElementInstanceID elementInstID, int index, const char *text);
 	void setListBoxItemColorOverride(UiElementInstanceID elementInstID, int index, const std::optional<Color> &color);
 	int getListBoxHoveredItemIndex(UiElementInstanceID elementInstID, const InputManager &inputManager, const Window &window) const;

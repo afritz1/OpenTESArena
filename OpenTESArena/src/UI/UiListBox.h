@@ -16,6 +16,7 @@ struct UiListBoxInitInfo
 {
 	int textureWidth;
 	int textureHeight;
+	std::vector<int> columnPixelXOffsets;
 	int itemPixelSpacing;
 	std::string fontName;
 	Color defaultTextColor; // Color of item text unless overridden.
@@ -29,11 +30,14 @@ using UiListBoxItemCallback = std::function<void(MouseButtonType mouseButtonType
 
 struct UiListBoxItem
 {
-	std::string text;
+	std::vector<std::string> textColumns;
 	std::optional<Color> overrideColor;
 	UiListBoxItemCallback callback;
 
 	UiListBoxItem();
+
+	void init(Span<const std::string> textColumns, const std::optional<Color> &overrideColor, const UiListBoxItemCallback &callback);
+	void init(const std::string &text, const std::optional<Color> &overrideColor, const UiListBoxItemCallback &callback);
 };
 
 struct UiListBox
@@ -41,6 +45,8 @@ struct UiListBox
 	UiTextureID textureID; // Owned by UI manager.
 	int textureWidth;
 	int textureHeight;
+
+	std::vector<int> columnPixelXOffsets;
 
 	int itemPixelSpacing;
 	int fontDefIndex; // Index in font library.
@@ -55,8 +61,8 @@ struct UiListBox
 
 	UiListBox();
 
-	void init(UiTextureID textureID, int textureWidth, int textureHeight, int itemPixelSpacing, int fontDefIndex,
-		Color defaultTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale);
+	void init(UiTextureID textureID, int textureWidth, int textureHeight, Span<const int> columnPixelXOffsets, int itemPixelSpacing,
+		int fontDefIndex, Color defaultTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale);
 
 	void free(Renderer &renderer);
 
