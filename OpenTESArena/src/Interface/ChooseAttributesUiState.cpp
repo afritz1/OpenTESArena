@@ -16,6 +16,8 @@
 #include "../World/CardinalDirection.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
+#include "components/utilities/String.h"
+
 namespace
 {
 	constexpr char ContextName_InitialPopUp[] = "ChooseAttributesInitialPopUp";
@@ -32,9 +34,7 @@ namespace
 
 	std::string GetPrimaryAttributeTextBoxElementName(const char *attributeName)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "ChooseAttributes%sTextBox", attributeName);
-		return std::string(elementName);
+		return String::format("ChooseAttributes%sTextBox", attributeName);
 	}
 
 	std::string GetDerivedAttributeTextBoxElementName(const char *attributeName)
@@ -44,9 +44,7 @@ namespace
 
 	std::string GetPrimaryAttributeUpDownButtonElementName(const char *attributeName, bool up)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "ChooseAttributes%s%sButton", attributeName, up ? "Up" : "Down");
-		return std::string(elementName);
+		return String::format("ChooseAttributes%s%sButton", attributeName, up ? "Up" : "Down");
 	}
 
 	void OnPrimaryAttributeButtonSelected(int attributeIndex)

@@ -6,6 +6,8 @@
 #include "../Input/InputActionName.h"
 #include "../UI/UiPivotType.h"
 
+#include "components/utilities/String.h"
+
 namespace
 {
 	constexpr char ContextName_PopUp[] = "LoadSavePopUp";
@@ -14,16 +16,12 @@ namespace
 
 	std::string GetEntryTextBoxElementName(int index)
 	{
-		char elementName[32];
-		std::snprintf(elementName, sizeof(elementName), "LoadSaveEntryTextBox%d", index);
-		return std::string(elementName);
+		return String::format("LoadSaveEntryTextBox%d", index);
 	}
 
 	std::string GetEntryButtonElementName(int index)
 	{
-		char elementName[32];
-		std::snprintf(elementName, sizeof(elementName), "LoadSaveEntryButton%d", index);
-		return std::string(elementName);
+		return String::format("LoadSaveEntryButton%d", index);
 	}
 }
 

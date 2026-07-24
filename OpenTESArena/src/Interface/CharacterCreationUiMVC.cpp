@@ -260,12 +260,11 @@ std::string ChooseClassUiModel::getFullTooltipText(const CharacterClassDefinitio
 	const std::string shieldTooltipText = ChooseClassUiModel::getShieldTooltipText(charClassDef);
 	const std::string weaponTooltipText = ChooseClassUiModel::getWeaponTooltipText(charClassDef, game);
 
-	char buffer[1024];
-	std::snprintf(buffer, sizeof(buffer), "%s (%s class)\n\n%s cast magic\nHealth die: d%d\nArmors: %s\nShields: %s\nWeapons: %s",
+	const std::string text = String::format("%s (%s class)\n\n%s cast magic\nHealth die: d%d\nArmors: %s\nShields: %s\nWeapons: %s",
 		charClassDef.name, charClassDef.categoryName, castsMagicPrefix, charClassDef.healthDie,
 		armorTooltipText.c_str(), shieldTooltipText.c_str(), weaponTooltipText.c_str());
 
-	return std::string(buffer);
+	return text;
 }
 
 std::string ChooseGenderUiModel::getTitleText(Game &game)

@@ -10,6 +10,8 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/TextRenderUtils.h"
 
+#include "components/utilities/String.h"
+
 void InventoryUiModel::ItemUiDefinition::init(const std::string &text, const Color &color)
 {
 	this->text = text;
@@ -33,8 +35,7 @@ Buffer<InventoryUiModel::ItemUiDefinition> InventoryUiModel::getPlayerInventoryI
 
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
 
-		char itemDisplayName[64];
-		std::snprintf(std::begin(itemDisplayName), std::size(itemDisplayName), "%s (%.1fkg)", itemDef.getDisplayName(itemInst.stackAmount).c_str(), itemDef.getWeight());
+		std::string itemDisplayName = String::format("%s (%.1fkg)", itemDef.getDisplayName(itemInst.stackAmount).c_str(), itemDef.getWeight());
 		const Color itemTextColor = InventoryUiView::getItemDisplayColor(itemInst, player);
 
 		ItemUiDefinition itemUiDef;

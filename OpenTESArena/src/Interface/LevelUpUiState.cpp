@@ -9,6 +9,8 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/UiPivotType.h"
 
+#include "components/utilities/String.h"
+
 namespace
 {
 	constexpr char ContextName_RemainingPointsPopUp[] = "LevelUpRemainingPointsPopUp";
@@ -22,9 +24,7 @@ namespace
 
 	std::string GetPrimaryAttributeTextBoxElementName(const char *attributeName)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "LevelUp%sTextBox", attributeName);
-		return std::string(elementName);
+		return String::format("LevelUp%sTextBox", attributeName);
 	}
 
 	std::string GetDerivedAttributeTextBoxElementName(const char *attributeName)
@@ -34,9 +34,7 @@ namespace
 
 	std::string GetPrimaryAttributeUpDownButtonElementName(const char *attributeName, bool up)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "LevelUp%s%sButton", attributeName, up ? "Up" : "Down");
-		return std::string(elementName);
+		return String::format("LevelUp%s%sButton", attributeName, up ? "Up" : "Down");
 	}
 
 	void OnPrimaryAttributeButtonSelected(int attributeIndex)

@@ -5,6 +5,8 @@
 #include "MathUtils.h"
 #include "Matrix4.h"
 
+#include "components/utilities/String.h"
+
 template<typename T>
 Matrix4<T>::Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z,
 	const Vector4f<T> &w)
@@ -257,13 +259,11 @@ T Matrix4<T>::getDeterminant() const
 template<typename T>
 std::string Matrix4<T>::toString() const
 {
-	char buffer[512];
-	std::snprintf(buffer, std::size(buffer), "|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|",
+	return String::format("|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|\n|%.2f, %.2f, %.2f, %.2f|",
 		this->x.x, this->y.x, this->z.x, this->w.x,
 		this->x.y, this->y.y, this->z.y, this->w.y,
 		this->x.z, this->y.z, this->z.z, this->w.z,
 		this->x.w, this->y.w, this->z.w, this->w.w);
-	return std::string(buffer);
 }
 
 // Template instantiations.

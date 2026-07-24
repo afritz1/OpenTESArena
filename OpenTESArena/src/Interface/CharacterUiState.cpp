@@ -5,13 +5,13 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 
+#include "components/utilities/String.h"
+
 namespace
 {
 	std::string GetPrimaryAttributeTextBoxElementName(const char *attributeName)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "Character%sTextBox", attributeName);
-		return std::string(elementName);
+		return String::format("Character%sTextBox", attributeName);
 	}
 
 	std::string GetDerivedAttributeTextBoxElementName(const char *attributeName)

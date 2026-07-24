@@ -28,16 +28,12 @@ namespace
 
 	std::string GetLocationIconImageElementName(const LocationDefinition &locationDef)
 	{
-		char elementName[96];
-		std::snprintf(elementName, sizeof(elementName), "ProvinceMapLocationIconImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
-		return elementName;
+		return String::format("ProvinceMapLocationIconImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
 	}
 
 	std::string GetLocationIconHighlightImageElementName(const LocationDefinition &locationDef)
 	{
-		char elementName[96];
-		std::snprintf(elementName, sizeof(elementName), "ProvinceMapLocationIconHighlightImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
-		return elementName;
+		return String::format("ProvinceMapLocationIconHighlightImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
 	}
 }
 

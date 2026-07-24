@@ -9,7 +9,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Math/Random.h"
 
-#include "components/dos/DOSUtils.h"
+#include "components/utilities/String.h"
 
 namespace
 {
@@ -105,8 +105,8 @@ Buffer<Color> ArenaWeatherUtils::makeSkyColors(ArenaWeatherType weatherType, Tex
 
 Buffer<uint8_t> ArenaWeatherUtils::makeThunderstormColors(const ExeData &exeData)
 {
-	const auto &srcColors = exeData.weather.thunderstormFlashColors;
-	Buffer<uint8_t> colors(static_cast<int>(std::size(srcColors)));
+	const Span<const uint8_t> srcColors = exeData.weather.thunderstormFlashColors;
+	Buffer<uint8_t> colors(srcColors.getCount());
 	std::copy(std::begin(srcColors), std::end(srcColors), colors.begin());
 	return colors;
 }
@@ -118,9 +118,7 @@ Buffer<Buffer<TextureAsset>> ArenaWeatherUtils::makeLightningBoltTextureAssets(T
 
 	for (int i = 0; i < fileCount; i++)
 	{
-		char filename[DOSUtils::FilenameBufferSize];
-		std::snprintf(filename, sizeof(filename), "LGLIT0%d.CFA", i + 1);
-
+		const std::string filename = String::format("LGLIT0%d.CFA", i + 1);
 		Buffer<TextureAsset> textureAssets = TextureUtils::makeTextureAssets(filename, textureManager);
 		textureAssetBuffers.set(i, std::move(textureAssets));
 	}

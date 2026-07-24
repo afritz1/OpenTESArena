@@ -14,6 +14,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 CharacterEquipmentPresentationState::CharacterEquipmentPresentationState()
 {
@@ -27,10 +28,7 @@ std::string CharacterSheetUiModel::getStatusValueCurrentAndMaxString(double curr
 {
 	const int currentInt = static_cast<int>(std::round(currentValue));
 	const int maxInt = static_cast<int>(std::round(maxValue));
-
-	char buffer[64];
-	std::snprintf(buffer, sizeof(buffer), "%d/%d", currentInt, maxInt);
-	return std::string(buffer);
+	return String::format("%d/%d", currentInt, maxInt);
 }
 
 std::string CharacterSheetUiModel::getDerivedAttributeDisplayString(int value)
@@ -41,9 +39,7 @@ std::string CharacterSheetUiModel::getDerivedAttributeDisplayString(int value)
 		signString = "+";
 	}
 
-	char buffer[64];
-	std::snprintf(buffer, sizeof(buffer), "%s%d", signString, value);
-	return buffer;
+	return String::format("%s%d", signString, value);
 }
 
 std::string CharacterSheetUiModel::getPlayerName(Game &game)

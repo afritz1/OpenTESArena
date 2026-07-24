@@ -71,9 +71,7 @@ std::string ArenaCityUtils::generateInfName(ArenaClimateType climateType, Weathe
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(weatherType)));
 	}
 
-	char buffer[16];
-	std::snprintf(buffer, sizeof(buffer), "%c%c%c.INF", climateLetter, locationLetter, weatherLetter);
-	return std::string(buffer);
+	return String::format("%c%c%c.INF", climateLetter, locationLetter, weatherLetter);
 }
 
 void ArenaCityUtils::writeSkeleton(const MIFLevel &level, Span2D<ArenaVoxelID> &dstFlor, Span2D<ArenaVoxelID> &dstMap1, Span2D<ArenaVoxelID> &dstMap2)

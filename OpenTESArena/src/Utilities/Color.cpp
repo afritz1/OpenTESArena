@@ -3,6 +3,8 @@
 #include "Color.h"
 #include "../Math/Random.h"
 
+#include "components/utilities/String.h"
+
 Color Color::randomRGBA(Random &random)
 {
 	return Color(
@@ -34,9 +36,7 @@ bool Color::operator!=(const Color &other) const
 
 std::string Color::toString() const
 {
-	char buffer[64];
-	std::snprintf(buffer, std::size(buffer), "%d, %d, %d, %d", this->r, this->g, this->b, this->a);
-	return std::string(buffer);
+	return String::format("%d, %d, %d, %d", this->r, this->g, this->b, this->a);
 }
 
 ColorReal ColorReal::randomRGBA(Random &random)
@@ -100,9 +100,7 @@ bool ColorReal::operator!=(const ColorReal &other) const
 
 std::string ColorReal::toString() const
 {
-	char buffer[64];
-	std::snprintf(buffer, std::size(buffer), "(%.2f, %.2f, %.2f, %.2f)", this->r, this->g, this->b, this->a);
-	return std::string(buffer);
+	return String::format("(%.2f, %.2f, %.2f, %.2f)", this->r, this->g, this->b, this->a);
 }
 
 uint32_t ColorReal::toRGBA() const

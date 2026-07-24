@@ -4,6 +4,7 @@
 #include "ItemDefinition.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 namespace
 {
@@ -235,11 +236,7 @@ std::string ItemDefinition::getDisplayName(int stackAmount) const
 	case ItemType::Armor:
 		return this->armor.name;
 	case ItemType::Consumable:
-	{
-		char displayName[64];
-		std::snprintf(displayName, sizeof(displayName), "%s (%d)", this->consumable.name, stackAmount);		
-		return displayName;
-	}
+		return String::format("%s (%d)", this->consumable.name, stackAmount);
 	case ItemType::Gold:
 		return (stackAmount == 1) ? this->gold.nameSingular : this->gold.namePlural;
 	case ItemType::Misc:

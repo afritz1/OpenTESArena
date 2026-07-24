@@ -3,6 +3,8 @@
 #include "PauseMenuUiState.h"
 #include "../Game/Game.h"
 
+#include "components/utilities/String.h"
+
 namespace
 {
 	constexpr char ElementName_HighlightImage[] = "OptionsHighlightImage";
@@ -11,9 +13,7 @@ namespace
 
 	std::string GetOptionDisplayText(const OptionsUiModel::Option &option)
 	{
-		char displayText[96];
-		std::snprintf(displayText, sizeof(displayText), "%s: %s", option.name.c_str(), option.getDisplayedValue().c_str());
-		return std::string(displayText);
+		return String::format("%s: %s", option.name.c_str(), option.getDisplayedValue().c_str());
 	}
 
 	const OptionsUiModel::OptionGroup &GetOptionGroupForTab(OptionsUiModel::Tab tab)

@@ -1,23 +1,16 @@
-#include <array>
-#include <cstdio>
-
 #include "ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
 
-#include "components/dos/DOSUtils.h"
+#include "components/utilities/String.h"
 
 std::string ArenaPortraitUtils::getHeads(bool male, int raceID, bool trimmed)
 {
-	char filename[DOSUtils::FilenameBufferSize];
-	std::snprintf(filename, sizeof(filename), "FACES%s%d%d.CIF", male ? "" : "F", trimmed ? 0 : 1, raceID);
-	return std::string(filename);
+	return String::format("FACES%s%d%d.CIF", male ? "" : "F", trimmed ? 0 : 1, raceID);
 }
 
 std::string ArenaPortraitUtils::getBody(bool male, int raceID)
 {
-	char filename[DOSUtils::FilenameBufferSize];
-	std::snprintf(filename, sizeof(filename), "%s0%d.IMG", male ? "CHARBK" : "CHRBKF", raceID);
-	return std::string(filename);
+	return String::format("%s0%d.IMG", male ? "CHARBK" : "CHRBKF", raceID);
 }
 
 const std::string &ArenaPortraitUtils::getShirt(bool male, bool magic)

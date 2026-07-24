@@ -76,9 +76,7 @@ namespace
 
 	std::string GetKeyImageElementName(int keyIndex)
 	{
-		char elementName[32];
-		std::snprintf(elementName, sizeof(elementName), "GameWorldKey%dImage", keyIndex);
-		return std::string(elementName);
+		return String::format("GameWorldKey%dImage", keyIndex);
 	}
 
 	bool IsPlayerWeaponVisible(const Player &player)

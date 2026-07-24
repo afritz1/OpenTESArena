@@ -6,6 +6,8 @@
 #include "Random.h"
 #include "Vector2.h"
 
+#include "components/utilities/String.h"
+
 // -- Vector2i --
 
 template<typename T>
@@ -73,9 +75,7 @@ Vector2i<T> Vector2i<T>::operator/(const Vector2i<T> &v) const
 template<typename T>
 std::string Vector2i<T>::toString() const
 {
-	char buffer[64];
-	std::snprintf(buffer, std::size(buffer), "%d, %d", this->x, this->y);
-	return std::string(buffer);
+	return String::format("%d, %d", this->x, this->y);
 }
 
 template<typename T>
@@ -183,9 +183,7 @@ Vector2f<T> Vector2f<T>::operator/(const Vector2f<T> &v) const
 template<typename T>
 std::string Vector2f<T>::toString() const
 {
-	char buffer[64];
-	std::snprintf(buffer, std::size(buffer), "%.2f, %.2f", this->x, this->y);
-	return std::string(buffer);
+	return String::format("%.2f, %.2f", this->x, this->y);
 }
 
 template<typename T>

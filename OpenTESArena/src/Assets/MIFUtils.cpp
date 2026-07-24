@@ -5,8 +5,8 @@
 #include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
-#include "components/dos/DOSUtils.h"
 #include "components/utilities/Bytes.h"
+#include "components/utilities/String.h"
 
 namespace MIFUtils
 {
@@ -34,10 +34,7 @@ std::string MIFUtils::makeMainQuestDungeonMifName(int dungeonX, int dungeonY, in
 {
 	uint32_t mifID = (dungeonY << 16) + dungeonX + provinceID;
 	mifID = static_cast<uint32_t>(-static_cast<int32_t>(Bytes::rol(mifID, 5)));
-
-	char buffer[DOSUtils::FilenameBufferSize];
-	std::snprintf(buffer, sizeof(buffer), "%d.MIF", mifID);
-	return std::string(buffer);
+	return String::format("%d.MIF", mifID);
 }
 
 int MIFUtils::getCityBlockCodeCount()
@@ -75,17 +72,14 @@ const std::string &MIFUtils::getCityBlockRotation(int index)
 
 std::string MIFUtils::makeCityBlockMifName(const char *blockCode, int variation, const char *rotation)
 {
-	char buffer[DOSUtils::FilenameBufferSize];
-	std::snprintf(buffer, sizeof(buffer), "%sBD%d%s.MIF", blockCode, variation, rotation);
-	return std::string(buffer);
+	return String::format("%sBD%d%s.MIF", blockCode, variation, rotation);
 }
 
 std::string MIFUtils::makeCityBlockMifName(BlockType blockType, ArenaRandom &random)
 {
 	const int blockIndex = static_cast<int>(blockType) - 2;
 	const std::string &blockCode = MIFUtils::getCityBlockCode(blockIndex);
-	const std::string &rotation = MIFUtils::getCityBlockRotation(
-		random.next() % MIFUtils::getCityBlockRotationCount());
+	const std::string &rotation = MIFUtils::getCityBlockRotation(random.next() % MIFUtils::getCityBlockRotationCount());
 	const int variationCount = MIFUtils::getCityBlockVariations(blockIndex);
 	const int variation = std::max(random.next() % variationCount, 1);
 	return MIFUtils::makeCityBlockMifName(blockCode.c_str(), variation, rotation.c_str());
