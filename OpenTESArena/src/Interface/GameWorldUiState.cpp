@@ -2204,15 +2204,14 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			return itemDef.type == ItemType::Consumable;
 		});
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Buy potion.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
+			const std::string consumableDisplayName = sourceItemDef.getDisplayName(1);
+			const int consumableGoldPrice = sourceItemDef.getGoldValue();
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { consumableDisplayName });
+
+			listBoxItemCallbacks.emplace_back(makeListBoxItemPurchaseCallback(sourceItemDefID, consumableGoldPrice, returnToMagesGuildMessageBoxCallback));
 		}
 
 		break;
@@ -2233,15 +2232,14 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			return (itemDef.type == ItemType::Accessory) || (itemDef.type == ItemType::Trinket);
 		});
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Buy magic item.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
+			const std::string sourceItemDisplayName = sourceItemDef.getDisplayName(1);
+			const int sourceItemGoldPrice = sourceItemDef.getGoldValue();
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDisplayName });
+
+			listBoxItemCallbacks.emplace_back(makeListBoxItemPurchaseCallback(sourceItemDefID, sourceItemGoldPrice, returnToMagesGuildMessageBoxCallback));
 		}
 
 		break;
@@ -2269,10 +2267,11 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (int i = 0; i < static_cast<int>(spellNames.size()); i++)
 		{
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { spellNames[i] });
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			listBoxItemCallbacks.emplace_back([&uiManager, returnToMagesGuildMessageBoxCallback](MouseButtonType)
 			{
-				DebugLogFormat("Buy spell.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+				uiManager.disableTopMostContext();
+				const std::string text = "Spells not implemented.";
+				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToMagesGuildMessageBoxCallback);
 			});
 		}
 
@@ -2293,21 +2292,20 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		{
 			const std::string &drinkName = drinkNames[i];
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { drinkName });
-			listBoxItemCallbacks.emplace_back([&uiManager, &exeData, drinkName](MouseButtonType)
+			listBoxItemCallbacks.emplace_back([&uiManager, &exeData, returnToTavernMessageBoxCallback, drinkName](MouseButtonType)
 			{
 				uiManager.disableTopMostContext();
 
 				std::string consumeDrinkText = String::replace(exeData.services.tavernConsumeDrink, "%s", drinkName);
 				consumeDrinkText = String::distributeNewlines(consumeDrinkText, 60);
 
-				GameWorldPopUpClosedCallback consumeDrinkOnCloseCallback = [&uiManager]()
+				GameWorldPopUpClosedCallback consumeDrinkOnCloseCallback = [&uiManager, returnToTavernMessageBoxCallback]()
 				{
 					// @todo make player drunk
-					uiManager.disableTopMostContext();
-					GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
+					returnToTavernMessageBoxCallback();
 				};
 
-				GameWorldUI::showTextPopUp(consumeDrinkText.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, consumeDrinkOnCloseCallback);
+				GameWorldUI::showTextPopUp(consumeDrinkText.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, consumeDrinkOnCloseCallback);
 			});
 		}
 
@@ -2327,10 +2325,16 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (int i = 0; i < roomTypes.getCount(); i++)
 		{
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { roomTypes[i] });
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			listBoxItemCallbacks.emplace_back([&game, &uiManager, returnToTavernMessageBoxCallback, i](MouseButtonType)
 			{
-				DebugLogFormat("Rent room %d.", i);
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+				uiManager.disableTopMostContext();
+
+				//Player &player = game.player;
+				// @todo assign rented bed somewhere. GameState::rentedBedSecondsRemaining probably
+				// @todo auto set it to 24 hours
+
+				const std::string text = "TODO rent a room for 24 hrs.\n(TODO bartering)";
+				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToTavernMessageBoxCallback);
 			});
 		}
 
@@ -2349,10 +2353,15 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		if (player.effectsState.isDiseased())
 		{
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { exeData.status.effectNames[0] });
-			listBoxItemCallbacks.emplace_back([&uiManager](MouseButtonType)
+			listBoxItemCallbacks.emplace_back([&game, &uiManager, returnToTempleMessageBoxCallback](MouseButtonType)
 			{
-				DebugLogFormat("Cure disease.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+				uiManager.disableTopMostContext();
+
+				Player &player = game.player;
+				player.effectsState.cureDisease();
+
+				const std::string text = "You are cured.\n(TODO bartering)";
+				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToTempleMessageBoxCallback);
 			});
 		}
 
