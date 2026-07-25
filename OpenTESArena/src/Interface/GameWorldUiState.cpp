@@ -301,22 +301,6 @@ void GameWorldUiState::init(Game &game)
 
 	this->statusBarsTextureID = GameWorldUiView::allocStatusBarsTexture(textureManager, renderer);
 
-	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
-	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
-	this->weaponAnimTextureIDs.init(weaponAnimDef.frameCount);
-	for (int i = 0; i < weaponAnimDef.frameCount; i++)
-	{
-		const WeaponAnimationDefinitionFrame &weaponAnimDefFrame = weaponAnimDef.frames[i];
-		const TextureAsset &weaponAnimDefFrameTextureAsset = weaponAnimDefFrame.textureAsset;
-		const std::string &weaponAnimDefFrameTextureFilename = weaponAnimDefFrameTextureAsset.filename;
-		DebugAssert(weaponAnimDefFrameTextureAsset.index >= 0);
-		const int weaponAnimDefFrameTextureIndex = weaponAnimDefFrameTextureAsset.index;
-		// @todo: some WeaponAnimationDefinitionFrames are duplicates, this can cause duplicate UiTextureID allocations, maybe map TextureAsset to UiTextureID to avoid it
-		const UiTextureID weaponTextureID = GameWorldUiView::allocWeaponAnimTexture(weaponAnimDefFrameTextureFilename, weaponAnimDefFrameTextureIndex, textureManager, renderer);
-		this->weaponAnimTextureIDs.set(i, weaponTextureID);
-	}
-
 	const int keyTextureCount = GameWorldUiView::getKeyTextureCount(textureManager);
 	this->keyTextureIDs.init(keyTextureCount);
 	for (int i = 0; i < keyTextureCount; i++)
@@ -355,16 +339,6 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 	{
 		renderer.freeUiTexture(this->statusBarsTextureID);
 		this->statusBarsTextureID = -1;
-	}
-
-	if (this->weaponAnimTextureIDs.isValid())
-	{
-		for (const UiTextureID textureID : this->weaponAnimTextureIDs)
-		{
-			renderer.freeUiTexture(textureID);
-		}
-
-		this->weaponAnimTextureIDs.clear();
 	}
 
 	if (this->keyTextureIDs.isValid())
@@ -465,6 +439,7 @@ void GameWorldUI::create(Game &game)
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
 
 	const bool isModernInterface = options.getGraphics_ModernInterface();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiElementInitInfo weaponAnimImageElementInitInfo;
 	weaponAnimImageElementInitInfo.name = WeaponImageElementName;
@@ -472,7 +447,9 @@ void GameWorldUI::create(Game &game)
 	weaponAnimImageElementInitInfo.drawOrder = 0;
 	weaponAnimImageElementInitInfo.renderSpace = isModernInterface ? UiRenderSpace::Native : UiRenderSpace::Classic;
 
-	const UiTextureID dummyWeaponAnimImageTextureID = state.weaponAnimTextureIDs[0];
+	const WeaponAnimationDefinition &dummyWeaponAnimDef = WeaponAnimationLibrary::getInstance().getDefinition(ArenaItemUtils::FistsWeaponID);
+	const TextureAsset &dummyWeaponAnimFrameTextureAsset = dummyWeaponAnimDef.frames[0].textureAsset;
+	const UiTextureID dummyWeaponAnimImageTextureID = uiManager.getOrAddTexture(dummyWeaponAnimFrameTextureAsset, paletteTextureAsset, textureManager, renderer);
 	uiManager.createImage(weaponAnimImageElementInitInfo, dummyWeaponAnimImageTextureID, state.contextInstID, renderer);
 
 	for (int i = 0; i < state.keyTextureIDs.getCount(); i++)
@@ -519,7 +496,6 @@ void GameWorldUI::create(Game &game)
 
 	const Player &player = game.player;
 	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 	const UiTextureID playerPortraitTextureID = uiManager.getOrAddTexture(playerPortraitTextureAsset, paletteTextureAsset, textureManager, renderer);
 	const UiElementInstanceID playerPortraitImageElementInstID = uiManager.getElementByName(PlayerPortraitImageElementName);
 	uiManager.setImageTexture(playerPortraitImageElementInstID, playerPortraitTextureID);
@@ -679,6 +655,7 @@ void GameWorldUI::update(double dt)
 	Renderer &renderer = game.renderer;
 
 	const bool isModernInterface = options.getGraphics_ModernInterface();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	// Compass
 	const Player &player = game.player;
@@ -704,7 +681,7 @@ void GameWorldUI::update(double dt)
 		const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
 		DebugAssertIndex(weaponAnimDef.frames, weaponAnimFrameIndex);
 		const WeaponAnimationDefinitionFrame &weaponAnimFrame = weaponAnimDef.frames[weaponAnimFrameIndex];
-		const UiTextureID weaponAnimTextureID = state.weaponAnimTextureIDs[weaponAnimFrameIndex];
+		const UiTextureID weaponAnimTextureID = uiManager.getOrAddTexture(weaponAnimFrame.textureAsset, paletteTextureAsset, textureManager, renderer);
 		const std::optional<Int2> weaponTextureDims = renderer.tryGetUiTextureDims(weaponAnimTextureID);
 		DebugAssert(weaponTextureDims.has_value());
 
@@ -793,7 +770,6 @@ void GameWorldUI::update(double dt)
 	{
 		const PlayerStatusGradientType statusGradientType = GameWorldUiModel::getCurrentPlayerStatusGradientType(player);
 		const TextureAsset statusGradientTextureAsset = GameWorldUiView::getStatusGradientTextureAsset(statusGradientType);
-		const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 		const UiTextureID statusGradientTextureID = uiManager.getOrAddTexture(statusGradientTextureAsset, paletteTextureAsset, textureManager, renderer);
 		const UiElementInstanceID statusGradientElementInstID = uiManager.getElementByName(StatusGradientImageElementName);
 		uiManager.setImageTexture(statusGradientElementInstID, statusGradientTextureID);

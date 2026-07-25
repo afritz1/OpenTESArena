@@ -84,7 +84,6 @@ struct GameWorldUiState
 	UiContextInstanceID shopkeeperBgContextInstID; // Just decoration, no interaction.
 
 	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
-	Buffer<UiTextureID> weaponAnimTextureIDs;
 	Buffer<UiTextureID> keyTextureIDs;
 	Buffer<UiTextureID> arrowCursorTextureIDs;
 	UiTextureID playerHurtTextureID;
