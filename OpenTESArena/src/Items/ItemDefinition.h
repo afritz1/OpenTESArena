@@ -180,4 +180,5 @@ struct ItemDefinition
 
 	std::string getDisplayName(int stackAmount) const;
 	double getWeight() const;
+	int getGoldValue() const;
 };

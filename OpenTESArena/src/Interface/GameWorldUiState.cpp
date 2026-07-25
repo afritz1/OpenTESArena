@@ -1884,6 +1884,24 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
 	};
 
+	GameWorldPopUpClosedCallback returnToMagesGuildMessageBoxCallback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
+	};
+
+	GameWorldPopUpClosedCallback returnToTavernMessageBoxCallback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
+	};
+
+	GameWorldPopUpClosedCallback returnToTempleMessageBoxCallback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Temple);
+	};
+
 	auto makeListBoxItemPurchaseCallback = [&game, &uiManager, &itemLibrary](ItemDefinitionID itemDefID, int itemGoldPrice, const GameWorldPopUpClosedCallback &popUpClosedCallback)
 	{
 		return [&game, &uiManager, &itemLibrary, itemDefID, itemGoldPrice, popUpClosedCallback](MouseButtonType)
@@ -2050,7 +2068,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			const std::string weaponDisplayName = sourceItemDef.getDisplayName(1);
 			const int weaponHandedness = sourceWeaponDef.handCount;
 			const double weaponWeightKgs = sourceItemDef.getWeight();
-			const int weaponPrice = sourceWeaponDef.basePrice;
+			const int weaponPrice = sourceItemDef.getGoldValue();
 
 			const std::string weaponHandednessString = String::format("%-8d", weaponHandedness);
 			const std::string weaponWeightString = String::format("%-.1f", weaponWeightKgs);
@@ -2087,7 +2105,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			const ArmorItemDefinition &sourceArmorDef = sourceItemDef.armor;
 			const std::string armorDisplayName = sourceItemDef.getDisplayName(1);
 			const double armorWeightKgs = sourceItemDef.getWeight();
-			const int armorPrice = 1; // @todo calculate armor gold price
+			const int armorPrice = sourceItemDef.getGoldValue();
 
 			const std::string armorProtectedSlotString = "TODO";
 			const std::string armorWeightString = String::format("%-.1f", armorWeightKgs);
@@ -2111,24 +2129,45 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
-		std::vector<ItemDefinitionID> sourceItemDefIDs;
+		std::vector<int> playerInventorySlotIndices;
 		for (int i = 0; i < player.inventory.getTotalSlotCount(); i++)
 		{
 			const ItemInstance &itemInst = player.inventory.getSlot(i);
 			if (itemInst.isValid())
 			{
-				sourceItemDefIDs.emplace_back(itemInst.defID);
+				playerInventorySlotIndices.emplace_back(i);
 			}
 		}
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const int inventorySlotIndex : playerInventorySlotIndices)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
+			const ItemInstance &sourceItemInst = player.inventory.getSlot(inventorySlotIndex);
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemInst.defID);
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			listBoxItemCallbacks.emplace_back([&game, &uiManager, &itemLibrary, returnToEquipmentStoreMessageBoxCallback, inventorySlotIndex](MouseButtonType)
 			{
-				DebugLogFormat("Sell item.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+				uiManager.disableTopMostContext();
+
+				Player &player = game.player;
+				ItemInventory &playerInventory = player.inventory;
+				ItemInstance &selectedItemInst = playerInventory.getSlot(inventorySlotIndex);
+				const bool isSelectedItemEquipped = selectedItemInst.isEquipped;
+				const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(selectedItemInst.defID);
+				const std::string selectedItemDisplayName = selectedItemDef.getDisplayName(1);
+				const int selectedItemGoldValue = selectedItemDef.getGoldValue();
+				player.gold += selectedItemGoldValue;
+				selectedItemInst.clear();
+
+				playerInventory.compact();
+
+				if (isSelectedItemEquipped)
+				{
+					// Reset weapon animation.
+					player.setWeaponAnimationFromItem(player.getEquippedWeaponAnimationDefID());
+				}
+
+				const std::string text = String::format("Sold %s for %d gold.\n(TODO bartering)", selectedItemDisplayName.c_str(), selectedItemGoldValue);
+				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToEquipmentStoreMessageBoxCallback);
 			});
 		}
 
@@ -2144,28 +2183,31 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
-		std::vector<ItemDefinitionID> sourceItemDefIDs;
+		std::vector<int> playerInventorySlotIndices;
 		for (int i = 0; i < player.inventory.getTotalSlotCount(); i++)
 		{
 			const ItemInstance &itemInst = player.inventory.getSlot(i);
 			if (itemInst.isValid())
 			{
 				const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-				if (itemDef.type == ItemType::Weapon || itemDef.type == ItemType::Armor || itemDef.type == ItemType::Shield)
+				const bool isValidItemForRepair = ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
+				if (isValidItemForRepair)
 				{
-					sourceItemDefIDs.emplace_back(itemInst.defID);
+					playerInventorySlotIndices.emplace_back(i);
 				}
 			}
 		}
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const int inventorySlotIndex : playerInventorySlotIndices)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
+			const ItemInstance &sourceItemInst = player.inventory.getSlot(inventorySlotIndex);
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemInst.defID);
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			listBoxItemCallbacks.emplace_back([&uiManager, returnToEquipmentStoreMessageBoxCallback](MouseButtonType)
 			{
-				DebugLogFormat("Repair item.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+				uiManager.disableTopMostContext();
+				const std::string text = "Repairing not implemented.";
+				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToEquipmentStoreMessageBoxCallback);
 			});
 		}
 

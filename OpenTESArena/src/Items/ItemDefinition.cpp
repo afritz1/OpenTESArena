@@ -276,3 +276,28 @@ double ItemDefinition::getWeight() const
 		DebugUnhandledReturnMsg(double, std::to_string(static_cast<int>(this->type)));
 	}
 }
+
+int ItemDefinition::getGoldValue() const
+{
+	switch (this->type)
+	{
+	case ItemType::Accessory:
+		return this->accessory.basePrice;
+	case ItemType::Armor:
+		return 1; // @todo
+	case ItemType::Consumable:
+		return 1; // @todo
+	case ItemType::Gold:
+		return 1;
+	case ItemType::Misc:
+		return 1; // @todo
+	case ItemType::Shield:
+		return 1; // @todo
+	case ItemType::Trinket:
+		return 1; // @todo
+	case ItemType::Weapon:
+		return this->weapon.basePrice;
+	default:
+		DebugUnhandledReturnMsg(double, std::to_string(static_cast<int>(this->type)));
+	}
+}
