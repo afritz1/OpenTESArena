@@ -244,10 +244,10 @@ void CharacterEquipmentUI::create(Game &game)
 	uiManager.setTextBoxText(levelTextBoxElementInstID, playerLevelText.c_str());
 
 	const UiElementInstanceID inventoryListBoxElementInstID = uiManager.getElementByName("CharacterEquipmentInventoryListBox");
-	const Buffer<InventoryUiModel::ItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
-	for (int i = 0; i < itemUiDefs.getCount(); i++)
+	const std::vector<InventoryItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
+	for (int i = 0; i < static_cast<int>(itemUiDefs.size()); i++)
 	{
-		const InventoryUiModel::ItemUiDefinition &itemUiDef = itemUiDefs.get(i);
+		const InventoryItemUiDefinition &itemUiDef = itemUiDefs[i];
 
 		UiListBoxItem listBoxItem;
 		listBoxItem.init(itemUiDef.text, itemUiDef.color, MakeInventoryListBoxItemCallback(game, inventoryListBoxElementInstID, i));

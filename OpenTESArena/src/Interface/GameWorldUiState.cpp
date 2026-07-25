@@ -2133,7 +2133,6 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 				const int selectedItemGoldValue = selectedItemDef.getGoldValue();
 				player.gold += selectedItemGoldValue;
 				selectedItemInst.clear();
-
 				playerInventory.compact();
 
 				if (isSelectedItemEquipped)
