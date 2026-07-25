@@ -189,6 +189,7 @@ void ItemInventory::compact()
 			{
 				ItemInstance &destinationItemInst = this->getSlot(emptyIndex);
 				destinationItemInst.defID = itemInst.defID;
+				destinationItemInst.stackAmount = itemInst.stackAmount;
 				destinationItemInst.isEquipped = itemInst.isEquipped;
 				itemInst.clear();
 			}
