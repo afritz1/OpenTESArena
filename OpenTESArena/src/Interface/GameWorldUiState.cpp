@@ -2137,8 +2137,11 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 				if (isSelectedItemEquipped)
 				{
-					// Reset weapon animation.
-					player.setWeaponAnimationFromItem(player.getEquippedWeaponAnimationDefID());
+					if (selectedItemDef.type == ItemType::Weapon)
+					{
+						// Reset weapon animation.
+						player.setWeaponAnimationFromItem(player.getEquippedWeaponItemDefID());
+					}
 				}
 
 				const std::string text = String::format("Sold %s for %d gold.\n(TODO bartering)", selectedItemDisplayName.c_str(), selectedItemGoldValue);
