@@ -1092,6 +1092,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int citizenRumorsModalWorkAskInTownOffset = GetExeAddress(*section, "CitizenRumorsModalWorkAskInTown");
 	const int citizenWhereIsOptionsCityOffset = GetExeAddress(*section, "CitizenWhereIsOptionsCity");
 	const int citizenWhereIsOptionsWildernessOffset = GetExeAddress(*section, "CitizenWhereIsOptionsWilderness");
+	const int playerGoldRemainingOffset = GetExeAddress(*section, "PlayerGoldRemaining");
 
 	initInt8Array(this->tavernRoomHealModifiers, exeBytes, tavernRoomHealModifiersOffset);
 	this->palaceClosedAtNight = GetExeStringNullTerminated(exeBytes, palaceClosedAtNightOffset);
@@ -1161,6 +1162,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->citizenRumorsModalWorkAskInTown = GetExeStringNullTerminated(exeBytes, citizenRumorsModalWorkAskInTownOffset);
 	initStringArrayNullTerminated(this->citizenWhereIsOptionsCity, exeBytes, citizenWhereIsOptionsCityOffset);
 	initStringArrayNullTerminated(this->citizenWhereIsOptionsWilderness, exeBytes, citizenWhereIsOptionsWildernessOffset);
+	this->playerGoldRemaining = GetExeStringNullTerminated(exeBytes, playerGoldRemainingOffset);
 
 	return true;
 }

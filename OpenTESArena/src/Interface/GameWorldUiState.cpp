@@ -56,6 +56,7 @@ namespace
 	constexpr char CampingHoursTextBoxElementName[] = "GameWorldCampingHoursTextBox";
 
 	constexpr char ConversationModalListBoxElementName[] = "GameWorldConversationModalListBox";
+	constexpr char PlayerGoldTextBoxElementName[] = "GameWorldConversationModalPlayerGoldTextBox";
 
 	constexpr const char *ButtonElementNames[] =
 	{
@@ -1816,6 +1817,8 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 
 	uiManager.addInputActionListener(InputActionName::Back, backInputActionCallback, ContextName_ConversationModal, inputManager);
 
+	GameWorldUI::setShopkeeperPlayerGoldVisible(false);
+
 	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
 
 	const bool isPaused = !game.shouldSimulateScene;
@@ -1918,6 +1921,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	Int2 listBoxButtonDownPositionOffset;
 	std::vector<std::vector<std::string>> listBoxItemTextColumns;
 	std::vector<UiListBoxItemCallback> listBoxItemCallbacks;
+	bool shouldShowPlayerGold = true;
 
 	switch (listBoxType)
 	{
@@ -1932,6 +1936,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxTextureHeight = 81;
 		listBoxButtonUpPositionOffset = Int2(9, 7);
 		listBoxButtonDownPositionOffset = Int2(9, 102);
+		shouldShowPlayerGold = false;
 
 		const double ceilingScale = gameState.getActiveCeilingScale();
 		const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
@@ -2472,6 +2477,8 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	};
 
 	uiManager.addMouseScrollChangedListener(mouseScrollChangedListener, ContextName_ConversationModal, inputManager);
+
+	GameWorldUI::setShopkeeperPlayerGoldVisible(shouldShowPlayerGold);
 
 	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
 }
@@ -3090,6 +3097,37 @@ void GameWorldUI::showShopkeeperBackground(const char *titleText)
 	uiManager.createImage(barterBgImageElementInitInfo, barterBgImageTextureID, state.shopkeeperBgContextInstID, renderer);
 
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, true);
+}
+
+void GameWorldUI::setShopkeeperPlayerGoldVisible(bool visible)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	Renderer &renderer = game.renderer;
+
+	UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(PlayerGoldTextBoxElementName);
+	if (textBoxElementInstID < 0)
+	{
+		UiElementInitInfo textBoxElementInitInfo;
+		textBoxElementInitInfo.name = PlayerGoldTextBoxElementName;
+		textBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
+		textBoxElementInitInfo.pivotType = UiPivotType::Middle;
+		textBoxElementInitInfo.drawOrder = 1;
+
+		UiTextBoxInitInfo textBoxInitInfo;
+		textBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(15);
+		textBoxInitInfo.fontName = ArenaFontName::A;
+		textBoxInitInfo.defaultColor = Color(28, 89, 125);
+		textBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+		textBoxElementInstID = uiManager.createTextBox(textBoxElementInitInfo, textBoxInitInfo, state.shopkeeperBgContextInstID, renderer);
+	}
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Player &player = game.player;
+	const std::string text = String::format("%s%d", exeData.services.playerGoldRemaining.c_str(), player.gold);
+	uiManager.setTextBoxText(textBoxElementInstID, text.c_str());
+	uiManager.setElementActive(textBoxElementInstID, visible);
 }
 
 void GameWorldUI::onPlayerStealItemSuccess(const ItemLibraryPredicate &stealableItemsPredicate, ConversationMessageBoxType mainMessageBoxType)

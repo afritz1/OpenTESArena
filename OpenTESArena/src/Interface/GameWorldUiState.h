@@ -174,6 +174,7 @@ namespace GameWorldUI
 	void onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType);
 	void showShopkeeperBackground(const char *titleText);
+	void setShopkeeperPlayerGoldVisible(bool visible);
 	void onPlayerStealItemSuccess(const ItemLibraryPredicate &stealableItemsPredicate, ConversationMessageBoxType mainMessageBoxType);
 	void onPlayerStealItemFailure();
 

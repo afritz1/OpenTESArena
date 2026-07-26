@@ -622,6 +622,8 @@ struct ExeDataServices
 	std::string citizenWhereIsOptionsCity[9];
 	std::string citizenWhereIsOptionsWilderness[9];
 
+	std::string playerGoldRemaining; // Shown in shopkeeper UI.
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

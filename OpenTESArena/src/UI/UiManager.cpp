@@ -273,7 +273,6 @@ UiElementInstanceID UiManager::getElementByName(const char *name) const
 		}
 	}
 
-	DebugLogErrorFormat("Couldn't find element \"%s\".", name);
 	return -1;
 }
 

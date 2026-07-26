@@ -342,6 +342,7 @@ CitizenRumorsModalWorkAskOutside=0x43C05
 CitizenRumorsModalWorkAskInTown=0x43B0C
 CitizenWhereIsOptionsCity=0x43C2F
 CitizenWhereIsOptionsWilderness=0x43C91
+PlayerGoldRemaining=0x401D4
 
 [Status]
 PopUp=0x411D7
