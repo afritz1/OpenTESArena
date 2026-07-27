@@ -1057,15 +1057,26 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			if (entityDefType == EntityDefinitionType::StaticNPC)
 			{
 				const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
-				if (staticNpcEntityDef.type == StaticNpcEntityDefinitionType::General)
+				const StaticNpcEntityDefinitionType staticNpcEntityDefType = staticNpcEntityDef.type;
+				const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+				const bool raceID = entityGenInfo.provinceID;
+
+				bool isMale = true;
+				std::string npcName;
+				if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::General)
 				{
 					const StaticNpcGeneralEntityDefinition &staticNpcGeneralEntityDef = staticNpcEntityDef.general;
+					isMale = GetStaticNpcPersonalityIsMale(staticNpcGeneralEntityDef.type);
+					npcName = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
+				}
+				else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper)
+				{
+					npcName = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
+				}
 
-					const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-					const bool raceID = entityGenInfo.provinceID;
-					const bool isMale = GetStaticNpcPersonalityIsMale(staticNpcGeneralEntityDef.type);
-					const std::string npcNameStr = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
-					initInfo.npcName = EntityNpcName(npcNameStr.c_str());
+				if (!npcName.empty())
+				{
+					initInfo.npcName = EntityNpcName(npcName.c_str());
 					initInfo.dialogueGenderIsMale = isMale;
 				}
 			}
