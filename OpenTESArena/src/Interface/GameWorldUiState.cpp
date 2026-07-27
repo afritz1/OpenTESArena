@@ -1898,12 +1898,12 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 				playerInventory.insert(itemDefID);
 				player.gold -= itemGoldPrice;
 
-				const std::string text = String::format("Bought %s for %d gold.\n(TODO bartering)", selectedItemDisplayName.c_str(), itemGoldPrice);
+				const std::string text = String::format("Bought %s for %d gold.", selectedItemDisplayName.c_str(), itemGoldPrice);
 				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
 			}
 			else
 			{
-				const std::string text = String::format("TODO %s is too expensive.", selectedItemDisplayName.c_str());
+				const std::string text = String::format("%s is too expensive.", selectedItemDisplayName.c_str());
 				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
 			}
 		};
@@ -2149,7 +2149,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 					}
 				}
 
-				const std::string text = String::format("Sold %s for %d gold.\n(TODO bartering)", selectedItemDisplayName.c_str(), selectedItemGoldValue);
+				const std::string text = String::format("Sold %s for %d gold.", selectedItemDisplayName.c_str(), selectedItemGoldValue);
 				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToEquipmentStoreMessageBoxCallback);
 			});
 		}
@@ -2341,7 +2341,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 				// @todo assign rented bed somewhere. GameState::rentedBedSecondsRemaining probably
 				// @todo auto set it to 24 hours
 
-				const std::string text = "TODO rent a room for 24 hrs.\n(TODO bartering)";
+				const std::string text = "TODO rent a room for 24 hrs.";
 				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToTavernMessageBoxCallback);
 			});
 		}
@@ -2361,14 +2361,14 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		if (player.effectsState.isDiseased())
 		{
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { exeData.status.effectNames[0] });
-			listBoxItemCallbacks.emplace_back([&game, &uiManager, returnToTempleMessageBoxCallback](MouseButtonType)
+			listBoxItemCallbacks.emplace_back([&game, &uiManager, &exeData, returnToTempleMessageBoxCallback](MouseButtonType)
 			{
 				uiManager.disableTopMostContext();
 
 				Player &player = game.player;
 				player.effectsState.cureDisease();
 
-				const std::string text = "You are cured.\n(TODO bartering)";
+				const std::string text = String::format(exeData.services.templeReceiveCuring.c_str(), player.firstName.c_str());
 				GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, returnToTempleMessageBoxCallback);
 			});
 		}
@@ -2973,7 +2973,8 @@ void GameWorldUI::onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "TODO bless";
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string text = exeData.services.templeReceiveBlessing;
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2998,7 +2999,8 @@ void GameWorldUI::onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType)
 	}
 	else
 	{
-		const std::string text = "TODO cure not diseased";
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const std::string text = String::format(exeData.services.templePlayerIsNotDiseased.c_str(), player.firstName.c_str());
 
 		GameWorldPopUpClosedCallback callback = [&uiManager]()
 		{
@@ -3017,10 +3019,12 @@ void GameWorldUI::onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType)
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const Player &player = game.player;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	Player &player = game.player;
 	if (player.currentHealth == player.maxHealth)
 	{
-		const std::string text = "TODO heal at full health";
+		const std::string text = String::format(exeData.services.templePlayerIsFullHealth.c_str(), player.firstName.c_str());
 
 		GameWorldPopUpClosedCallback callback = [&uiManager]()
 		{
@@ -3032,7 +3036,9 @@ void GameWorldUI::onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType)
 	}
 	else
 	{
-		const std::string text = "TODO heal needs healing";
+		player.currentHealth = player.maxHealth;
+
+		const std::string text = String::format(exeData.services.templeReceiveHealing.c_str(), player.firstName.c_str());
 
 		GameWorldPopUpClosedCallback callback = [&uiManager]()
 		{
