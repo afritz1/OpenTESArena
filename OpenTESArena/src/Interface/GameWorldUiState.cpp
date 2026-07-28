@@ -333,6 +333,7 @@ void GameWorldUiState::init(Game &game)
 	this->currentSpellPoints = player.currentSpellPoints;
 	this->maxSpellPoints = player.maxSpellPoints;
 	this->interactionType = GameWorldInteractionType::Default;
+	this->dialogueStartPlayerEffectsState.clear();
 }
 
 void GameWorldUiState::freeTextures(Renderer &renderer)
@@ -1687,6 +1688,12 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 	const bool canCastMagic = playerCharClassDef.castsMagic;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
+	const bool isPaused = !game.shouldSimulateScene;
+	if (!isPaused)
+	{
+		state.dialogueStartPlayerEffectsState = player.effectsState;
+	}	
+
 	std::string messageBoxTitleText;
 	int messageBoxButtonCount = 0;
 	constexpr int messageBoxMaxButtonCount = 5;
@@ -1955,7 +1962,6 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 
 	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
 
-	const bool isPaused = !game.shouldSimulateScene;
 	if (!isPaused)
 	{
 		GameWorldUI::onPauseChanged(true);
@@ -2750,7 +2756,7 @@ UiButtonCallback GameWorldUI::makeTavernDrinkPurchaseCallback(const std::string 
 		GameWorldPopUpClosedCallback consumeDrinkOnCloseCallback = [&game, popUpClosedCallback]()
 		{
 			Player &player = game.player;
-			// @todo make player drunk
+			player.effectsState.applyDrink();
 
 			popUpClosedCallback();
 		};
@@ -3286,6 +3292,20 @@ void GameWorldUI::onCloseConversationButtonSelected(MouseButtonType mouseButtonT
 	UiManager &uiManager = game.uiManager;
 	DialogueManager &dialogueManager = game.dialogueManager;
 	state.dialogueWhereIsDetailEntries.clear();
+	
+	// Have to check here since the real-time effects check doesn't handle coming out of UI.
+	const Player &player = game.player;
+	const bool isBecomingDrunk = player.effectsState.isDrunk() && !state.dialogueStartPlayerEffectsState.isDrunk();
+	if (isBecomingDrunk)
+	{
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const Span<const std::string> effectNames = exeData.status.effectNames;
+		const std::string drunkText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[5], exeData);
+		GameWorldUI::setEffectText(drunkText.c_str());
+	}
+
+	state.dialogueStartPlayerEffectsState.clear();
+
 	uiManager.setContextEnabled(state.conversationModalContextInstID, false);
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
 	dialogueManager.endDialogue();

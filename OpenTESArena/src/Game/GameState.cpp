@@ -1443,6 +1443,12 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 			}
 		}
 	}
+
+	if (player.effectsState.isDrunkToDeath())
+	{
+		DebugLog("Player died from being too drunk.");
+		GameWorldUiController::onShowPlayerDeathCinematic(game);
+	}
 }
 
 void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffectsState, const PlayerEffectsState &prevEffectsState)
@@ -1452,6 +1458,7 @@ void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffects
 
 	const bool isCatchingNewDisease = currentEffectsState.isDiseased() && (currentEffectsState.diseaseID != prevEffectsState.diseaseID);
 	const bool isBecomingParalyzed = currentEffectsState.isParalyzed() && !prevEffectsState.isParalyzed();
+	//const bool isBecomingDrunk = currentEffectsState.isDrunk() && !prevEffectsState.isDrunk(); // Doesn't catch the moment player leaves bartender dialogue
 
 	std::string effectText;
 	if (isCatchingNewDisease)
@@ -1462,6 +1469,10 @@ void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffects
 	{
 		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[6], exeData);
 	}
+	/*else if (isBecomingDrunk)
+	{
+		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[5], exeData);
+	}*/
 
 	if (!effectText.empty())
 	{

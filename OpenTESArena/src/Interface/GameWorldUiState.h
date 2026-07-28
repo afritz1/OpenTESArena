@@ -7,6 +7,7 @@
 #include "../Entities/EntityInstance.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/Rect.h"
+#include "../Player/Player.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiButton.h"
 #include "../UI/UiContext.h"
@@ -116,6 +117,7 @@ struct GameWorldUiState
 	std::string campManualHoursInputText; // Number of hours to manually rest.
 
 	std::vector<DialogueDirectionsDetailEntry> dialogueWhereIsDetailEntries; // After asking for all inns/temples/stores in "Where Is..." menu.
+	PlayerEffectsState dialogueStartPlayerEffectsState; // Cached when beginning dialogue and checked upon leaving dialogue (for drunk effect).
 
 	GameWorldUiState();
 

@@ -187,6 +187,16 @@ bool PlayerEffectsState::isParalyzed() const
 	return this->paralysisSecondsRemaining > 0.0;
 }
 
+bool PlayerEffectsState::isDrunk() const
+{
+	return this->drunkPercent >= 0.50; // Arbitrary
+}
+
+bool PlayerEffectsState::isDrunkToDeath() const
+{
+	return this->drunkPercent >= 1.0;
+}
+
 void PlayerEffectsState::update(double dt)
 {
 	if (this->diseaseSecondsRemaining > 0.0)
@@ -203,6 +213,12 @@ void PlayerEffectsState::update(double dt)
 	{
 		this->paralysisSecondsRemaining = std::max(this->paralysisSecondsRemaining - dt, 0.0);
 	}
+
+	if (this->drunkPercent > 0.0)
+	{
+		const double drunkPercentLossPerSecond = 0.0035; // Arbitrary
+		this->drunkPercent = std::max(this->drunkPercent - (drunkPercentLossPerSecond * dt), 0.0);
+	}
 }
 
 void PlayerEffectsState::applyDisease(int diseaseID, double seconds)
@@ -217,6 +233,11 @@ void PlayerEffectsState::applyParalysis(double seconds)
 	this->paralysisSecondsRemaining = std::max(this->paralysisSecondsRemaining, seconds);
 }
 
+void PlayerEffectsState::applyDrink()
+{
+	this->drunkPercent += 0.15;
+}
+
 void PlayerEffectsState::cureDisease()
 {
 	this->diseaseID = -1;
@@ -228,11 +249,17 @@ void PlayerEffectsState::cureParalysis()
 	this->paralysisSecondsRemaining = 0.0;
 }
 
+void PlayerEffectsState::cureDrunk()
+{
+	this->drunkPercent = 0.0;
+}
+
 void PlayerEffectsState::clear()
 {
 	this->diseaseID = -1;
 	this->diseaseSecondsRemaining = 0.0;
 	this->paralysisSecondsRemaining = 0.0;
+	this->drunkPercent = 0.0;
 }
 
 Player::Player()
@@ -817,6 +844,12 @@ void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData 
 	{
 		const int spellPointsGainAmount = (static_cast<int>(this->maxSpellPoints) * restFactor) >> 3;
 		this->currentSpellPoints = std::min(this->currentSpellPoints + spellPointsGainAmount, this->maxSpellPoints);
+	}
+
+	if (this->effectsState.drunkPercent > 0.0)
+	{
+		constexpr double drunkPercentLossPerRestTick = 0.05; // Arbitrary
+		this->effectsState.drunkPercent = std::max(this->effectsState.drunkPercent - drunkPercentLossPerRestTick, 0.0);
 	}
 }
 

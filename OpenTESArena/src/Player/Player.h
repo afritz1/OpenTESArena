@@ -89,18 +89,23 @@ struct PlayerEffectsState
 	int diseaseID;
 	double diseaseSecondsRemaining;
 	double paralysisSecondsRemaining;
+	double drunkPercent;
 
 	PlayerEffectsState();
 
 	bool isDiseased() const;
 	bool isParalyzed() const;
+	bool isDrunk() const;
+	bool isDrunkToDeath() const;
 
 	void update(double dt);
 
 	void applyDisease(int diseaseID, double seconds);
 	void applyParalysis(double seconds);
+	void applyDrink();
 	void cureDisease();
 	void cureParalysis();
+	void cureDrunk();
 
 	void clear();
 };

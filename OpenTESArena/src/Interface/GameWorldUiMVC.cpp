@@ -351,7 +351,7 @@ PlayerStatusGradientType GameWorldUiModel::getCurrentPlayerStatusGradientType(co
 	{
 		return PlayerStatusGradientType::NearDeath;
 	}
-	else if (false) // @todo poison
+	else if (player.effectsState.isDrunk())
 	{
 		return PlayerStatusGradientType::Poisoned;
 	}
