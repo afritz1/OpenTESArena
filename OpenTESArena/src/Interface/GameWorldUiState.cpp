@@ -2780,9 +2780,8 @@ UiButtonCallback GameWorldUI::makeTavernRoomPurchaseCallback(int roomType)
 		uiManager.disableTopMostContext();
 
 		GameState &gameState = game.gameState;
-
 		const int rentedRoomHours = 24;
-		gameState.setTavernRentedRoom(rentedRoomHours);
+		gameState.setTavernRentedRoom(roomType, rentedRoomHours);
 
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		const std::string &roomTypeName = exeData.services.tavernRoomTypes[roomType];
@@ -3728,9 +3727,9 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 	if (isSneakingSuccessful)
 	{
 		Span<const std::string> roomTypeNames = exeData.services.tavernRoomTypes;
-		const int rentedRoomHours = 24;
 		const int roomType = random.next(roomTypeNames.getCount());
-		gameState.setTavernRentedRoom(rentedRoomHours);
+		const int rentedRoomHours = 24;
+		gameState.setTavernRentedRoom(roomType, rentedRoomHours);
 
 		const std::string &roomName = roomTypeNames[roomType];
 		text = String::format(exeData.services.tavernSneakIntoRoomSuccessful.c_str(), roomName.c_str());

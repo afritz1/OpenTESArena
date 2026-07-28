@@ -825,7 +825,6 @@ void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData 
 	// or 0 if the healMod was negative, added to roomModifier before multiplying it by restFactor.
 
 	const Span<const int8_t> tavernRoomHealModifiers = exeData.services.tavernRoomHealModifiers;
-	DebugAssertIndex(tavernRoomHealModifiers, tavernRoomType);
 	const int roomModifier = tavernRoomHealModifiers[tavernRoomType];
 	const int roomRestHealAmount = roomModifier * restFactor;
 	healAmount += roomRestHealAmount;

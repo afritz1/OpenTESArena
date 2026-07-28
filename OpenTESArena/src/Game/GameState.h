@@ -110,12 +110,14 @@ struct CampingState
 struct TavernRentedRoomState
 {
 	//std::string interiorName; // @todo a better way to uniquely identify this tavern, like LocationDefinitionID + MapType + WorldInt2
+	int roomType; // Affects quality of rest.
 	double remainingSeconds;
 
 	TavernRentedRoomState();
 
 	bool hasTimeRemaining() const;
 
+	void setRentedRoom(int roomType, int hours);
 	void update(double dt);
 
 	void clear();
@@ -258,7 +260,7 @@ public:
 	void clearCampingState();
 
 	bool canUseTavernRentedRoomForCamping() const;
-	void setTavernRentedRoom(int hours);
+	void setTavernRentedRoom(int roomType, int hours);
 	void clearTavernRentedRoomState();
 
 	void addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon);

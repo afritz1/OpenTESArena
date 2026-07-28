@@ -211,12 +211,18 @@ void CampingState::clear()
 
 TavernRentedRoomState::TavernRentedRoomState()
 {
-	this->remainingSeconds = 0.0;
+	this->clear();
 }
 
 bool TavernRentedRoomState::hasTimeRemaining() const
 {
-	return /*!this->interiorName.empty() &&*/ (this->remainingSeconds > 0.0);
+	return /*!this->interiorName.empty() &&*/ (this->roomType >= 0) && (this->remainingSeconds > 0.0);
+}
+
+void TavernRentedRoomState::setRentedRoom(int roomType, int hours)
+{
+	this->roomType = roomType;
+	this->remainingSeconds = hours * 60.0 * 60.0;
 }
 
 void TavernRentedRoomState::update(double dt)
@@ -224,12 +230,18 @@ void TavernRentedRoomState::update(double dt)
 	if (this->remainingSeconds > 0.0)
 	{
 		this->remainingSeconds = std::max(this->remainingSeconds - dt, 0.0);
+
+		if (this->remainingSeconds == 0.0)
+		{
+			this->clear();
+		}
 	}
 }
 
 void TavernRentedRoomState::clear()
 {
 	//this->interiorName.clear();
+	this->roomType = -1;
 	this->remainingSeconds = 0.0;
 }
 
@@ -798,9 +810,9 @@ bool GameState::canUseTavernRentedRoomForCamping() const
 	return this->tavernRentedRoomState.hasTimeRemaining();
 }
 
-void GameState::setTavernRentedRoom(int hours)
+void GameState::setTavernRentedRoom(int roomType, int hours)
 {
-	this->tavernRentedRoomState.remainingSeconds = hours * 60.0 * 60.0;
+	this->tavernRentedRoomState.setRentedRoom(roomType, hours);
 }
 
 void GameState::clearTavernRentedRoomState()
@@ -1505,9 +1517,13 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 
 		this->campingState.secondsUntilNextRecoveryTick += PlayerConstants::SECONDS_PER_RECOVERY_TICK;
 
-		// @todo provide correct values
 		const int restFactor = 1;
-		const int tavernRoomType = 0;
+		int tavernRoomType = 0;
+		if (this->tavernRentedRoomState.hasTimeRemaining())
+		{
+			tavernRoomType = this->tavernRentedRoomState.roomType;
+		}
+
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		player.applyRestHealing(restFactor, tavernRoomType, exeData);
 
