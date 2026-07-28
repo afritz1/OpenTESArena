@@ -107,6 +107,20 @@ struct CampingState
 	void clear();
 };
 
+struct TavernRentedRoomState
+{
+	//std::string interiorName; // @todo a better way to uniquely identify this tavern, like LocationDefinitionID + MapType + WorldInt2
+	double remainingSeconds;
+
+	TavernRentedRoomState();
+
+	bool hasTimeRemaining() const;
+
+	void update(double dt);
+
+	void clear();
+};
+
 // Container for currently loaded game/world data.
 class GameState
 {
@@ -161,6 +175,7 @@ private:
 	WeatherInstance weatherInst;
 
 	CampingState campingState;
+	TavernRentedRoomState tavernRentedRoomState;
 
 	CombatResults combatResults;
 
@@ -241,6 +256,10 @@ public:
 	void setCampingManualHours(int hours);
 	void setCampingUntilHealed();
 	void clearCampingState();
+
+	bool canUseTavernRentedRoomForCamping() const;
+	void setTavernRentedRoom(int hours);
+	void clearTavernRentedRoomState();
 
 	void addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon);
 	void addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon);

@@ -363,18 +363,15 @@ TextureAsset FastTravelUiView::getPaletteTextureAsset()
 void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays)
 {
 	// Clear selected map location.
-	auto &gameState = game.gameState;
+	GameState &gameState = game.gameState;
 	gameState.setTravelData(std::nullopt);
-
-	// Handle fast travel behavior and decide which UI to switch to.
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
 
 	// Update game clock.
 	// @todo: maybe move this to a WorldMapLogicController namespace
 	FastTravelUiModel::tickTravelTime(game, travelDays);
 
 	// Update weathers.
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	gameState.updateWeatherList(game.arenaRandom, exeData);
 
 	// Clear just the lore text (action text and effect text are unchanged).
@@ -383,6 +380,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	// Clear keys inventory in case we're leaving a main quest dungeon.
 	Player &player = game.player;
 	player.clearKeyInventory();
+
+	gameState.clearTavernRentedRoomState();
 
 	Random &random = game.random;
 	if (player.effectsState.isDiseased())
@@ -416,13 +415,12 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	{
 		// Get weather type from game state.
 		const LocationCityDefinition &cityDef = travelLocationDef.getCityDefinition();
-		const ArenaWeatherType weatherType = [&game, &gameState, &binaryAssetLibrary,
-			&travelProvinceDef, &travelLocationDef, &cityDef]()
+		const ArenaWeatherType weatherType = [&game, &gameState, &travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
 			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
 			const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, travelProvinceDef.getGlobalRect());
 
-			const auto &cityData = binaryAssetLibrary.getCityDataFile();
+			const CityDataFile &cityData = BinaryAssetLibrary::getInstance().getCityDataFile();
 			const int globalQuarter = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityData);
 
 			Span<const ArenaWeatherType> worldMapWeathers = gameState.getWorldMapWeathers();

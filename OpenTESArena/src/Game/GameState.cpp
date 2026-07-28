@@ -209,6 +209,30 @@ void CampingState::clear()
 	this->secondsUntilNextRecoveryTick = 0.0;
 }
 
+TavernRentedRoomState::TavernRentedRoomState()
+{
+	this->remainingSeconds = 0.0;
+}
+
+bool TavernRentedRoomState::hasTimeRemaining() const
+{
+	return /*!this->interiorName.empty() &&*/ (this->remainingSeconds > 0.0);
+}
+
+void TavernRentedRoomState::update(double dt)
+{
+	if (this->remainingSeconds > 0.0)
+	{
+		this->remainingSeconds = std::max(this->remainingSeconds - dt, 0.0);
+	}
+}
+
+void TavernRentedRoomState::clear()
+{
+	//this->interiorName.clear();
+	this->remainingSeconds = 0.0;
+}
+
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
 {
 	this->provinceID = provinceID;
@@ -291,6 +315,7 @@ void GameState::clearSession()
 	this->weatherDef.initClear();
 
 	this->campingState.clear();
+	this->tavernRentedRoomState.clear();
 }
 
 bool GameState::hasPendingLevelIndexChange() const
@@ -756,6 +781,33 @@ void GameState::clearCampingState()
 	this->campingState.clear();
 }
 
+bool GameState::canUseTavernRentedRoomForCamping() const
+{
+	const MapType mapType = this->getActiveMapType();
+	if (mapType != MapType::Interior)
+	{
+		return false;
+	}
+
+	const MapDefinitionInterior &mapDefInterior = this->activeMapDef.getSubDefinition().interior;
+	if (mapDefInterior.interiorType != ArenaInteriorType::Tavern)
+	{
+		return false;
+	}
+
+	return this->tavernRentedRoomState.hasTimeRemaining();
+}
+
+void GameState::setTavernRentedRoom(int hours)
+{
+	this->tavernRentedRoomState.remainingSeconds = hours * 60.0 * 60.0;
+}
+
+void GameState::clearTavernRentedRoomState()
+{
+	this->tavernRentedRoomState.clear();
+}
+
 void GameState::addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon)
 {
 	CombatVoxelResult result;
@@ -1102,7 +1154,8 @@ void GameState::tickGameClock(double dt, Game &game)
 	const Clock prevClock = this->clock;
 	const bool isPlayerCamping = this->isCamping();
 	const double timeScale = ArenaClockUtils::GameSecondsPerRealTimeSecond * (isPlayerCamping ? ArenaClockUtils::CampingTimeScale : 1.0);
-	this->clock.incrementTime(dt * timeScale);
+	const double scaledDt = dt * timeScale;
+	this->clock.incrementTime(scaledDt);
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;
 
@@ -1250,6 +1303,8 @@ void GameState::tickGameClock(double dt, Game &game)
 			audioManager.setMusic(musicDef);
 		}
 	}
+
+	this->tavernRentedRoomState.update(scaledDt);
 }
 
 void GameState::tickChasmAnimation(double dt)

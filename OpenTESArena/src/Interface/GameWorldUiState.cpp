@@ -1594,6 +1594,7 @@ void GameWorldUI::addConversationMessageBoxInputActionListeners(const char *mapN
 
 	const char *contextName = ContextName_ConversationModal;
 
+	const GameState &gameState = game.gameState;
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
 
@@ -1653,8 +1654,13 @@ void GameWorldUI::addConversationMessageBoxInputActionListeners(const char *mapN
 	else if (StringView::equals(mapName, InputActionMapName::Tavern))
 	{
 		uiManager.addInputActionListener(InputActionName::TavernBuyDrinks, GameWorldUI::onTavernBuyDrinksInputAction, contextName, inputManager);
-		uiManager.addInputActionListener(InputActionName::TavernGetRoom, GameWorldUI::onTavernGetRoomInputAction, contextName, inputManager);
-		uiManager.addInputActionListener(InputActionName::TavernSneakIntoRoom, GameWorldUI::onTavernSneakIntoRoomInputAction, contextName, inputManager);
+
+		if (!gameState.canUseTavernRentedRoomForCamping())
+		{
+			uiManager.addInputActionListener(InputActionName::TavernGetRoom, GameWorldUI::onTavernGetRoomInputAction, contextName, inputManager);
+			uiManager.addInputActionListener(InputActionName::TavernSneakIntoRoom, GameWorldUI::onTavernSneakIntoRoomInputAction, contextName, inputManager);
+		}
+		
 		uiManager.addInputActionListener(InputActionName::TavernRumors, GameWorldUI::onTavernRumorsInputAction, contextName, inputManager);
 		uiManager.addInputActionListener(InputActionName::TavernExit, GameWorldUI::onTavernExitInputAction, contextName, inputManager);
 	}
@@ -1806,8 +1812,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 	{
 		messageBoxTitleText = exeData.services.tavernModalTitle;
 
-		const bool isRoomRented = false; // @todo query some TavernRoomState in GameState eventually
-		if (isRoomRented)
+		if (gameState.canUseTavernRentedRoomForCamping())
 		{
 			messageBoxButtonCount = 3;
 			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcTavernBuyDrinksButtonSelected;
@@ -2775,11 +2780,13 @@ UiButtonCallback GameWorldUI::makeTavernRoomPurchaseCallback(int roomType)
 		uiManager.disableTopMostContext();
 
 		GameState &gameState = game.gameState;
-		//Player &player = game.player;
-		// @todo assign rented bed somewhere. GameState::rentedBedSecondsRemaining probably
-		// @todo auto set it to 24 hours
 
-		const std::string text = "TODO rent a room for 24 hrs.";
+		const int rentedRoomHours = 24;
+		gameState.setTavernRentedRoom(rentedRoomHours);
+
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const std::string &roomTypeName = exeData.services.tavernRoomTypes[roomType];
+		const std::string text = String::format(exeData.services.tavernRoomRented.c_str(), roomTypeName.c_str());
 		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Tavern);
 		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
 	};
@@ -2845,7 +2852,7 @@ void GameWorldUI::onPlayerStealItemFailure()
 	GameWorldPopUpClosedCallback callback = [&game, &uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
 
 		GameState &gameState = game.gameState;
 		gameState.queueCityGuardEncounter(game);
@@ -3261,8 +3268,10 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 	}
 	else if (isPlayerAttemptingRestInTavern)
 	{
-		// @todo actually check if a bed has been rented
-		text = exeData.camping.tavernBedNotRented;
+		if (!gameState.canUseTavernRentedRoomForCamping())
+		{
+			text = exeData.camping.tavernBedNotRented;
+		}
 	}
 
 	if (!text.empty())
@@ -3707,15 +3716,46 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "TODO sneak into room";
+	GameState &gameState = game.gameState;
+	Random &random = game.random;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
-	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	const bool isSneakingSuccessful = random.nextReal() <= 0.70; // Arbitrary
+
+	std::string text;
+	std::string fontName;
+	GameWorldPopUpClosedCallback callback;
+	if (isSneakingSuccessful)
 	{
-		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
-	};
+		Span<const std::string> roomTypeNames = exeData.services.tavernRoomTypes;
+		const int rentedRoomHours = 24;
+		const int roomType = random.next(roomTypeNames.getCount());
+		gameState.setTavernRentedRoom(rentedRoomHours);
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+		const std::string &roomName = roomTypeNames[roomType];
+		text = String::format(exeData.services.tavernSneakIntoRoomSuccessful.c_str(), roomName.c_str());
+		text = String::distributeNewlines(text, 60);
+
+		fontName = GameWorldUiView::StatusPopUpFontName;
+		callback = [&uiManager]()
+		{
+			uiManager.disableTopMostContext();
+			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
+		};
+	}
+	else
+	{
+		text = exeData.services.tavernSneakIntoRoomUnsuccessful;
+		fontName = ArenaFontName::A;
+		callback = [&game, &uiManager, &gameState]()
+		{
+			uiManager.disableTopMostContext();
+			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
+			gameState.queueCityGuardEncounter(game);
+		};
+	}
+
+	GameWorldUI::showTextPopUp(text.c_str(), fontName, TextAlignment::TopLeft, callback);
 }
 
 void GameWorldUI::onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonType)
