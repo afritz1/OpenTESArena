@@ -123,6 +123,40 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_TAB));
 		}
+		else if (StringView::equals(mapName, InputActionMapName::EquipmentStore))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::EquipmentStoreBuy,
+				InputStateType::BeginPerform,
+				SDLK_b));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::EquipmentStoreSell,
+				InputStateType::BeginPerform,
+				SDLK_s));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::EquipmentStoreRepair,
+				InputStateType::BeginPerform,
+				SDLK_r));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::EquipmentStoreSteal,
+				InputStateType::BeginPerform,
+				SDLK_t));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::EquipmentStoreExit,
+				InputStateType::BeginPerform,
+				SDLK_e));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::EquipmentStoreBuy))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::EquipmentStoreBuyWeapon,
+				InputStateType::BeginPerform,
+				SDLK_w));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::EquipmentStoreBuyArmor,
+				InputStateType::BeginPerform,
+				SDLK_a));
+		}
 		else if (StringView::equals(mapName, InputActionMapName::GameWorld))
 		{
 			// Game world interaction.
@@ -226,6 +260,138 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_l));
 		}
+		else if (StringView::equals(mapName, InputActionMapName::MagesGuild))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildBuy,
+				InputStateType::BeginPerform,
+				SDLK_b));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildDetectMagic,
+				InputStateType::BeginPerform,
+				SDLK_d));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildSpellmaker,
+				InputStateType::BeginPerform,
+				SDLK_s));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildSteal,
+				InputStateType::BeginPerform,
+				SDLK_t));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildExit,
+				InputStateType::BeginPerform,
+				SDLK_e));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::MagesGuildBuy))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildBuyPotions,
+				InputStateType::BeginPerform,
+				SDLK_p));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildBuyMagicItems,
+				InputStateType::BeginPerform,
+				SDLK_m));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildBuySpells,
+				InputStateType::BeginPerform,
+				SDLK_s));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::MagesGuildSteal))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildStealPotions,
+				InputStateType::BeginPerform,
+				SDLK_p));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::MagesGuildStealMagicItems,
+				InputStateType::BeginPerform,
+				SDLK_m));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::NpcGeneral))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::NpcWhoAreYou,
+				InputStateType::BeginPerform,
+				SDLK_w));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::NpcWhereIs,
+				InputStateType::BeginPerform,
+				SDLK_h));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::NpcRumors,
+				InputStateType::BeginPerform,
+				SDLK_r));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::NpcExit,
+				InputStateType::BeginPerform,
+				SDLK_e));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::NpcRumors))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::NpcRumorsGeneral,
+				InputStateType::BeginPerform,
+				SDLK_g));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::NpcRumorsWork,
+				InputStateType::BeginPerform,
+				SDLK_w));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::Tavern))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TavernBuyDrinks,
+				InputStateType::BeginPerform,
+				SDLK_b));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TavernGetRoom,
+				InputStateType::BeginPerform,
+				SDLK_g));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TavernSneakIntoRoom,
+				InputStateType::BeginPerform,
+				SDLK_s));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TavernRumors,
+				InputStateType::BeginPerform,
+				SDLK_r));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TavernExit,
+				InputStateType::BeginPerform,
+				SDLK_e));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::TavernRumors))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TavernRumorsGeneral,
+				InputStateType::BeginPerform,
+				SDLK_g));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TavernRumorsWork,
+				InputStateType::BeginPerform,
+				SDLK_w));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::Temple))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TempleBless,
+				InputStateType::BeginPerform,
+				SDLK_b));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TempleCure,
+				InputStateType::BeginPerform,
+				SDLK_c));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TempleHeal,
+				InputStateType::BeginPerform,
+				SDLK_h));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::TempleExit,
+				InputStateType::BeginPerform,
+				SDLK_e));
+		}
 		else if (StringView::equals(mapName, InputActionMapName::MainMenu))
 		{
 			defs.emplace_back(makeKeyDef(
@@ -254,7 +420,7 @@ namespace
 		}
 		else
 		{
-			DebugLogError("Unrecognized default map name \"" + std::string(mapName) + "\".");
+			DebugLogErrorFormat("Unrecognized default map name \"%s\".", mapName);
 		}
 
 		return map;

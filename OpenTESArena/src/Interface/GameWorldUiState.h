@@ -8,6 +8,7 @@
 #include "../Items/ItemLibrary.h"
 #include "../Math/Rect.h"
 #include "../Rendering/RenderTextureUtils.h"
+#include "../UI/UiButton.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"
@@ -141,40 +142,24 @@ namespace GameWorldUI
 	void showCampManualHoursModal();
 	void showPlayerHurt();
 
+	// Sets only the given map active and other conversation maps inactive.
+	void setConversationMessageBoxInputActionMapActive(const char *mapName);
+	void addConversationMessageBoxInputActionListeners(const char *mapName);
+
 	void showConversationMessageBox(ConversationMessageBoxType messageBoxType);
 	void showConversationListBox(ConversationListBoxType listBoxType);
-	void onCloseConversationButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcRumorsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcRumorsGeneralButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcRumorsWorkButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcEquipmentBuyButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcEquipmentSellButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcEquipmentRepairButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcEquipmentBuyWeaponsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcEquipmentBuyArmorButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildBuyButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildDetectMagicButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildSpellmakerButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildStealButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildBuyPotionsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildBuyMagicItemsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildBuySpellsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTavernBuyDrinksButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTavernGetARoomButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTavernRumorsGeneralButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTavernRumorsWorkButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType);
-	void onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType);
 	void showShopkeeperBackground(const char *titleText);
+	GameWorldPopUpClosedCallback makeReturnToMessageBoxCallback(ConversationMessageBoxType messageBoxType);
 	void setShopkeeperPlayerGoldVisible(bool visible);
+	UiButtonCallback makeDirectionsEntryCallback(const DialogueDirectionsEntry &entry);
+	UiButtonCallback makeDirectionsDetailEntryCallback(const DialogueDirectionsDetailEntry &detailEntry);
+	UiButtonCallback makeShopkeeperItemPurchaseCallback(ItemDefinitionID itemDefID, int itemGoldPrice, ConversationMessageBoxType returnMessageBoxType);
+	UiButtonCallback makeShopkeeperItemSellCallback(int playerInventorySlotIndex);
+	UiButtonCallback makeShopkeeperItemRepairCallback(int playerInventorySlotIndex);
+	UiButtonCallback makeMagesGuildSpellPurchaseCallback(const std::string &spellName);
+	UiButtonCallback makeTavernDrinkPurchaseCallback(const std::string &drinkName);
+	UiButtonCallback makeTavernRoomPurchaseCallback(int roomType);
+	UiButtonCallback makeTempleCurePurchaseCallback();
 	void onPlayerStealItemSuccess(const ItemLibraryPredicate &stealableItemsPredicate, ConversationMessageBoxType mainMessageBoxType);
 	void onPlayerStealItemFailure();
 
@@ -209,6 +194,37 @@ namespace GameWorldUI
 	void onScrollUpButtonSelected(MouseButtonType mouseButtonType);
 	void onScrollDownButtonSelected(MouseButtonType mouseButtonType);
 
+	void onCloseConversationButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcRumorsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcRumorsGeneralButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcRumorsWorkButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentBuyButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentSellButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentRepairButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentBuyWeaponsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentBuyArmorButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildBuyButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildDetectMagicButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildSpellmakerButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildStealButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildBuyPotionsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildBuyMagicItemsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildBuySpellsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernBuyDrinksButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernGetARoomButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernRumorsGeneralButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernRumorsWorkButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType);
+
 	void onActivateInputAction(const InputActionCallbackValues &values);
 	void onInspectInputAction(const InputActionCallbackValues &values);
 	void onCharacterSheetInputAction(const InputActionCallbackValues &values);
@@ -225,6 +241,41 @@ namespace GameWorldUI
 	void onPlayerPositionInputAction(const InputActionCallbackValues &values);
 	void onPauseMenuInputAction(const InputActionCallbackValues &values);
 
+	void onNpcWhoAreYouInputAction(const InputActionCallbackValues &values);
+	void onNpcWhereIsInputAction(const InputActionCallbackValues &values);
+	void onNpcRumorsInputAction(const InputActionCallbackValues &values);
+	void onNpcExitInputAction(const InputActionCallbackValues &values);
+	void onNpcRumorsGeneralInputAction(const InputActionCallbackValues &values);
+	void onNpcRumorsWorkInputAction(const InputActionCallbackValues &values);
+	void onEquipmentStoreBuyInputAction(const InputActionCallbackValues &values);
+	void onEquipmentStoreSellInputAction(const InputActionCallbackValues &values);
+	void onEquipmentStoreRepairInputAction(const InputActionCallbackValues &values);
+	void onEquipmentStoreStealInputAction(const InputActionCallbackValues &values);
+	void onEquipmentStoreExitInputAction(const InputActionCallbackValues &values);
+	void onEquipmentStoreBuyWeaponInputAction(const InputActionCallbackValues &values);
+	void onEquipmentStoreBuyArmorInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildBuyInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildDetectMagicInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildSpellmakerInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildStealInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildExitInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildBuyPotionsInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildBuyMagicItemsInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildBuySpellsInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildStealPotionsInputAction(const InputActionCallbackValues &values);
+	void onMagesGuildStealMagicItemsInputAction(const InputActionCallbackValues &values);
+	void onTavernBuyDrinksInputAction(const InputActionCallbackValues &values);
+	void onTavernGetRoomInputAction(const InputActionCallbackValues &values);
+	void onTavernSneakIntoRoomInputAction(const InputActionCallbackValues &values);
+	void onTavernRumorsInputAction(const InputActionCallbackValues &values);
+	void onTavernExitInputAction(const InputActionCallbackValues &values);
+	void onTavernRumorsGeneralInputAction(const InputActionCallbackValues &values);
+	void onTavernRumorsWorkInputAction(const InputActionCallbackValues &values);
+	void onTempleBlessInputAction(const InputActionCallbackValues &values);
+	void onTempleCureInputAction(const InputActionCallbackValues &values);
+	void onTempleHealInputAction(const InputActionCallbackValues &values);
+	void onTempleExitInputAction(const InputActionCallbackValues &values);
+
 	constexpr std::pair<const char*, UiButtonDefinitionCallback> ButtonCallbacks[] =
 	{
 		DECLARE_UI_FUNC(GameWorldUI, onCharacterSheetButtonSelected),
@@ -237,7 +288,38 @@ namespace GameWorldUI
 		DECLARE_UI_FUNC(GameWorldUI, onUseItemButtonSelected),
 		DECLARE_UI_FUNC(GameWorldUI, onCampButtonSelected),
 		DECLARE_UI_FUNC(GameWorldUI, onScrollUpButtonSelected),
-		DECLARE_UI_FUNC(GameWorldUI, onScrollDownButtonSelected)
+		DECLARE_UI_FUNC(GameWorldUI, onScrollDownButtonSelected),
+
+		DECLARE_UI_FUNC(GameWorldUI, onCloseConversationButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcWhoAreYouButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcWhereIsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcRumorsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcRumorsGeneralButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcRumorsWorkButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcEquipmentBuyButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcEquipmentSellButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcEquipmentRepairButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcEquipmentStealButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcEquipmentBuyWeaponsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcEquipmentBuyArmorButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildBuyButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildDetectMagicButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildSpellmakerButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildStealButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildBuyPotionsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildBuyMagicItemsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildBuySpellsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildStealPotionsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcMagesGuildStealMagicItemsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTavernBuyDrinksButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTavernGetARoomButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTavernSneakIntoARoomButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTavernRumorsButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTavernRumorsGeneralButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTavernRumorsWorkButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTempleBlessButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTempleCureButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcTempleHealButtonSelected)
 	};
 
 	constexpr std::pair<const char*, UiInputListenerDefinitionCallback> InputActionCallbacks[] =
@@ -256,6 +338,41 @@ namespace GameWorldUI
 		DECLARE_UI_FUNC(GameWorldUI, onCampInputAction),
 		DECLARE_UI_FUNC(GameWorldUI, onToggleCompassInputAction),
 		DECLARE_UI_FUNC(GameWorldUI, onPlayerPositionInputAction),
-		DECLARE_UI_FUNC(GameWorldUI, onPauseMenuInputAction)
+		DECLARE_UI_FUNC(GameWorldUI, onPauseMenuInputAction),
+
+		DECLARE_UI_FUNC(GameWorldUI, onNpcWhoAreYouInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcWhereIsInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcRumorsInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcExitInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcRumorsGeneralInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onNpcRumorsWorkInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onEquipmentStoreBuyInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onEquipmentStoreSellInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onEquipmentStoreRepairInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onEquipmentStoreStealInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onEquipmentStoreExitInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onEquipmentStoreBuyWeaponInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onEquipmentStoreBuyArmorInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildBuyInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildDetectMagicInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildSpellmakerInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildStealInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildExitInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildBuyPotionsInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildBuyMagicItemsInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildBuySpellsInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildStealPotionsInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onMagesGuildStealMagicItemsInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTavernBuyDrinksInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTavernGetRoomInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTavernSneakIntoRoomInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTavernRumorsInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTavernExitInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTavernRumorsGeneralInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTavernRumorsWorkInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTempleBlessInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTempleCureInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTempleHealInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onTempleExitInputAction)
 	};
 }

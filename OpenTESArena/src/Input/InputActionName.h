@@ -50,6 +50,46 @@ namespace InputActionName
 	constexpr const char *CampManualHours = "CampManualHours";
 	constexpr const char *CampUntilHealed = "CampUntilHealed";
 
+	// NPC conversation.
+	constexpr const char *NpcWhoAreYou = "NpcWhoAreYou";
+	constexpr const char *NpcWhereIs = "NpcWhereIs";
+	constexpr const char *NpcRumors = "NpcRumors";
+	constexpr const char *NpcExit = "NpcExit";
+	constexpr const char *NpcRumorsGeneral = "NpcRumorsGeneral";
+	constexpr const char *NpcRumorsWork = "NpcRumorsWork";
+
+	constexpr const char *EquipmentStoreBuy = "EquipmentStoreBuy";
+	constexpr const char *EquipmentStoreSell = "EquipmentStoreSell";
+	constexpr const char *EquipmentStoreRepair = "EquipmentStoreRepair";
+	constexpr const char *EquipmentStoreSteal = "EquipmentStoreSteal";
+	constexpr const char *EquipmentStoreExit = "EquipmentStoreExit";
+	constexpr const char *EquipmentStoreBuyWeapon = "EquipmentStoreBuyWeapon";
+	constexpr const char *EquipmentStoreBuyArmor = "EquipmentStoreBuyArmor";
+
+	constexpr const char *MagesGuildBuy = "MagesGuildBuy";
+	constexpr const char *MagesGuildDetectMagic = "MagesGuildDetectMagic";
+	constexpr const char *MagesGuildSpellmaker = "MagesGuildSpellmaker";
+	constexpr const char *MagesGuildSteal = "MagesGuildSteal";
+	constexpr const char *MagesGuildExit = "MagesGuildExit";
+	constexpr const char *MagesGuildBuyPotions = "MagesGuildBuyPotions";
+	constexpr const char *MagesGuildBuyMagicItems = "MagesGuildBuyMagicItems";
+	constexpr const char *MagesGuildBuySpells = "MagesGuildBuySpells";
+	constexpr const char *MagesGuildStealPotions = "MagesGuildStealPotions";
+	constexpr const char *MagesGuildStealMagicItems = "MagesGuildStealMagicItems";
+
+	constexpr const char *TavernBuyDrinks = "TavernBuyDrinks";
+	constexpr const char *TavernGetRoom = "TavernGetRoom";
+	constexpr const char *TavernSneakIntoRoom = "TavernSneakIntoRoom";
+	constexpr const char *TavernRumors = "TavernRumors";
+	constexpr const char *TavernExit = "TavernExit";
+	constexpr const char *TavernRumorsGeneral = "TavernRumorsGeneral";
+	constexpr const char *TavernRumorsWork = "TavernRumorsWork";
+	
+	constexpr const char *TempleBless = "TempleBless";
+	constexpr const char *TempleCure = "TempleCure";
+	constexpr const char *TempleHeal = "TempleHeal";
+	constexpr const char *TempleExit = "TempleExit";
+
 	// Debug.
 	constexpr const char *DebugProfiler = "DebugProfiler";
 }
