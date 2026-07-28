@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/PhysicsSystem.h"
 
@@ -170,6 +172,8 @@ struct EntityOccupiedVoxelState
 	EntityOccupiedVoxelState();
 };
 
+using EntityInstancePredicate = std::function<bool(const EntityInstance&)>;
+
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 public:
@@ -290,6 +294,8 @@ public:
 	// Don't need to notify the chunk if the chunk is being freed this frame.
 	void queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify);
 	void queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk);
+
+	void queueEntitiesDestroyIf(const EntityInstancePredicate &predicate);
 
 	void endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 	void clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);

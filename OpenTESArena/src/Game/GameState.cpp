@@ -938,7 +938,7 @@ void GameState::queueCityGuardEncounter(Game &game)
 	{
 		const Player &player = game.player;
 		const WorldDouble3 playerPosition = player.getEyePosition();
-		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 		if (entityChunkManager.anyEnemiesNearby(playerPosition))
 		{
 			DebugLog("Not spawning guards because enemies are nearby.");
@@ -951,6 +951,28 @@ void GameState::queueCityGuardEncounter(Game &game)
 			DebugLog("Not spawning guards because of random chance.");
 			return;
 		}
+
+		const EntityInstancePredicate removeEntityForCrimePredicate = [&entityChunkManager](const EntityInstance &entityInst)
+		{
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			const EntityDefinitionType entityDefType = entityDef.type;
+			bool shouldDestroyEntity = false;
+			if (entityDefType == EntityDefinitionType::Citizen)
+			{
+				shouldDestroyEntity = true;
+			}
+			else if (entityDefType == EntityDefinitionType::StaticNPC)
+			{
+				const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
+				const StaticNpcEntityDefinitionType staticNpcEntityDefType = staticNpcEntityDef.type;
+				shouldDestroyEntity = (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper) || (staticNpcEntityDefType == StaticNpcEntityDefinitionType::TavernPatron);
+			}
+			
+			return shouldDestroyEntity;
+		};
+
+		// Clear entities who are sensitive to crime.
+		entityChunkManager.queueEntitiesDestroyIf(removeEntityForCrimePredicate);
 
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		const LocationDefinition &locationDef = this->getLocationDefinition();

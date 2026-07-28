@@ -2483,6 +2483,17 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool 
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
 }
 
+void EntityChunkManager::queueEntitiesDestroyIf(const EntityInstancePredicate &predicate)
+{
+	for (const EntityInstance &entityInst : this->entities.values)
+	{
+		if (predicate(entityInst))
+		{
+			this->queueEntityDestroy(entityInst.instanceID, true);
+		}
+	}
+}
+
 void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
