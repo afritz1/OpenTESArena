@@ -86,6 +86,8 @@ namespace
 	std::string GetStatusEffectString(const Player &player, const ExeData &exeData)
 	{
 		const bool isDiseased = player.effectsState.isDiseased();
+		const bool isCriticallyHurt = player.isHealthCriticallyLow();
+		const bool isDrunk = player.effectsState.isDrunk();
 		const bool isParalyzed = player.effectsState.isParalyzed();
 
 		std::string text = exeData.status.effect;
@@ -94,6 +96,14 @@ namespace
 		if (isDiseased)
 		{
 			effectStrIndex = 1;
+		}
+		else if (isCriticallyHurt)
+		{
+			effectStrIndex = 3;
+		}
+		else if (isDrunk)
+		{
+			effectStrIndex = 4;
 		}
 
 		const std::string &effectStr = exeData.status.effectsList[effectStrIndex];
