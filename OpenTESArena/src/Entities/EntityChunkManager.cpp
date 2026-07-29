@@ -285,11 +285,6 @@ EntityLockState::EntityLockState()
 	this->isLocked = false;
 }
 
-EntityOccupiedVoxelState::EntityOccupiedVoxelState()
-{
-	this->id = -1;
-}
-
 const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID) const
 {
 	const EntityDefinitionLibrary &defLibrary = EntityDefinitionLibrary::getInstance();
@@ -1367,16 +1362,15 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 						return false;
 					}
 
-					const auto occupiedVoxelIter = std::find_if(this->occupiedVoxelStates.begin(), this->occupiedVoxelStates.end(),
-						[worldVoxel, entityInstID](const EntityOccupiedVoxelState &occupiedVoxelState)
-					{
-						return (occupiedVoxelState.voxel == worldVoxel) && (occupiedVoxelState.id != entityInstID);
-					});
-
-					const bool isOccupiedVoxel = occupiedVoxelIter != this->occupiedVoxelStates.end();
+					const auto occupiedVoxelIter = this->occupiedVoxels.find(worldVoxel);
+					const bool isOccupiedVoxel = occupiedVoxelIter != this->occupiedVoxels.end();
 					if (isOccupiedVoxel)
 					{
-						return false;
+						const bool isOccupiedByOtherEntity = occupiedVoxelIter->second != entityInstID;
+						if (isOccupiedByOtherEntity)
+						{
+							return false;
+						}
 					}
 
 					return true;
@@ -2180,7 +2174,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 		animInst.update(dt);
 	}
 
-	this->occupiedVoxelStates.clear();
+	this->occupiedVoxels.clear();
 	for (const EntityInstanceID entityInstID : this->entities.keys)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
@@ -2194,11 +2188,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
 		const WorldInt2 entityWorldVoxel = VoxelUtils::pointToVoxel(entityPositionXZ);
-
-		EntityOccupiedVoxelState occupiedVoxelState;
-		occupiedVoxelState.voxel = entityWorldVoxel;
-		occupiedVoxelState.id = entityInstID;
-		this->occupiedVoxelStates.emplace_back(std::move(occupiedVoxelState));
+		this->occupiedVoxels.emplace(entityWorldVoxel, entityInstID);
 	}
 
 	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);

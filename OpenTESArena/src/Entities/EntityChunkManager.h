@@ -154,14 +154,6 @@ struct EntityLockState
 	EntityLockState();
 };
 
-struct EntityOccupiedVoxelState
-{
-	WorldInt2 voxel;
-	EntityInstanceID id;
-
-	EntityOccupiedVoxelState();
-};
-
 using EntityInstancePredicate = std::function<bool(const EntityInstance&)>;
 
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
@@ -207,7 +199,7 @@ public:
 	std::vector<EntityInstanceID> destroyedEntityIDs;
 
 	// Voxels treated as solid for pathfinding due to the presence of an entity.
-	std::vector<EntityOccupiedVoxelState> occupiedVoxelStates;
+	std::unordered_map<WorldInt2, EntityInstanceID> occupiedVoxels;
 private:
 	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
