@@ -43,7 +43,7 @@ namespace
 	constexpr double EnemyToPlayerDetectionDistance = 4.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
 	constexpr double EnemyToPlayerMeleeAttackDistance = 1.0; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
 
-	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isCharacter, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isTransformStatic, bool isCharacter, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -70,13 +70,23 @@ namespace
 			static_cast<float>(feetPosition.y + capsuleHalfTotalHeight),
 			static_cast<float>(feetPosition.z));
 		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
+		
+		JPH::EMotionType motionType = JPH::EMotionType::Kinematic;
+		if (isTransformStatic)
+		{
+			motionType = JPH::EMotionType::Static;
+		}
+		else if (isCharacter)
+		{
+			motionType = JPH::EMotionType::Dynamic;
+		}
+
 		const JPH::ObjectLayer capsuleObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::MOVING;
-		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, capsuleObjectLayer);
+		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, motionType, capsuleObjectLayer);
 		capsuleSettings.mIsSensor = isSensor;
 
 		if (isCharacter) // Enemies.
 		{
-			capsuleSettings.mMotionType = JPH::EMotionType::Dynamic;
 			capsuleSettings.mAllowedDOFs = JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationZ; // Constant Y position.
 			capsuleSettings.mAllowSleeping = false;
 			capsuleSettings.mFriction = 1.0f;
@@ -400,8 +410,9 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	animInst.setStateIndex(initInfo.initialAnimStateIndex);
 
+	const bool isTransformStatic = !initInfo.direction.has_value();
 	const bool hasBehavior = initInfo.canBeKilled;
-	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, hasBehavior, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, isTransformStatic, hasBehavior, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 	{
 		DebugLogError("Couldn't allocate entity Jolt physics body.");
 	}
