@@ -266,7 +266,7 @@ public:
 	void addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon);
 	void addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon);
 
-	void spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
+	int spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
 	void queueCityGuardEncounter(Game &game);
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.

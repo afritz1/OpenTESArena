@@ -834,7 +834,7 @@ void GameState::addCombatEntityResult(EntityInstanceID entityInstID, bool isFrom
 	this->combatResults.entityResults.emplace_back(std::move(result));
 }
 
-void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
+int GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
 {
 	const Player &player = game.player;
 	ArenaRandom &arenaRandom = game.arenaRandom;
@@ -932,6 +932,8 @@ void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo
 
 		actualSpawnCount++;
 	}
+
+	return actualSpawnCount;
 }
 
 void GameState::queueCityGuardEncounter(Game &game)
@@ -964,28 +966,6 @@ void GameState::queueCityGuardEncounter(Game &game)
 			return;
 		}
 
-		const EntityInstancePredicate removeEntityForCrimePredicate = [&entityChunkManager](const EntityInstance &entityInst)
-		{
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-			const EntityDefinitionType entityDefType = entityDef.type;
-			bool shouldDestroyEntity = false;
-			if (entityDefType == EntityDefinitionType::Citizen)
-			{
-				shouldDestroyEntity = true;
-			}
-			else if (entityDefType == EntityDefinitionType::StaticNPC)
-			{
-				const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
-				const StaticNpcEntityDefinitionType staticNpcEntityDefType = staticNpcEntityDef.type;
-				shouldDestroyEntity = (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper) || (staticNpcEntityDefType == StaticNpcEntityDefinitionType::TavernPatron);
-			}
-			
-			return shouldDestroyEntity;
-		};
-
-		// Clear entities who are sensitive to crime.
-		entityChunkManager.queueEntitiesDestroyIf(removeEntityForCrimePredicate);
-
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		const LocationDefinition &locationDef = this->getLocationDefinition();
 		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
@@ -996,7 +976,32 @@ void GameState::queueCityGuardEncounter(Game &game)
 
 		EntityEncounterSpawnInfo encounterSpawnInfo;
 		encounterSpawnInfo.initCityGuards(guardType, guardLevel, guardCount);
-		this->spawnEncounterEnemies(game, encounterSpawnInfo);
+		const int successfulSpawnCount = this->spawnEncounterEnemies(game, encounterSpawnInfo);
+
+		if (successfulSpawnCount > 0)
+		{
+			const EntityInstancePredicate removeEntityForCrimePredicate = [&entityChunkManager](const EntityInstance &entityInst)
+			{
+				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+				const EntityDefinitionType entityDefType = entityDef.type;
+				bool shouldDestroyEntity = false;
+				if (entityDefType == EntityDefinitionType::Citizen)
+				{
+					shouldDestroyEntity = true;
+				}
+				else if (entityDefType == EntityDefinitionType::StaticNPC)
+				{
+					const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
+					const StaticNpcEntityDefinitionType staticNpcEntityDefType = staticNpcEntityDef.type;
+					shouldDestroyEntity = (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper) || (staticNpcEntityDefType == StaticNpcEntityDefinitionType::TavernPatron);
+				}
+
+				return shouldDestroyEntity;
+			};
+
+			// Clear entities who are sensitive to crime.
+			entityChunkManager.queueEntitiesDestroyIf(removeEntityForCrimePredicate);
+		}
 	};
 }
 
