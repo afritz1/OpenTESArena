@@ -154,16 +154,6 @@ struct EntityLockState
 	EntityLockState();
 };
 
-// Generated when an entity moves between chunks so systems can update resource ownership.
-struct EntityTransferResult
-{
-	EntityInstanceID id;
-	ChunkInt2 oldChunkPos;
-	ChunkInt2 newChunkPos;
-
-	EntityTransferResult();
-};
-
 struct EntityOccupiedVoxelState
 {
 	WorldInt2 voxel;
@@ -216,10 +206,6 @@ public:
 	// Entities scheduled for destruction from memory this frame. These should not be simulated or rendered.
 	std::vector<EntityInstanceID> destroyedEntityIDs;
 
-	// Entities that have moved between chunks this frame and are still in play. Necessary for chunks that
-	// track the entities inside them for faster lookups.
-	std::vector<EntityTransferResult> transferResults;
-
 	// Voxels treated as solid for pathfinding due to the presence of an entity.
 	std::vector<EntityOccupiedVoxelState> occupiedVoxelStates;
 private:
@@ -245,8 +231,6 @@ private:
 		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random,
 		const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
-
-	void queueEntityTransfer(EntityInstanceID entityInstID, ChunkInt2 prevChunkPos, ChunkInt2 newChunkPos);
 
 	void updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);

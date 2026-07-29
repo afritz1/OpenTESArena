@@ -275,11 +275,6 @@ EntityLockState::EntityLockState()
 	this->isLocked = false;
 }
 
-EntityTransferResult::EntityTransferResult()
-{
-	this->id = -1;
-}
-
 EntityOccupiedVoxelState::EntityOccupiedVoxelState()
 {
 	this->id = -1;
@@ -1247,41 +1242,6 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 		const WorldInt2 levelOffset = WorldInt2::Zero;
 		this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
 			citizenGenInfo, random, entityDefLibrary, physicsSystem, textureManager, renderer);
-	}
-}
-
-void EntityChunkManager::queueEntityTransfer(EntityInstanceID entityInstID, ChunkInt2 prevChunkPos, ChunkInt2 newChunkPos)
-{
-	EntityChunk *prevEntityChunk = this->findChunkAtPosition(prevChunkPos); // Entity may have crossed chunk boundary same frame as player.
-	if (prevEntityChunk != nullptr)
-	{
-		std::vector<EntityInstanceID> &prevEntityChunkIDs = prevEntityChunk->entityIDs;
-		for (int entityIndex = 0; entityIndex < static_cast<int>(prevEntityChunkIDs.size()); entityIndex++)
-		{
-			const EntityInstanceID prevEntityChunkInstID = prevEntityChunkIDs[entityIndex];
-			if (prevEntityChunkInstID == entityInstID)
-			{
-				prevEntityChunkIDs.erase(prevEntityChunkIDs.begin() + entityIndex);
-				break;
-			}
-		}
-	}
-
-	EntityChunk *curEntityChunk = this->findChunkAtPosition(newChunkPos);
-	if (curEntityChunk != nullptr)
-	{
-		const auto destroyedIter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
-		const bool isEntityDestroyedThisFrame = destroyedIter != this->destroyedEntityIDs.end();
-		if (!isEntityDestroyedThisFrame)
-		{
-			curEntityChunk->entityIDs.emplace_back(entityInstID);
-
-			EntityTransferResult transferResult;
-			transferResult.id = entityInstID;
-			transferResult.oldChunkPos = prevChunkPos;
-			transferResult.newChunkPos = newChunkPos;
-			this->transferResults.emplace_back(std::move(transferResult));
-		}
 	}
 }
 
@@ -2372,16 +2332,6 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 				static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
 				static_cast<WEDouble>(physicsPosition.GetZ()));
 			entityPosition = newPosition;
-
-			const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
-			const WorldDouble2 newPositionXZ = newPosition.getXZ();
-
-			const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
-			const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
-			if (curEntityChunkPos != prevEntityChunkPos)
-			{
-				this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
-			}
 		}
 	}
 
@@ -2402,16 +2352,6 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 			static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
 			static_cast<WEDouble>(physicsPosition.GetZ()));
 		entityPosition = newPosition;
-
-		const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
-		const WorldDouble2 newPositionXZ = newPosition.getXZ();
-
-		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
-		const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
-		if (curEntityChunkPos != prevEntityChunkPos)
-		{
-			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
-		}
 	};
 
 	for (const EntityInstanceID entityInstID : this->citizenEntityInstIDs)
@@ -2423,47 +2363,84 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 	{
 		updateEntityPositionToPhysicsPosition(entityInstID);
 	}
+
+	// Refresh entity chunk caches. Doing it this way because managing transfer results was annoying.
+	for (ChunkPtr &chunkPtr : this->activeChunks)
+	{
+		chunkPtr->entityIDs.clear();
+	}
+
+	EntityChunk *currentEntityChunk = nullptr;
+	for (const EntityInstance &entityInst : this->entities.values)
+	{
+		const EntityInstanceID entityInstID = entityInst.instanceID;
+		const auto destroyedIter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
+		if (destroyedIter != this->destroyedEntityIDs.end())
+		{
+			continue;
+		}
+
+		const WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		const ChunkInt2 entityChunkPos = VoxelUtils::worldPointToChunk(entityPosition);
+		if ((currentEntityChunk == nullptr) || (currentEntityChunk->position != entityChunkPos))
+		{
+			currentEntityChunk = this->findChunkAtPosition(entityChunkPos);
+			if (currentEntityChunk == nullptr)
+			{
+				continue;
+			}
+		}
+
+		currentEntityChunk->entityIDs.emplace_back(entityInstID);
+	}
 }
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)
 {
 	const auto iter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
-	if (iter == this->destroyedEntityIDs.end())
+	if (iter != this->destroyedEntityIDs.end())
 	{
-		this->destroyedEntityIDs.emplace_back(entityInstID);
+		return;
+	}
 
-		if (chunkToNotify != nullptr)
-		{
-			EntityChunk &entityChunk = this->getChunkAtPosition(*chunkToNotify);
-			const auto iter = std::find(entityChunk.entityIDs.begin(), entityChunk.entityIDs.end(), entityInstID);
-			DebugAssert(iter != entityChunk.entityIDs.end());
-			entityChunk.entityIDs.erase(iter);
-		}
+	this->destroyedEntityIDs.emplace_back(entityInstID);
 
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityDefinitionType entityDefType = entityDef.type;
+	if (chunkToNotify != nullptr)
+	{
+		EntityChunk *entityChunk = this->findChunkAtPosition(*chunkToNotify);
+		if (entityChunk != nullptr)
+		{
+			const auto cacheIter = std::find(entityChunk->entityIDs.begin(), entityChunk->entityIDs.end(), entityInstID);
+			if (cacheIter != entityChunk->entityIDs.end())
+			{
+				entityChunk->entityIDs.erase(cacheIter);
+			}
+		}
+	}
 
-		std::vector<EntityInstanceID> *entityInstIDsToUpdate = nullptr;
-		if (entityDefType == EntityDefinitionType::Enemy)
-		{
-			entityInstIDsToUpdate = &this->enemyEntityInstIDs;
-		}
-		else if (entityDefType == EntityDefinitionType::Citizen)
-		{
-			entityInstIDsToUpdate = &this->citizenEntityInstIDs;
-		}
-		else if (entityDefType == EntityDefinitionType::Vfx)
-		{
-			entityInstIDsToUpdate = &this->vfxEntityInstIDs;
-		}
+	const EntityInstance &entityInst = this->entities.get(entityInstID);
+	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+	const EntityDefinitionType entityDefType = entityDef.type;
 
-		if (entityInstIDsToUpdate != nullptr)
-		{
-			const auto idIter = std::find(entityInstIDsToUpdate->begin(), entityInstIDsToUpdate->end(), entityInstID);
-			DebugAssert(idIter != entityInstIDsToUpdate->end());
-			entityInstIDsToUpdate->erase(idIter);
-		}
+	std::vector<EntityInstanceID> *entityInstIDsToUpdate = nullptr;
+	if (entityDefType == EntityDefinitionType::Enemy)
+	{
+		entityInstIDsToUpdate = &this->enemyEntityInstIDs;
+	}
+	else if (entityDefType == EntityDefinitionType::Citizen)
+	{
+		entityInstIDsToUpdate = &this->citizenEntityInstIDs;
+	}
+	else if (entityDefType == EntityDefinitionType::Vfx)
+	{
+		entityInstIDsToUpdate = &this->vfxEntityInstIDs;
+	}
+
+	if (entityInstIDsToUpdate != nullptr)
+	{
+		const auto idIter = std::find(entityInstIDsToUpdate->begin(), entityInstIDsToUpdate->end(), entityInstID);
+		DebugAssert(idIter != entityInstIDsToUpdate->end());
+		entityInstIDsToUpdate->erase(idIter);
 	}
 }
 
@@ -2574,7 +2551,6 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 	}
 
 	this->destroyedEntityIDs.clear();
-	this->transferResults.clear();
 }
 
 void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
