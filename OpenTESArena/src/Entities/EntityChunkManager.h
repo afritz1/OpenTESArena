@@ -246,11 +246,6 @@ public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	EntityInstanceID getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const;
 
-	// Count functions for specialized entities.
-	int getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const;
-	int getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const;
-	int getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const;
-
 	// Gets the entity visibility state necessary for rendering and ray cast selection.
 	void getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const;
 

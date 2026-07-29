@@ -1128,8 +1128,10 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
 
-		const int currentCitizenCount = CitizenUtils::getCitizenCount(*this);
-		const int targetCitizensToSpawn = std::min(CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
+		const int activeChunkCount = static_cast<int>(this->activeChunks.size());
+		const int maxCitizenCountInScene = CitizenUtils::getMaxCitizenCountForScene(activeChunkCount);
+		const int currentCitizenCount = static_cast<int>(this->citizenEntityInstIDs.size());
+		const int targetCitizensToSpawn = std::min(maxCitizenCountInScene - currentCitizenCount, CitizenUtils::MAX_CITIZENS_PER_CHUNK);
 		const int remainingMaleCitizensToSpawn = targetCitizensToSpawn / 2;
 		const int remainingFemaleCitizensToSpawn = targetCitizensToSpawn - remainingMaleCitizensToSpawn;
 		const int citizenRaceID = citizenGenInfo->raceID;
@@ -1722,94 +1724,6 @@ EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID body
 	}
 
 	return -1;
-}
-
-int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
-{
-	const int chunkIndex = this->findChunkIndex(chunkPos);
-	if (chunkIndex < 0)
-	{
-		DebugLogWarningFormat("Missing chunk (%s) for counting entities with direction.", chunkPos.toString().c_str());
-		return 0;
-	}
-
-	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
-
-	int count = 0;
-	for (const EntityInstanceID entityInstID : chunk.entityIDs)
-	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.directionID >= 0)
-		{
-			count++;
-		}
-	}
-
-	return count;
-}
-
-int EntityChunkManager::getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const
-{
-	const int chunkIndex = this->findChunkIndex(chunkPos);
-	if (chunkIndex < 0)
-	{
-		DebugLogWarningFormat("Missing chunk (%s) for counting entities with creature sound.", chunkPos.toString().c_str());
-		return 0;
-	}
-
-	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
-
-	int count = 0;
-	for (const EntityInstanceID entityInstID : chunk.entityIDs)
-	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.behaviorStateID < 0)
-		{
-			continue;
-		}
-
-		const EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
-		if (!behaviorState.isCreature())
-		{
-			continue;
-		}
-
-		count++;
-	}
-
-	return count;
-}
-
-int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const
-{
-	const int chunkIndex = this->findChunkIndex(chunkPos);
-	if (chunkIndex < 0)
-	{
-		DebugLogWarningFormat("Missing chunk (%s) for counting entities with citizen direction.", chunkPos.toString().c_str());
-		return 0;
-	}
-
-	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
-
-	int count = 0;
-	for (const EntityInstanceID entityInstID : chunk.entityIDs)
-	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.behaviorStateID < 0)
-		{
-			continue;
-		}
-
-		const EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
-		if (behaviorState.type != EntityBehaviorStateType::Citizen)
-		{
-			continue;
-		}
-
-		count++;
-	}
-
-	return count;
 }
 
 void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const

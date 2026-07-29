@@ -20,14 +20,12 @@
 namespace
 {
 	// Allowed directions for citizens to walk.
-	constexpr std::array<std::pair<CardinalDirectionName, WorldDouble2>, 4> CitizenDirections =
+	constexpr std::pair<CardinalDirectionName, WorldDouble2> CitizenDirections[] =
 	{
-		{
-			{ CardinalDirectionName::North, CardinalDirection::North },
-			{ CardinalDirectionName::East, CardinalDirection::East },
-			{ CardinalDirectionName::South, CardinalDirection::South },
-			{ CardinalDirectionName::West, CardinalDirection::West }
-		}
+		{ CardinalDirectionName::North, CardinalDirection::North },
+		{ CardinalDirectionName::East, CardinalDirection::East },
+		{ CardinalDirectionName::South, CardinalDirection::South },
+		{ CardinalDirectionName::West, CardinalDirection::West }
 	};
 }
 
@@ -39,6 +37,13 @@ void CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityD
 	this->maleEntityDef = maleEntityDef;
 	this->femaleEntityDef = femaleEntityDef;
 	this->raceID = raceID;
+}
+
+int CitizenUtils::getMaxCitizenCountForScene(int chunkCount)
+{
+	DebugAssert(chunkCount >= 0);
+	const int baseMaxCitizensPerScene = CitizenUtils::MAX_CITIZENS_PER_CHUNK * chunkCount;
+	return (5 * baseMaxCitizensPerScene) / 4;
 }
 
 bool CitizenUtils::canMapTypeSpawnCitizens(MapType mapType)
@@ -92,13 +97,13 @@ std::optional<CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapTyp
 
 bool CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection)
 {
-	const auto iter = std::find_if(CitizenDirections.begin(), CitizenDirections.end(),
+	const auto iter = std::find_if(std::begin(CitizenDirections), std::end(CitizenDirections),
 		[directionName](const auto &pair)
 	{
 		return pair.first == directionName;
 	});
 
-	if (iter != CitizenDirections.end())
+	if (iter != std::end(CitizenDirections))
 	{
 		*outDirection = iter->second;
 		return true;
@@ -123,21 +128,21 @@ const WorldDouble2 &CitizenUtils::getCitizenDirectionByIndex(int index)
 
 int CitizenUtils::getRandomCitizenDirectionIndex(Random &random)
 {
-	return random.next() % static_cast<int>(CitizenDirections.size());
+	return random.next(static_cast<int>(std::size(CitizenDirections)));
 }
 
-int CitizenUtils::getCitizenCountInChunk(const ChunkInt2 &chunkPos, const EntityChunkManager &entityChunkManager)
-{
-	return entityChunkManager.getCountInChunkWithCitizenDirection(chunkPos);
-}
-
-int CitizenUtils::getCitizenCount(const EntityChunkManager &entityChunkManager)
+int CitizenUtils::getCitizenCountInChunk(ChunkInt2 chunkPos, const EntityChunkManager &entityChunkManager)
 {
 	int count = 0;
-	for (int i = 0; i < entityChunkManager.getChunkCount(); i++)
+	for (const EntityInstanceID entityInstID : entityChunkManager.citizenEntityInstIDs)
 	{
-		const EntityChunk &chunk = entityChunkManager.getChunkAtIndex(i);
-		count += CitizenUtils::getCitizenCountInChunk(chunk.position, entityChunkManager);
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+		const WorldDouble3 &entityPosition = entityChunkManager.positions.get(entityInst.positionID);
+		const ChunkInt2 entityChunkPos = VoxelUtils::worldPointToChunk(entityPosition);
+		if (entityChunkPos == chunkPos)
+		{
+			count++;
+		}
 	}
 
 	return count;
