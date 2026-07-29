@@ -1,3 +1,6 @@
+#include <mutex>
+#include <thread>
+
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
 
@@ -12,12 +15,20 @@
 
 namespace
 {
+	// Required in contact listeners when Jolt is multi-threaded.
+	// - @todo ideally there would be thread-safe queues instead of locking per contact
+	std::mutex PlayerVsVoxelMutex;
+	std::mutex BowProjectileVsVoxelMutex;
+	std::mutex BowProjectileVsEntityMutex;
+
 	void OnPlayerVsVoxelContactAdded(const JPH::Body &playerBody, const JPH::Body &voxelBody, JPH::SubShapeID voxelSubShapeID, bool isVoxelSensor, Game &game)
 	{
 		if (!isVoxelSensor)
 		{
 			return;
 		}
+		
+		std::lock_guard<std::mutex> lockGuard(PlayerVsVoxelMutex);
 
 		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 		JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
@@ -74,6 +85,8 @@ namespace
 			return;
 		}
 
+		std::lock_guard<std::mutex> lockGuard(BowProjectileVsVoxelMutex);
+
 		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of an arrow dying
 	}
 
@@ -97,6 +110,8 @@ namespace
 		{
 			return;
 		}
+
+		std::lock_guard<std::mutex> lockGuard(BowProjectileVsEntityMutex);
 
 		GameState &gameState = game.gameState;
 		constexpr bool isFromMeleeWeapon = false;

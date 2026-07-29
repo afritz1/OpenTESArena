@@ -19,13 +19,14 @@ struct RayCastHit;
 namespace Physics
 {
 	// Jolt init values.
-	constexpr int TempAllocatorByteCount = 20 * 1024 * 1024; // 20MB
-	constexpr int ThreadCount = 1;
+	constexpr int TempAllocatorByteCount = 64 * 1024 * 1024;
 	constexpr int MaxBodies = 250000;
 	constexpr int BodyMutexCount = 0; // Use default settings.
-	constexpr int MaxBodyPairs = 65536;
-	constexpr int MaxContactConstraints = 16384;
+	constexpr int MaxBodyPairs = 1 << 16;
+	constexpr int MaxContactConstraints = MaxBodyPairs / 4;
 	constexpr double DeltaTime = 1.0 / 240.0; // Very high # of updates per frame to help prevent bumpy road feeling at lower FPS.
+
+	int getThreadCount(int platformThreadCount);
 
 	// Shape creation tweaks.
 	constexpr double BoxConvexRadius = 0.020;

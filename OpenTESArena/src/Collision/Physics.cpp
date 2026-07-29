@@ -696,6 +696,11 @@ namespace Physics
 	}
 }
 
+int Physics::getThreadCount(int platformThreadCount)
+{
+	return std::clamp(platformThreadCount / 2, 1, 3);
+}
+
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, double ceilingScale,
 	const VoxelDouble3 &cameraForward, bool includeEntities, const VoxelChunkManager &voxelChunkManager,
 	const EntityChunkManager &entityChunkManager, const CollisionChunkManager &collisionChunkManager,

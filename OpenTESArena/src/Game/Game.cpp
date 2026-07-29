@@ -491,7 +491,7 @@ bool Game::init()
 
 		debugTextBoxDummyText += std::string(30, TextRenderUtils::LARGEST_CHAR);
 	}
-	
+
 	UiTextBoxInitInfo debugTextBoxInitInfo;
 	debugTextBoxInitInfo.worstCaseText = debugTextBoxDummyText;
 	debugTextBoxInitInfo.fontName = CommonUiView::DebugInfoFontName;
@@ -685,7 +685,7 @@ void Game::handleContextChanges()
 			const std::string &activeContextName = this->uiManager.getContextName(activeContextID);
 			this->uiManager.endContext(activeContextName.c_str(), *this);
 		}
-		
+
 		this->uiManager.beginContext(this->nextContextName.c_str(), *this);
 		this->nextContextName.clear();
 	}
@@ -810,14 +810,18 @@ void Game::loop()
 	PhysicsBroadPhaseLayerInterface physicsBroadPhaseLayerInterface;
 	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
 	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
-	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
+	constexpr int maxPhysicsBodyCount = Physics::MaxBodies;
+	const int platformThreadCount = Platform::getThreadCount();
+	const int physicsThreadCount = Physics::getThreadCount(platformThreadCount);
+	DebugLogFormat("Initializing Jolt Physics with %d threads, %d max bodies.", physicsThreadCount, maxPhysicsBodyCount);
+	this->physicsSystem.Init(maxPhysicsBodyCount, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
 
 	PhysicsBodyActivationListener physicsBodyActivationListener;
 	PhysicsContactListener physicsContactListener(*this);
 	this->physicsSystem.SetBodyActivationListener(&physicsBodyActivationListener);
 	this->physicsSystem.SetContactListener(&physicsContactListener);
 
-	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
+	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, physicsThreadCount); // @todo: implement own derived JobSystem class
 
 	// Set startup UI to use for the first frame.
 	this->nextContextName = IntroUiModel::prepareStartupContext(*this);
