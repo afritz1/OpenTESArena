@@ -40,13 +40,13 @@
 #=============================================================================
 
 find_path(WILDMIDI_INCLUDE_DIR NAMES wildmidi_lib.h
-	HINTS $ENV{WILDMIDIDIR}
+	HINTS $ENV{WILDMIDIDIR} $ENV{WILDMIDIDIR}/include
 	DOC "The WildMidi include directory"
 )
 
 find_library(WILDMIDI_LIBRARY NAMES WildMidi wildmidi_dynamic libWildMidi
-	HINTS $ENV{WILDMIDIDIR}
-     DOC "The WildMidi library"
+	HINTS $ENV{WILDMIDIDIR} $ENV{WILDMIDIDIR}/x64
+	DOC "The WildMidi library"
 )
 
 # handle the QUIETLY and REQUIRED arguments and set WILDMIDI_FOUND to TRUE if
