@@ -1244,6 +1244,7 @@ void GameWorldUI::showCampModal()
 	campModalTitleTextBoxElementInitInfo.name = "GameWorldCampModalTitleTextBox";
 	campModalTitleTextBoxElementInitInfo.position = campModalTitleImageElementInitInfo.position;
 	campModalTitleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	campModalTitleTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo campModalTitleTextBoxInitInfo;
 	campModalTitleTextBoxInitInfo.text = GameWorldUiModel::getCampModalTitleText(exeData);
@@ -1263,6 +1264,7 @@ void GameWorldUI::showCampModal()
 	campModalManualHoursTextBoxElementInitInfo.name = "GameWorldCampModalManualHoursTextBox";
 	campModalManualHoursTextBoxElementInitInfo.position = campModalManualHoursImageElementInitInfo.position;
 	campModalManualHoursTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	campModalManualHoursTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo campModalManualHoursTextBoxInitInfo;
 	campModalManualHoursTextBoxInitInfo.text = GameWorldUiModel::getCampModalManualHoursText(exeData);
@@ -1301,6 +1303,7 @@ void GameWorldUI::showCampModal()
 	campModalUntilHealedTextBoxElementInitInfo.name = "GameWorldCampModalUntilHealedTextBox";
 	campModalUntilHealedTextBoxElementInitInfo.position = campModalUntilHealedImageElementInitInfo.position;
 	campModalUntilHealedTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	campModalUntilHealedTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo campModalUntilHealedTextBoxInitInfo;
 	campModalUntilHealedTextBoxInitInfo.text = GameWorldUiModel::getCampModalUntilHealedText(exeData);
@@ -1424,6 +1427,7 @@ void GameWorldUI::showCampManualHoursModal()
 	textBoxElementInitInfo.name = "GameWorldCampManualHoursModalTextBox";
 	textBoxElementInitInfo.position = imageGlobalRect.getTopLeft() + Int2(13, 11);
 	textBoxElementInitInfo.pivotType = UiPivotType::TopLeft;
+	textBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo textBoxInitInfo;
 	textBoxInitInfo.text = GameWorldUiModel::getCampManualHoursModalText(exeData);
@@ -1436,6 +1440,7 @@ void GameWorldUI::showCampManualHoursModal()
 	inputTextBoxElementInitInfo.name = "GameWorldCampManualHoursModalInputTextBox";
 	inputTextBoxElementInitInfo.position = textBoxGlobalRect.getTopRight();
 	inputTextBoxElementInitInfo.pivotType = UiPivotType::TopLeft;
+	inputTextBoxElementInitInfo.drawOrder = 2;
 
 	UiTextBoxInitInfo inputTextBoxInitInfo;
 	inputTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(3);
