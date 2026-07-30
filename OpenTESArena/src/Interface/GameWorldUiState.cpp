@@ -1795,13 +1795,26 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		break;
 	case ConversationMessageBoxType::MagesGuildBuyItem:
 		messageBoxTitleText = exeData.services.magesGuildPickItemModalTitle;
-		messageBoxButtonCount = 3;
-		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected;
-		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected;
-		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildBuySpellsButtonSelected;
-		messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
-		messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
-		messageBoxButtonTexts[2] = exeData.services.magesGuildPickItemModalSpells;
+
+		if (canCastMagic)
+		{
+			messageBoxButtonCount = 3;
+			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected;
+			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected;
+			messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildBuySpellsButtonSelected;
+			messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
+			messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
+			messageBoxButtonTexts[2] = exeData.services.magesGuildPickItemModalSpells;
+		}
+		else
+		{
+			messageBoxButtonCount = 2;
+			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected;
+			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected;
+			messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
+			messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
+		}
+		
 		inputActionMapName = InputActionMapName::MagesGuildBuy;
 		break;
 	case ConversationMessageBoxType::MagesGuildSteal:
