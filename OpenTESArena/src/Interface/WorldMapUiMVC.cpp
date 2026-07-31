@@ -382,6 +382,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	player.clearKeyInventory();
 
 	gameState.clearTavernRentedRoomState();
+	gameState.clearAutomapDirectionsDetailEntries();
 
 	Random &random = game.random;
 	if (player.effectsState.isDiseased())

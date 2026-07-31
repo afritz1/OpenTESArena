@@ -9,6 +9,7 @@
 #include "Jolt/Physics/PhysicsSystem.h"
 
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Interface/DialogueManager.h"
 #include "../Interface/ProvinceMapUiMVC.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
@@ -183,6 +184,8 @@ private:
 
 	GuardSpawnState guardSpawnState;
 
+	std::vector<DialogueDirectionsDetailEntry> automapDirectionsDetailEntries; // Stored directions from NPCs that appear on the automap.
+
 	void clearMaps();
 public:
 	// Creates incomplete game state with no active world, to be further initialized later.
@@ -268,6 +271,10 @@ public:
 
 	int spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
 	void queueCityGuardEncounter(Game &game);
+
+	Span<const DialogueDirectionsDetailEntry> getAutomapDirectionsDetailEntries() const;
+	void addAutomapDirectionsDetailEntry(const std::string &buildingName, WorldInt3 worldVoxel);
+	void clearAutomapDirectionsDetailEntries();
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
 	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);

@@ -328,6 +328,7 @@ void GameState::clearSession()
 
 	this->campingState.clear();
 	this->tavernRentedRoomState.clear();
+	this->automapDirectionsDetailEntries.clear();
 }
 
 bool GameState::hasPendingLevelIndexChange() const
@@ -1005,6 +1006,31 @@ void GameState::queueCityGuardEncounter(Game &game)
 	};
 }
 
+Span<const DialogueDirectionsDetailEntry> GameState::getAutomapDirectionsDetailEntries() const
+{
+	return this->automapDirectionsDetailEntries;
+}
+
+void GameState::addAutomapDirectionsDetailEntry(const std::string &buildingName, WorldInt3 worldVoxel)
+{
+	DialogueDirectionsDetailEntry entry(buildingName, worldVoxel);
+	const auto existingIter = std::find_if(this->automapDirectionsDetailEntries.begin(), this->automapDirectionsDetailEntries.end(),
+		[&entry](const DialogueDirectionsDetailEntry &currentEntry)
+	{
+		return currentEntry.entranceWorldVoxel == entry.entranceWorldVoxel;
+	});
+
+	if (existingIter == this->automapDirectionsDetailEntries.end())
+	{
+		this->automapDirectionsDetailEntries.emplace_back(std::move(entry));
+	}
+}
+
+void GameState::clearAutomapDirectionsDetailEntries()
+{
+	this->automapDirectionsDetailEntries.clear();
+}
+
 void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt)
 {
 	Player &player = game.player;
@@ -1154,6 +1180,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.random, textureManager);
 
 	this->guardSpawnState.clearQueue();
+	this->automapDirectionsDetailEntries.clear();
 
 	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
 	RenderCamera renderCamera;

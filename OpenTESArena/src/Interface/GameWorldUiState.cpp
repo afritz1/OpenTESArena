@@ -218,8 +218,10 @@ namespace
 		return closestIndex;
 	}
 
-	std::string GetSubstitutedTextForDirectionsEntry(const DialogueDirectionsDetailEntry *detailEntry, WorldInt3 playerWorldVoxel, DialogueManager &dialogueManager)
+	std::string GetSubstitutedTextForDirectionsEntry(const DialogueDirectionsDetailEntry *detailEntry, WorldInt3 playerWorldVoxel, DialogueManager &dialogueManager, bool *outIsEntryValidForAutomap)
 	{
+		*outIsEntryValidForAutomap = false;
+
 		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
 		const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
 
@@ -239,6 +241,7 @@ namespace
 		{
 			// Close enough to mark on player's map.
 			entryKey = 261;
+			*outIsEntryValidForAutomap = true;
 		}
 		else
 		{
@@ -2581,7 +2584,7 @@ UiButtonCallback GameWorldUI::makeDirectionsEntryCallback(const DialogueDirectio
 		UiManager &uiManager = game.uiManager;
 		uiManager.disableTopMostContext();
 
-		const GameState &gameState = game.gameState;
+		GameState &gameState = game.gameState;
 		const double ceilingScale = gameState.getActiveCeilingScale();
 		const Player &player = game.player;
 		const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
@@ -2621,7 +2624,14 @@ UiButtonCallback GameWorldUI::makeDirectionsEntryCallback(const DialogueDirectio
 					nearestDetailEntry = &detailEntries[nearestDetailEntryIndex];
 				}
 
-				text = GetSubstitutedTextForDirectionsEntry(nearestDetailEntry, playerWorldVoxel, dialogueManager);
+				bool isEntryValidForAutomap;
+				text = GetSubstitutedTextForDirectionsEntry(nearestDetailEntry, playerWorldVoxel, dialogueManager, &isEntryValidForAutomap);
+
+				if (isEntryValidForAutomap)
+				{
+					DebugAssert(nearestDetailEntry != nullptr);
+					gameState.addAutomapDirectionsDetailEntry(nearestDetailEntry->buildingName, nearestDetailEntry->entranceWorldVoxel);
+				}
 			}
 
 			GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, popUpClosedCallback);
@@ -2638,7 +2648,7 @@ UiButtonCallback GameWorldUI::makeDirectionsDetailEntryCallback(const DialogueDi
 		UiManager &uiManager = game.uiManager;
 		uiManager.disableTopMostContext();
 
-		const GameState &gameState = game.gameState;
+		GameState &gameState = game.gameState;
 		const double ceilingScale = gameState.getActiveCeilingScale();
 		const Player &player = game.player;
 		const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
@@ -2653,9 +2663,16 @@ UiButtonCallback GameWorldUI::makeDirectionsDetailEntryCallback(const DialogueDi
 			nearestDetailEntry = &detailEntry;
 		}
 
-		const std::string text = GetSubstitutedTextForDirectionsEntry(nearestDetailEntry, playerWorldVoxel, dialogueManager);
+		bool isEntryValidForAutomap;
+		const std::string text = GetSubstitutedTextForDirectionsEntry(nearestDetailEntry, playerWorldVoxel, dialogueManager, &isEntryValidForAutomap);
 		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Citizen);
 		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, popUpClosedCallback);
+
+		if (isEntryValidForAutomap)
+		{
+			DebugAssert(nearestDetailEntry != nullptr);
+			gameState.addAutomapDirectionsDetailEntry(nearestDetailEntry->buildingName, nearestDetailEntry->entranceWorldVoxel);
+		}
 	};
 }
 

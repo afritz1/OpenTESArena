@@ -35,17 +35,17 @@ namespace
 	};
 }
 
-Double2 AutomapUiModel::makeAutomapOffset(const VoxelInt2 &playerVoxel)
+Double2 AutomapUiModel::makeAutomapOffset(const VoxelInt2 &voxel)
 {
 	// Offsets from the top-left corner of the automap texture. Always at least one full chunk because
 	// the player is in the middle of the active chunks.
 	const VoxelInt2 chunkOffset(
 		AutomapUiView::ChunkDistance * ChunkUtils::CHUNK_DIM,
 		AutomapUiView::ChunkDistance * ChunkUtils::CHUNK_DIM);
-	const VoxelInt2 playerVoxelOffset(ChunkUtils::CHUNK_DIM - playerVoxel.y - 1, playerVoxel.x);
+	const VoxelInt2 voxelOffset(ChunkUtils::CHUNK_DIM - voxel.y - 1, voxel.x);
 
 	// Convert to real since the automap scrolling is in vector space.
-	const Double2 offsetReal = VoxelUtils::getVoxelCenter(chunkOffset + playerVoxelOffset);
+	const Double2 offsetReal = VoxelUtils::getVoxelCenter(chunkOffset + voxelOffset);
 
 	// Negate the offset so it's how much the automap is pushed. It's the vector opposite of the automap
 	// origin to the player's position.
