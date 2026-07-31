@@ -34,7 +34,7 @@ std::vector<InventoryItemUiDefinition> InventoryUiModel::getPlayerInventoryItems
 		}
 
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-		std::string itemDisplayName = String::format("%s (%.1fkg)", itemDef.getDisplayName(itemInst.stackAmount).c_str(), itemDef.getWeight());
+		std::string itemDisplayName = String::format("%s (%.1fkg)", itemDef.getDisplayNameWithQty(itemInst.stackAmount).c_str(), itemDef.getWeight());
 		const Color itemTextColor = InventoryUiView::getItemDisplayColor(itemInst, player);
 
 		InventoryItemUiDefinition itemUiDef;

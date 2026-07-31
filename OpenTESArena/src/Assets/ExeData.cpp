@@ -669,6 +669,7 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int armorClassItemMaterialChancesOffset = GetExeAddress(*section, "ArmorClassItemMaterialChances");
 	const int armorClassItemMaterialPriceMultipliersOffset = GetExeAddress(*section, "ArmorClassItemMaterialPriceMultipliers");
 	const int potionNamesOffset = GetExeAddress(*section, "PotionNames");
+	const int potionGoldPricesOffset = GetExeAddress(*section, "PotionGoldPrices");
 	const int unidentifiedPotionNameOffset = GetExeAddress(*section, "UnidentifiedPotionName");
 	const int bodyPartNamesOffset = GetExeAddress(*section, "BodyPartNames");
 	const int weaponAnimFilenamesOffset = GetExeAddress(*section, "WeaponAnimationFilenames");
@@ -744,6 +745,7 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	initInt8Array(this->armorClassItemMaterialChances, exeBytes, armorClassItemMaterialChancesOffset);
 	initInt16Array(this->armorClassItemMaterialPriceMultipliers, exeBytes, armorClassItemMaterialPriceMultipliersOffset);
 	initStringArrayNullTerminated(this->potionNames, exeBytes, potionNamesOffset);
+	initInt16Array(this->potionGoldPrices, exeBytes, potionGoldPricesOffset);
 	this->unidentifiedPotionName = GetExeStringNullTerminated(exeBytes, unidentifiedPotionNameOffset);
 	initStringArrayNullTerminated(this->bodyPartNames, exeBytes, bodyPartNamesOffset);
 	initStringArrayNullTerminated(this->weaponAnimationFilenames, exeBytes, weaponAnimFilenamesOffset);

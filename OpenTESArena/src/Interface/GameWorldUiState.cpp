@@ -103,7 +103,7 @@ namespace
 
 	std::string GetLootItemDisplayNameWithQty(const ItemDefinition &itemDef, int stackAmount)
 	{
-		std::string displayName = itemDef.getDisplayName(stackAmount);
+		std::string displayName = itemDef.getDisplayNameWithQty(stackAmount);
 		if (itemDef.type == ItemType::Gold)
 		{
 			size_t goldCountIndex = displayName.find("%u");
@@ -2110,7 +2110,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
 			const WeaponItemDefinition &sourceWeaponDef = sourceItemDef.weapon;
-			const std::string weaponDisplayName = sourceItemDef.getDisplayName(1);
+			const std::string weaponDisplayName = sourceItemDef.getDisplayNameWithoutQty();
 			const int weaponHandedness = sourceWeaponDef.handCount;
 			const double weaponWeightKgs = sourceItemDef.getWeight();
 			const int weaponPrice = sourceItemDef.getGoldValue();
@@ -2148,7 +2148,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
 			const ArmorItemDefinition &sourceArmorDef = sourceItemDef.armor;
-			const std::string armorDisplayName = sourceItemDef.getDisplayName(1);
+			const std::string armorDisplayName = sourceItemDef.getDisplayNameWithoutQty();
 			const double armorWeightKgs = sourceItemDef.getWeight();
 			const int armorPrice = sourceItemDef.getGoldValue();
 
@@ -2188,7 +2188,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		{
 			const ItemInstance &sourceItemInst = player.inventory.getSlot(inventorySlotIndex);
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemInst.defID);
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayNameWithoutQty() });
 			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemSellCallback(inventorySlotIndex));
 		}
 
@@ -2223,7 +2223,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		{
 			const ItemInstance &sourceItemInst = player.inventory.getSlot(inventorySlotIndex);
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemInst.defID);
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayName(1) });
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayNameWithoutQty() });
 			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemRepairCallback(inventorySlotIndex));
 		}
 
@@ -2236,7 +2236,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 150;
 		listBoxTextureHeight = 56;
-		listBoxColumnPixelXOffsets = { 0, 130 };
+		listBoxColumnPixelXOffsets = { 0, 123 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
@@ -2249,7 +2249,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
-			const std::string consumableDisplayName = String::format("%.28s", sourceItemDef.getDisplayName(1).c_str());
+			const std::string consumableDisplayName = String::format("%.28s", sourceItemDef.getDisplayNameWithoutQty().c_str());
 			const int consumableGoldPrice = sourceItemDef.getGoldValue();
 			const std::string consumableGoldPriceString = String::format("%d gp", consumableGoldPrice);
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { consumableDisplayName, consumableGoldPriceString });
@@ -2278,8 +2278,9 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
-			const std::string sourceItemDisplayName = String::format("%.30s", sourceItemDef.getDisplayName(1).c_str());
+			const std::string sourceItemDisplayName = String::format("%.30s", sourceItemDef.getDisplayNameWithoutQty().c_str());
 			const int sourceItemGoldPrice = sourceItemDef.getGoldValue();
+
 			const std::string sourceItemGoldPriceString = String::format("%d gp", sourceItemGoldPrice);
 			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDisplayName, sourceItemGoldPriceString });
 			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemPurchaseCallback(sourceItemDefID, sourceItemGoldPrice, ConversationMessageBoxType::MagesGuild));
@@ -2719,7 +2720,7 @@ UiButtonCallback GameWorldUI::makeShopkeeperItemPurchaseCallback(ItemDefinitionI
 
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(itemDefID);
-		const std::string selectedItemDisplayName = selectedItemDef.getDisplayName(1);
+		const std::string selectedItemDisplayName = selectedItemDef.getDisplayNameWithoutQty();
 
 		Player &player = game.player;
 		ItemInventory &playerInventory = player.inventory;
@@ -2758,7 +2759,7 @@ UiButtonCallback GameWorldUI::makeShopkeeperItemSellCallback(int playerInventory
 
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(selectedItemInst.defID);
-		const std::string selectedItemDisplayName = selectedItemDef.getDisplayName(1);
+		const std::string selectedItemDisplayName = selectedItemDef.getDisplayNameWithoutQty();
 		const int selectedItemGoldValue = selectedItemDef.getGoldValue();
 
 		player.gold += selectedItemGoldValue;
@@ -2920,7 +2921,7 @@ void GameWorldUI::onPlayerStealItemSuccess(const ItemLibraryPredicate &stealable
 	const int stolenItemDefIdIndex = random.next(static_cast<int>(stealableItemDefIDs.size()));
 	const ItemDefinitionID stolenItemDefID = stealableItemDefIDs[stolenItemDefIdIndex];
 	const ItemDefinition &stolenItemDef = itemLibrary.getDefinition(stolenItemDefID);
-	const std::string itemName = stolenItemDef.getDisplayName(1);
+	const std::string itemName = stolenItemDef.getDisplayNameWithoutQty();
 	const std::string text = String::replace(exeData.services.equipmentStealSuccess, "%s", itemName.c_str());
 
 	Player &player = game.player;

@@ -105,6 +105,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	}*/
 
 	const Span<const std::string> potionNames = exeData.equipment.potionNames;
+	const Span<const uint16_t> potionGoldPrices = exeData.equipment.potionGoldPrices;
 	const std::string &unidentifiedPotionName = exeData.equipment.unidentifiedPotionName;
 	for (int i = 0; i < potionNames.getCount(); i++)
 	{
@@ -113,7 +114,8 @@ void ItemLibrary::init(const ExeData &exeData)
 
 		const std::string &potionName = potionNames[i];
 		const ArenaConsumableTypeID consumableTypeID = static_cast<ArenaConsumableTypeID>(i);
-		itemDef.consumable.init(potionName.c_str(), consumableTypeID, unidentifiedPotionName.c_str());
+		const int potionGoldPrice = potionGoldPrices[i];
+		itemDef.consumable.init(potionName.c_str(), consumableTypeID, potionGoldPrice, unidentifiedPotionName.c_str());
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	

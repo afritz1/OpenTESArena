@@ -67,10 +67,11 @@ struct ConsumableItemDefinition
 {
 	char name[64]; // "Potion of <effect>", etc.
 	ArenaConsumableTypeID typeID;
+	int basePrice;
 	char unidentifiedName[64];
 	// @todo: effect def ID?
 
-	void init(const char *name, ArenaConsumableTypeID typeID, const char *unidentifiedName);
+	void init(const char *name, ArenaConsumableTypeID typeID, int basePrice, const char *unidentifiedName);
 };
 
 struct GoldItemDefinition
@@ -178,7 +179,8 @@ struct ItemDefinition
 
 	void init(ItemType type);
 
-	std::string getDisplayName(int stackAmount) const;
+	std::string getDisplayNameWithQty(int stackAmount) const;
+	std::string getDisplayNameWithoutQty() const;
 	double getWeight() const;
 	int getGoldValue() const;
 };

@@ -128,10 +128,11 @@ void ArmorItemDefinition::initPlate(const char *name, ArenaArmorTypeID typeID, d
 	this->plateMaterialDefID = materialDefID;
 }
 
-void ConsumableItemDefinition::init(const char *name, ArenaConsumableTypeID typeID, const char *unidentifiedName)
+void ConsumableItemDefinition::init(const char *name, ArenaConsumableTypeID typeID, int basePrice, const char *unidentifiedName)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
+	this->basePrice = basePrice;
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 }
 
@@ -225,7 +226,7 @@ void ItemDefinition::init(ItemType type)
 	this->isArtifact = false;
 }
 
-std::string ItemDefinition::getDisplayName(int stackAmount) const
+std::string ItemDefinition::getDisplayNameWithQty(int stackAmount) const
 {
 	// @todo eventually this will need stack counts from ItemInstance, so may as well move this there sometime
 
@@ -247,6 +248,25 @@ std::string ItemDefinition::getDisplayName(int stackAmount) const
 		return this->trinket.name;
 	case ItemType::Weapon:
 		return this->weapon.name;
+	default:
+		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
+std::string ItemDefinition::getDisplayNameWithoutQty() const
+{
+	switch (this->type)
+	{
+	case ItemType::Accessory:
+	case ItemType::Armor:
+	case ItemType::Gold:
+	case ItemType::Misc:
+	case ItemType::Shield:
+	case ItemType::Trinket:
+	case ItemType::Weapon:
+		return this->getDisplayNameWithQty(1);
+	case ItemType::Consumable:
+		return this->consumable.name;
 	default:
 		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(this->type)));
 	}
@@ -286,7 +306,7 @@ int ItemDefinition::getGoldValue() const
 	case ItemType::Armor:
 		return 1; // @todo
 	case ItemType::Consumable:
-		return 1; // @todo
+		return this->consumable.basePrice;
 	case ItemType::Gold:
 		return 1;
 	case ItemType::Misc:

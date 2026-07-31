@@ -201,6 +201,7 @@ EnhancementItemAttributePrices=0x3D7B7
 ArmorClassItemMaterialChances=0x3D7CF
 ArmorClassItemMaterialPriceMultipliers=0x3D7D4
 PotionNames=0x3DFC9
+PotionGoldPrices=0x3E11C
 UnidentifiedPotionName=0x4148C
 BodyPartNames=0x3DB8D
 WeaponAnimationFilenames=0x41DAC

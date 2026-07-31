@@ -351,6 +351,7 @@ struct ExeDataEquipment
 
 	// Consumables.
 	std::string potionNames[15]; // "Potion of <effect>"...
+	uint16_t potionGoldPrices[15];
 	std::string unidentifiedPotionName;
 
 	// @todo: artifacts.
