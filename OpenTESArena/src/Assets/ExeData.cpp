@@ -1058,6 +1058,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int tavernModalRumorsOffset = GetExeAddress(*section, "TavernModalRumors");
 	const int tavernModalExitOffset = GetExeAddress(*section, "TavernModalExit");
 	const int tavernDrinksOffset = GetExeAddress(*section, "TavernDrinks");
+	const int tavernDrinkGoldPricesOffset = GetExeAddress(*section, "TavernDrinkGoldPrices");
 	const int tavernRoomTypesOffset = GetExeAddress(*section, "TavernRoomTypes");
 	const int tavernRoomsAvailableOffset = GetExeAddress(*section, "TavernRoomsAvailable");
 	const int tavernSneakIntoRoomUnsuccessfulOffset = GetExeAddress(*section, "TavernSneakIntoRoomUnsuccessful");
@@ -1128,6 +1129,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->tavernModalRumors = GetExeStringNullTerminated(exeBytes, tavernModalRumorsOffset);
 	this->tavernModalExit = GetExeStringNullTerminated(exeBytes, tavernModalExitOffset);
 	initStringArrayNullTerminated(this->tavernDrinks, exeBytes, tavernDrinksOffset);
+	initInt8Array(this->tavernDrinkGoldPrices, exeBytes, tavernDrinkGoldPricesOffset);
 	initStringArrayNullTerminated(this->tavernRoomTypes, exeBytes, tavernRoomTypesOffset);
 	this->tavernRoomsAvailable = GetExeStringNullTerminated(exeBytes, tavernRoomsAvailableOffset);
 	this->tavernSneakIntoRoomUnsuccessful = GetExeStringNullTerminated(exeBytes, tavernSneakIntoRoomUnsuccessfulOffset);

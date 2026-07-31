@@ -308,6 +308,7 @@ TavernModalSneakIntoARoom=0x42C7F
 TavernModalRumors=0x42C96
 TavernModalExit=0x42CA2
 TavernDrinks=0x3DB12
+TavernDrinkGoldPrices=0x3DBE8
 TavernRoomTypes=0x3E292
 TavernRoomsAvailable=0x42D51
 TavernSneakIntoRoomUnsuccessful=0x42D61

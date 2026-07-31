@@ -585,6 +585,7 @@ struct ExeDataServices
 	std::string tavernModalRumors;
 	std::string tavernModalExit;
 	std::string tavernDrinks[21];
+	uint8_t tavernDrinkGoldPrices[21];
 	std::string tavernRoomTypes[5];
 	std::string tavernRoomsAvailable;
 	std::string tavernSneakIntoRoomUnsuccessful;

@@ -18,8 +18,8 @@ namespace RandomUtils
 	}
 
 	// Shuffles the elements randomly with the given RNG source.
-	template<typename T>
-	void shuffle(Span<T> buffer, Random &random)
+	template<typename T, typename RandomT>
+	void shuffle(Span<T> buffer, RandomT &random)
 	{
 		const int count = buffer.getCount();
 		for (int i = 0; i < count - 1; i++)

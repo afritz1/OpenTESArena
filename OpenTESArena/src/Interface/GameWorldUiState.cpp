@@ -1,4 +1,5 @@
 #include <cstring>
+#include <numeric>
 
 #include "AutomapUiState.h"
 #include "CharacterUiState.h"
@@ -14,6 +15,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/DialogueManager.h"
+#include "../Math/RandomUtils.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -2317,15 +2319,32 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Arena;
 		listBoxTextureWidth = 155;
 		listBoxTextureHeight = 54;
+		listBoxColumnPixelXOffsets = { 0, 120 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
 		Span<const std::string> drinkNames = exeData.services.tavernDrinks;
-		for (int i = 0; i < drinkNames.getCount(); i++)
+		Span<const uint8_t> drinkGoldPrices = exeData.services.tavernDrinkGoldPrices;
+
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
+		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+		ArenaRandom tempRandom(locationCityDef.citySeed); // @todo use interior seed from the entrance XY
+
+		constexpr int maxAvailableDrinkCount = 10;
+		std::vector<int> availableDrinkIndices(drinkNames.getCount());
+		std::iota(availableDrinkIndices.begin(), availableDrinkIndices.end(), 0);
+		RandomUtils::shuffle<int>(availableDrinkIndices, tempRandom);
+		availableDrinkIndices.resize(maxAvailableDrinkCount);
+
+		for (int i = 0; i < static_cast<int>(availableDrinkIndices.size()); i++)
 		{
-			const std::string &drinkName = drinkNames[i];
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { drinkName });
-			listBoxItemCallbacks.emplace_back(GameWorldUI::makeTavernDrinkPurchaseCallback(drinkName));
+			const int drinkIndex = availableDrinkIndices[i];
+			const std::string &drinkName = drinkNames[drinkIndex];
+			const int drinkGoldPrice = drinkGoldPrices[drinkIndex];
+			const std::string drinkNameTruncated = String::format("%.22s", drinkName.c_str());
+			const std::string drinkGoldPriceString = String::format("%d gp", drinkGoldPrice);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { drinkNameTruncated, drinkGoldPriceString });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeTavernDrinkPurchaseCallback(drinkName, drinkGoldPrice));
 		}
 
 		break;
@@ -2779,9 +2798,9 @@ UiButtonCallback GameWorldUI::makeMagesGuildSpellPurchaseCallback(const std::str
 	};
 }
 
-UiButtonCallback GameWorldUI::makeTavernDrinkPurchaseCallback(const std::string &drinkName)
+UiButtonCallback GameWorldUI::makeTavernDrinkPurchaseCallback(const std::string &drinkName, int drinkGoldPrice)
 {
-	return [drinkName](MouseButtonType)
+	return [drinkName, drinkGoldPrice](MouseButtonType)
 	{
 		GameWorldUiState &state = GameWorldUI::state;
 		Game &game = *state.game;
@@ -2789,19 +2808,34 @@ UiButtonCallback GameWorldUI::makeTavernDrinkPurchaseCallback(const std::string 
 		uiManager.disableTopMostContext();
 
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		std::string consumeDrinkText = String::replace(exeData.services.tavernConsumeDrink, "%s", drinkName);
-		consumeDrinkText = String::distributeNewlines(consumeDrinkText, 60);
+		const GameWorldPopUpClosedCallback returnToTavernMessageBoxCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Tavern);
 
-		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Tavern);
-		GameWorldPopUpClosedCallback consumeDrinkOnCloseCallback = [&game, popUpClosedCallback]()
+		Player &player = game.player;
+
+		std::string text;
+		GameWorldPopUpClosedCallback popUpClosedCallback;
+		if (player.gold >= drinkGoldPrice)
 		{
-			Player &player = game.player;
-			player.effectsState.applyDrink();
+			player.gold -= drinkGoldPrice;
 
-			popUpClosedCallback();
-		};
+			std::string consumeDrinkText = String::replace(exeData.services.tavernConsumeDrink, "%s", drinkName);
+			text = String::distributeNewlines(consumeDrinkText, 60);
 
-		GameWorldUI::showTextPopUp(consumeDrinkText.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, consumeDrinkOnCloseCallback);
+			popUpClosedCallback = [&game, returnToTavernMessageBoxCallback]()
+			{
+				Player &player = game.player;
+				player.effectsState.applyDrink();
+
+				returnToTavernMessageBoxCallback();
+			};
+		}
+		else
+		{
+			text = String::format("%s is too expensive.", drinkName.c_str());
+			popUpClosedCallback = returnToTavernMessageBoxCallback;
+		}
+
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, popUpClosedCallback);
 	};
 }
 
