@@ -160,7 +160,7 @@ namespace GameWorldUI
 	UiButtonCallback makeShopkeeperItemRepairCallback(int playerInventorySlotIndex);
 	UiButtonCallback makeMagesGuildSpellPurchaseCallback(const std::string &spellName);
 	UiButtonCallback makeTavernDrinkPurchaseCallback(const std::string &drinkName, int drinkGoldPrice);
-	UiButtonCallback makeTavernRoomPurchaseCallback(int roomType);
+	UiButtonCallback makeTavernRoomPurchaseCallback(int roomType, int goldPrice);
 	UiButtonCallback makeTempleCurePurchaseCallback();
 	void onPlayerStealItemSuccess(const ItemLibraryPredicate &stealableItemsPredicate, ConversationMessageBoxType mainMessageBoxType);
 	void onPlayerStealItemFailure();

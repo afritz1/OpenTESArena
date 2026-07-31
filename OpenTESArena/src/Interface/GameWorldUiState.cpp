@@ -2236,6 +2236,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 150;
 		listBoxTextureHeight = 56;
+		listBoxColumnPixelXOffsets = { 0, 130 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
@@ -2248,9 +2249,10 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
-			const std::string consumableDisplayName = sourceItemDef.getDisplayName(1);
+			const std::string consumableDisplayName = String::format("%.28s", sourceItemDef.getDisplayName(1).c_str());
 			const int consumableGoldPrice = sourceItemDef.getGoldValue();
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { consumableDisplayName });
+			const std::string consumableGoldPriceString = String::format("%d gp", consumableGoldPrice);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { consumableDisplayName, consumableGoldPriceString });
 			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemPurchaseCallback(sourceItemDefID, consumableGoldPrice, ConversationMessageBoxType::MagesGuild));
 		}
 
@@ -2263,6 +2265,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 270;
 		listBoxTextureHeight = 72;
+		listBoxColumnPixelXOffsets = { 0, 180 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
 
@@ -2275,9 +2278,10 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
 			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
-			const std::string sourceItemDisplayName = sourceItemDef.getDisplayName(1);
+			const std::string sourceItemDisplayName = String::format("%.30s", sourceItemDef.getDisplayName(1).c_str());
 			const int sourceItemGoldPrice = sourceItemDef.getGoldValue();
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDisplayName });
+			const std::string sourceItemGoldPriceString = String::format("%d gp", sourceItemGoldPrice);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDisplayName, sourceItemGoldPriceString });
 			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemPurchaseCallback(sourceItemDefID, sourceItemGoldPrice, ConversationMessageBoxType::MagesGuild));
 		}
 
@@ -2354,18 +2358,25 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxTextureName = ArenaTextureName::ContainerInventory;
 		listBoxPositionOffset = Int2(29, 36);
 		listBoxFontName = ArenaFontName::A;
-		listBoxTextureWidth = 146;
+		listBoxTextureWidth = 170;
 		listBoxTextureHeight = 44;
+		listBoxColumnPixelXOffsets = { 0, 112 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
 		Span<const std::string> roomTypeNames = exeData.services.tavernRoomTypes;
+		constexpr int roomGoldPricesPerDay[] = { 10, 20, 35, 50, 75 }; // @todo get from ExeData
+
 		for (int i = 0; i < roomTypeNames.getCount(); i++)
 		{
 			const int roomType = i;
-			const std::string &roomTypeName = roomTypeNames[i];
-			listBoxItemTextColumns.emplace_back(std::vector<std::string> { roomTypeName });
-			listBoxItemCallbacks.emplace_back(GameWorldUI::makeTavernRoomPurchaseCallback(roomType));
+			const std::string roomTypeName = String::format("%.13s", roomTypeNames[i].c_str());
+			const int baseRoomGoldPrice = roomGoldPricesPerDay[i];
+			const int roomRentDayCount = 1;
+			const int calculatedRoomGoldPrice = baseRoomGoldPrice * roomRentDayCount;
+			const std::string roomGoldPriceString = String::format("%d gp", calculatedRoomGoldPrice);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { roomTypeName, roomGoldPriceString });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeTavernRoomPurchaseCallback(roomType, calculatedRoomGoldPrice));
 		}
 
 		break;
@@ -2839,23 +2850,38 @@ UiButtonCallback GameWorldUI::makeTavernDrinkPurchaseCallback(const std::string 
 	};
 }
 
-UiButtonCallback GameWorldUI::makeTavernRoomPurchaseCallback(int roomType)
+UiButtonCallback GameWorldUI::makeTavernRoomPurchaseCallback(int roomType, int goldPrice)
 {
-	return [roomType](MouseButtonType)
+	return [roomType, goldPrice](MouseButtonType)
 	{
 		GameWorldUiState &state = GameWorldUI::state;
 		Game &game = *state.game;
+		GameState &gameState = game.gameState;
 		UiManager &uiManager = game.uiManager;
 		uiManager.disableTopMostContext();
 
-		GameState &gameState = game.gameState;
-		const int rentedRoomHours = 24;
-		gameState.setTavernRentedRoom(roomType, rentedRoomHours);
-
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		const std::string &roomTypeName = exeData.services.tavernRoomTypes[roomType];
-		const std::string text = String::format(exeData.services.tavernRoomRented.c_str(), roomTypeName.c_str());
+
 		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Tavern);
+
+		Player &player = game.player;
+
+		std::string text;
+		if (player.gold >= goldPrice)
+		{
+			player.gold -= goldPrice;
+
+			const int rentedRoomHours = 24;
+			gameState.setTavernRentedRoom(roomType, rentedRoomHours);
+
+			text = String::format(exeData.services.tavernRoomRented.c_str(), roomTypeName.c_str());
+		}
+		else
+		{
+			text = String::format("%s is too expensive.", roomTypeName.c_str());
+		}
+		
 		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
 	};
 }
