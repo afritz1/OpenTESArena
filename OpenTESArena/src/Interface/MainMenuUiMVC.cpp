@@ -1001,9 +1001,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		DebugCrash("Unrecognized world type \"" + std::to_string(static_cast<int>(mapType)) + "\".");
 	}
 
-	// Set to 5:45am for testing.
-	auto &clock = gameState.getClock();
-	clock.init(5, 45, 0);
+	Clock &clock = gameState.getClock();
+	clock.init(6, 45, 0);
 
 	GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
 	{
