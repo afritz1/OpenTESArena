@@ -1964,7 +1964,7 @@ void EntityChunkManager::updateDeathStates(JPH::PhysicsSystem &physicsSystem, Au
 	}
 }
 
-void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager &voxelChunkManager)
+void EntityChunkManager::updateVfx(WorldDouble3 playerPosition, double ceilingScale, const VoxelChunkManager &voxelChunkManager)
 {
 	std::vector<EntityInstanceID> vfxEntitiesToDestroy;
 	for (const EntityInstanceID entityInstID : this->vfxEntityInstIDs)
@@ -1977,18 +1977,33 @@ void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager 
 			continue;
 		}
 
+		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const VfxEntityDefinition &vfxEntityDef = entityDef.vfx;
-		if (vfxEntityDef.type == VfxEntityAnimationType::BowProjectile || vfxEntityDef.type == VfxEntityAnimationType::SpellProjectile)
+
+		bool isProjectileOutsidePlayArea = false;
+		if (vfxEntityDef.type == VfxEntityAnimationType::BowProjectile)
 		{
-			// @todo maybe change this to distanceSqr from player so it's more general
-			const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 			if (entityPosition.y < 0.0)
 			{
-				// Outside play area.
-				vfxEntitiesToDestroy.emplace_back(entityInstID);
-				continue;
+				isProjectileOutsidePlayArea = true;
 			}
+		}
+		else if (vfxEntityDef.type == VfxEntityAnimationType::SpellProjectile)
+		{
+			constexpr double maxSpellProjectileDistance = 100.0;
+			constexpr double maxSpellProjectileDistanceSqr = maxSpellProjectileDistance * maxSpellProjectileDistance;
+
+			const double spellProjectileDistanceSqr = (entityPosition - playerPosition).lengthSquared();
+			if (spellProjectileDistanceSqr > maxSpellProjectileDistanceSqr)
+			{
+				isProjectileOutsidePlayArea = true;
+			}
+		}
+
+		if (isProjectileOutsidePlayArea)
+		{
+			vfxEntitiesToDestroy.emplace_back(entityInstID);
 		}
 	}
 
@@ -2214,7 +2229,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	this->updateEnemyBehaviors(dt, playerPosition, player, random, physicsSystem, audioManager, voxelChunkManager);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
-	this->updateVfx(ceilingScale, voxelChunkManager);
+	this->updateVfx(playerPosition, ceilingScale, voxelChunkManager);
 }
 
 void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem)

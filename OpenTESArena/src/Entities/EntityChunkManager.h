@@ -233,7 +233,7 @@ private:
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
 	void updateDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
-	void updateVfx(double ceilingScale, const VoxelChunkManager &voxelChunkManager);
+	void updateVfx(WorldDouble3 playerPosition, double ceilingScale, const VoxelChunkManager &voxelChunkManager);
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	EntityInstanceID getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const;
