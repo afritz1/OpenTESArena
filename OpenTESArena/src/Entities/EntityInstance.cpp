@@ -71,4 +71,5 @@ void EntityInstance::clear()
 	this->physicsBodyID = JPH::BodyID();
 	this->transformHeapIndex = -1;
 	this->transformIndex = -1;
+	this->isQueuedForDestroy = false;
 }

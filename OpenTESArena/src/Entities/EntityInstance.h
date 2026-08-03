@@ -36,6 +36,7 @@ struct EntityInstance
 	JPH::BodyID physicsBodyID;
 	int transformHeapIndex;
 	int transformIndex;
+	bool isQueuedForDestroy;
 
 	EntityInstance();
 

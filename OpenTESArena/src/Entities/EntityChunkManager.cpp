@@ -2288,13 +2288,12 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 	EntityChunk *currentEntityChunk = nullptr;
 	for (const EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstanceID entityInstID = entityInst.instanceID;
-		const auto destroyedIter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
-		if (destroyedIter != this->destroyedEntityIDs.end())
+		if (entityInst.isQueuedForDestroy)
 		{
 			continue;
 		}
 
+		const EntityInstanceID entityInstID = entityInst.instanceID;
 		const WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const ChunkInt2 entityChunkPos = VoxelUtils::worldPointToChunk(entityPosition);
 		if ((currentEntityChunk == nullptr) || (currentEntityChunk->position != entityChunkPos))
@@ -2312,12 +2311,13 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)
 {
-	const auto iter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
-	if (iter != this->destroyedEntityIDs.end())
+	EntityInstance &entityInst = this->entities.get(entityInstID);
+	if (entityInst.isQueuedForDestroy)
 	{
 		return;
 	}
 
+	entityInst.isQueuedForDestroy = true;
 	this->destroyedEntityIDs.emplace_back(entityInstID);
 
 	if (chunkToNotify != nullptr)
@@ -2333,7 +2333,6 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const
 		}
 	}
 
-	const EntityInstance &entityInst = this->entities.get(entityInstID);
 	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 	const EntityDefinitionType entityDefType = entityDef.type;
 
