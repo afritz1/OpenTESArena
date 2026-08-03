@@ -47,9 +47,9 @@ namespace CombatLogic
 	EntityDefID getSpellProjectileEntityDefID(int spellIndex);
 	EntityDefID getSpellExplosionEntityDefID(int spellIndex);
 
-	void spawnBowProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager,
+	void spawnBowProjectile(WorldDouble3 position, Double3 direction, EntityChunkManager &entityChunkManager,
 		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
-	void spawnSpellProjectile(int spellIndex, WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager, Random &random,
+	void spawnSpellProjectile(int spellIndex, WorldDouble3 position, Double3 direction, EntityChunkManager &entityChunkManager, Random &random,
 		AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 	void spawnSpellExplosion(int spellIndex, WorldDouble3 position, EntityChunkManager &entityChunkManager, Random &random,
 		AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);

@@ -1167,11 +1167,11 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	else
 	{
 		bool isAttack = false;
-		Double2 projectileDirection;
+		Double3 projectileDirection;
 		if (isModernInterface)
 		{
 			isAttack = isAttackMouseButtonDown;
-			projectileDirection = player.getGroundDirectionXZ();
+			projectileDirection = player.forward;
 		}
 		else
 		{
@@ -1190,7 +1190,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			const int originalCursorY = window.nativeToOriginal(mousePosition).y;
 			const bool isCursorInSceneView = originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight);
 			isAttack = isAttackMouseButtonDown && isCursorInSceneView;
-			projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition).getXZ().normalized();
+			projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition);
 		}
 
 		if (isAttack)

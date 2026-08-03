@@ -482,7 +482,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			DebugLogError("Couldn't allocate EntityDirectionID.");
 		}
 
-		const Double2 &direction = *initInfo.direction;
+		const Double3 &direction = *initInfo.direction;
 		this->directions.get(entityInst.directionID) = direction;
 	}
 
@@ -511,14 +511,14 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		if (vfxEntityAnimType == VfxEntityAnimationType::BowProjectile)
 		{
 			projectileSpeed = 3.0;
-			projectileDirection = Double3(initInfo.direction->x, 0.0, initInfo.direction->y);
+			projectileDirection = *initInfo.direction;
 			projectileVelocity = projectileDirection * projectileSpeed;
 			projectileGravity = 0.02;
 		}
 		else if (vfxEntityAnimType == VfxEntityAnimationType::SpellProjectile)
 		{
 			projectileSpeed = 2.5;
-			projectileDirection = Double3(initInfo.direction->x, 0.0, initInfo.direction->y);
+			projectileDirection = *initInfo.direction;
 			projectileVelocity = projectileDirection * projectileSpeed;
 		}
 
@@ -1073,7 +1073,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			if (isDynamicEntity)
 			{
-				initInfo.direction = CardinalDirection::North;
+				const Double2 defaultDirectionXZ = CardinalDirection::North;
+				initInfo.direction = Double3(defaultDirectionXZ.x, 0.0, defaultDirectionXZ.y);
 				
 				if (entityDefType == EntityDefinitionType::Enemy)
 				{
@@ -1298,8 +1299,9 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
-		const double distToPlayerSqr = dirToPlayer.lengthSquared();
+		const Double2 dirToPlayerXZ = playerPositionXZ - entityPositionXZ;
+		const Double3 dirToPlayer(dirToPlayerXZ.x, 0.0, dirToPlayerXZ.y);
+		const double distToPlayerSqr = dirToPlayerXZ.lengthSquared();
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
@@ -1316,7 +1318,7 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 			DebugCrash("Couldn't get citizen walk state index.");
 		}
 
-		Double2 &entityDir = this->directions.get(entityInst.directionID);
+		Double3 &entityDir = this->directions.get(entityInst.directionID);
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
 		DebugAssert(behaviorState.type == EntityBehaviorStateType::Citizen);
@@ -1357,14 +1359,14 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 		const int curAnimStateIndex = animInst.currentStateIndex;
 		if (curAnimStateIndex == *walkStateIndex)
 		{
-			auto getVoxelAtDistance = [&entityPositionXZ](VoxelDouble2 checkDist) -> WorldInt2
+			auto getVoxelAtDistance = [&entityPositionXZ](Double2 checkDist) -> WorldInt2
 			{
 				const WorldDouble2 worldPosition = entityPositionXZ + checkDist;
 				return VoxelUtils::pointToVoxel(worldPosition);
 			};
 
 			const WorldInt2 curWorldVoxel = VoxelUtils::pointToVoxel(entityPositionXZ);
-			const WorldInt2 nextWorldVoxel = getVoxelAtDistance(entityDir * 0.50);
+			const WorldInt2 nextWorldVoxel = getVoxelAtDistance(entityDir.getXZ() * 0.50);
 
 			if (nextWorldVoxel != curWorldVoxel)
 			{
@@ -1413,9 +1415,8 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 
 				if (!isSuitableVoxel(nextWorldVoxel))
 				{
-					// Need to change walking direction. Determine another safe route, or if
-					// none exist, then stop walking.
-					const CardinalDirectionName curDirectionName = CardinalDirection::getDirectionName(entityDir);
+					// Need to change walking direction. Determine another safe route, or if none exist, then stop walking.
+					const CardinalDirectionName curDirectionName = CardinalDirection::getDirectionName(entityDir.getXZ());
 
 					// Shuffle citizen direction indices so they don't all switch to the same direction every time.
 					constexpr auto &dirIndices = ArenaCitizenUtils::DIRECTION_INDICES;
@@ -1432,8 +1433,8 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 						const CardinalDirectionName cardinalDirectionName = CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
 						if (cardinalDirectionName != curDirectionName)
 						{
-							const WorldDouble2 &possibleDirection = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
-							const WorldInt2 possibleVoxel = getVoxelAtDistance(possibleDirection * 0.50);
+							const Double3 possibleDirection = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
+							const WorldInt2 possibleVoxel = getVoxelAtDistance(possibleDirection.getXZ() * 0.50);
 							if (isSuitableVoxel(possibleVoxel))
 							{
 								return true;
@@ -1455,7 +1456,7 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 				}
 			}
 
-			const Double2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
+			const Double2 entityVelocity = entityDir.getXZ() * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
 			const JPH::Vec3 newEntityPhysicsVelocity(static_cast<float>(entityVelocity.x), 0.0f, static_cast<float>(entityVelocity.y));
 			bodyInterface.SetLinearVelocity(physicsBodyID, newEntityPhysicsVelocity);
 		}
@@ -1483,15 +1484,17 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 		const double distToPlayerXZSqr = entityToPlayerDiffXZ.lengthSquared();
 		const double distToPlayerYSqr = entityToPlayerDiff.y * entityToPlayerDiff.y;
 		
-		Double2 dirToPlayer;
+		Double2 dirToPlayerXZ;
 		if (distToPlayerXZSqr >= Constants::Epsilon)
 		{
-			dirToPlayer = entityToPlayerDiff.getXZ().normalized();
+			dirToPlayerXZ = entityToPlayerDiff.getXZ().normalized();
 		}
 		else
 		{
-			dirToPlayer = CardinalDirection::North; // In case player is standing on top of them
+			dirToPlayerXZ = CardinalDirection::North; // In case player is standing on top of them
 		}
+
+		const Double3 dirToPlayer(dirToPlayerXZ.x, 0.0, dirToPlayerXZ.y);
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
@@ -1516,7 +1519,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 			DebugCrash("Couldn't get enemy attack state index.");
 		}
 
-		Double2 &entityDir = this->directions.get(entityInst.directionID);
+		Double3 &entityDir = this->directions.get(entityInst.directionID);
 		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
 		DebugAssert(behaviorState.type == EntityBehaviorStateType::Enemy);
 		EntityEnemyBehaviorState &enemyBehaviorState = behaviorState.enemy;
@@ -1556,7 +1559,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 			if (!isCloseEnoughToAttackPlayer)
 			{
 				constexpr double entityMoveSpeed = 1.50;
-				const Double2 entityVelocity = entityDir * entityMoveSpeed;
+				const Double2 entityVelocity = entityDir.getXZ() * entityMoveSpeed;
 
 				const WorldDouble2 attemptedNextPosition = entityPositionXZ + (entityVelocity * dt);
 				const CoordDouble2 attemptedNextCoord = VoxelUtils::worldPointToCoord(attemptedNextPosition);
@@ -1787,9 +1790,9 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 	Radians animAngle = 0.0;
 	if (!entityInst.isTransformStatic())
 	{
-		const Double2 &entityDir = this->directions.get(entityInst.directionID);
+		const Double3 &entityDir = this->directions.get(entityInst.directionID);
 		const Double2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
-		const Radians entityAngle = MathUtils::fullAtan2(entityDir);
+		const Radians entityAngle = MathUtils::fullAtan2(entityDir.getXZ());
 		const Radians diffAngle = MathUtils::fullAtan2(diffDir);
 		const Radians relativeAngle = Constants::TwoPi + (entityAngle - diffAngle);
 

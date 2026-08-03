@@ -41,9 +41,8 @@ namespace CitizenUtils
 	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef);
 
 	// Helper functions for determining a citizen's walking direction.
-	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection);
 	CardinalDirectionName getCitizenDirectionNameByIndex(int index);
-	const WorldDouble2 &getCitizenDirectionByIndex(int index);
+	Double3 getCitizenDirectionByIndex(int index);
 	int getRandomCitizenDirectionIndex(Random &random);
 
 	int getCitizenCountInChunk(ChunkInt2 chunkPos, const EntityChunkManager &entityChunkManager);

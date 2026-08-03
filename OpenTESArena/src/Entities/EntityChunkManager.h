@@ -51,7 +51,7 @@ struct EntityInitInfo
 	char initialAnimStateIndex;
 	bool isSensorCollider;
 	bool canBeKilled;
-	std::optional<Double2> direction;
+	std::optional<Double3> direction;
 	std::optional<int8_t> citizenDirectionIndex;
 	std::optional<EntityNpcName> npcName;
 	std::optional<uint16_t> citizenColorSeed;
@@ -170,7 +170,7 @@ public:
 	using EntityPool = KeyValuePool<EntityInstanceID, EntityInstance>;
 	using EntityPositionPool = KeyValuePool<EntityPositionID, WorldDouble3>;
 	using EntityBoundingBoxPool = KeyValuePool<EntityBoundingBoxID, BoundingBox3D>;
-	using EntityDirectionPool = KeyValuePool<EntityDirectionID, Double2>;
+	using EntityDirectionPool = KeyValuePool<EntityDirectionID, Double3>;
 	using EntityAnimationInstancePool = KeyValuePool<EntityAnimationInstanceID, EntityAnimationInstance>;
 	using EntityBehaviorStatePool = KeyValuePool<EntityBehaviorStateID, EntityBehaviorState>;
 	using EntityCombatStatePool = KeyValuePool<EntityCombatStateID, EntityCombatState>;

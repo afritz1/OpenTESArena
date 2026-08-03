@@ -163,7 +163,7 @@ EntityDefID CombatLogic::getSpellExplosionEntityDefID(int spellIndex)
 	return projectileEntityDefID;
 }
 
-void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager,
+void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double3 direction, EntityChunkManager &entityChunkManager,
 	Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {	
 	const EntityDefID bowProjectileEntityDefID = CombatLogic::getBowProjectileEntityDefID();
@@ -172,7 +172,7 @@ void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double2 direction, E
 
 	EntityInitInfo bowProjectileEntityInitInfo;
 	bowProjectileEntityInitInfo.defID = bowProjectileEntityDefID;
-	bowProjectileEntityInitInfo.feetPosition = position + (Double3(direction.x, 0.0, direction.y) * 0.10);
+	bowProjectileEntityInitInfo.feetPosition = position + (direction * 0.10);
 	bowProjectileEntityInitInfo.initialAnimStateIndex = *bowProjectileAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 	bowProjectileEntityInitInfo.isSensorCollider = true;
 	bowProjectileEntityInitInfo.canBeKilled = false;
@@ -180,7 +180,7 @@ void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double2 direction, E
 	entityChunkManager.createEntity(bowProjectileEntityInitInfo, random, physicsSystem, renderer);
 }
 
-void CombatLogic::spawnSpellProjectile(int spellIndex, WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager, Random &random,
+void CombatLogic::spawnSpellProjectile(int spellIndex, WorldDouble3 position, Double3 direction, EntityChunkManager &entityChunkManager, Random &random,
 	AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {	
 	const EntityDefID projectileEntityDefID = CombatLogic::getSpellProjectileEntityDefID(spellIndex);
@@ -189,7 +189,7 @@ void CombatLogic::spawnSpellProjectile(int spellIndex, WorldDouble3 position, Do
 
 	EntityInitInfo projectileEntityInitInfo;
 	projectileEntityInitInfo.defID = projectileEntityDefID;
-	projectileEntityInitInfo.feetPosition = position + (Double3(direction.x, 0.0, direction.y) * 0.10);
+	projectileEntityInitInfo.feetPosition = position + (direction * 0.10);
 	projectileEntityInitInfo.initialAnimStateIndex = *projectileAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 	projectileEntityInitInfo.isSensorCollider = true;
 	projectileEntityInitInfo.canBeKilled = false;

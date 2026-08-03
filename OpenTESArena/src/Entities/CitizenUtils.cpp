@@ -20,13 +20,15 @@
 namespace
 {
 	// Allowed directions for citizens to walk.
-	constexpr std::pair<CardinalDirectionName, WorldDouble2> CitizenDirections[] =
+	constexpr std::pair<CardinalDirectionName, Double3> CitizenDirections[] =
 	{
-		{ CardinalDirectionName::North, CardinalDirection::North },
-		{ CardinalDirectionName::East, CardinalDirection::East },
-		{ CardinalDirectionName::South, CardinalDirection::South },
-		{ CardinalDirectionName::West, CardinalDirection::West }
+		{ CardinalDirectionName::North, Double3(CardinalDirection::North.x, 0.0, CardinalDirection::North.y) },
+		{ CardinalDirectionName::East, Double3(CardinalDirection::East.x, 0.0, CardinalDirection::East.y) },
+		{ CardinalDirectionName::South, Double3(CardinalDirection::South.x, 0.0, CardinalDirection::South.y) },
+		{ CardinalDirectionName::West, Double3(CardinalDirection::West.x, 0.0, CardinalDirection::West.y) }
 	};
+
+	static_assert(sizeof(CardinalDirection::North) == sizeof(double) * 2);
 }
 
 void CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID,
@@ -95,32 +97,13 @@ std::optional<CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapTyp
 	return CitizenUtils::makeCitizenGenInfo(raceID, climateType);
 }
 
-bool CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, WorldDouble2 *outDirection)
-{
-	const auto iter = std::find_if(std::begin(CitizenDirections), std::end(CitizenDirections),
-		[directionName](const auto &pair)
-	{
-		return pair.first == directionName;
-	});
-
-	if (iter != std::end(CitizenDirections))
-	{
-		*outDirection = iter->second;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 CardinalDirectionName CitizenUtils::getCitizenDirectionNameByIndex(int index)
 {
 	DebugAssertIndex(CitizenDirections, index);
 	return CitizenDirections[index].first;
 }
 
-const WorldDouble2 &CitizenUtils::getCitizenDirectionByIndex(int index)
+Double3 CitizenUtils::getCitizenDirectionByIndex(int index)
 {
 	DebugAssertIndex(CitizenDirections, index);
 	return CitizenDirections[index].second;
