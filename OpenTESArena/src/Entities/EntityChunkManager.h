@@ -65,6 +65,7 @@ struct EntityInitInfo
 	ArenaInteriorType interiorType;
 	int interiorLevelIndex;
 	int guardType;
+	std::optional<int> spellIndex;
 
 	EntityInitInfo();
 };
@@ -139,6 +140,13 @@ struct EntityCombatState
 	bool isInDeathState() const;
 };
 
+struct EntitySpellState
+{
+	int spellIndex;
+
+	EntitySpellState();
+};
+
 struct EntityDialogueState
 {
 	bool isMale;
@@ -166,6 +174,7 @@ public:
 	using EntityAnimationInstancePool = KeyValuePool<EntityAnimationInstanceID, EntityAnimationInstance>;
 	using EntityBehaviorStatePool = KeyValuePool<EntityBehaviorStateID, EntityBehaviorState>;
 	using EntityCombatStatePool = KeyValuePool<EntityCombatStateID, EntityCombatState>;
+	using EntitySpellStatePool = KeyValuePool<EntitySpellStateID, EntitySpellState>;
 	using EntityNpcNamePool = KeyValuePool<EntityNpcNameID, EntityNpcName>;
 	using EntityDialogueStatePool = KeyValuePool<EntityDialogueStateID, EntityDialogueState>;
 	using EntityPaletteIndicesInstancePool = KeyValuePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
@@ -180,6 +189,7 @@ public:
 	EntityAnimationInstancePool animInsts;
 	EntityBehaviorStatePool behaviorStates;
 	EntityCombatStatePool combatStates;
+	EntitySpellStatePool spellStates;
 	EntityNpcNamePool npcNames;
 	EntityDialogueStatePool dialogueStates;
 	EntityPaletteIndicesInstancePool paletteIndices;

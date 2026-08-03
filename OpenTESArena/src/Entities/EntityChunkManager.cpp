@@ -274,6 +274,11 @@ bool EntityCombatState::isInDeathState() const
 	return this->isDying || this->isDead;
 }
 
+EntitySpellState::EntitySpellState()
+{
+	this->spellIndex = -1;
+}
+
 EntityDialogueState::EntityDialogueState()
 {
 	this->isMale = false;
@@ -479,6 +484,18 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 		const Double2 &direction = *initInfo.direction;
 		this->directions.get(entityInst.directionID) = direction;
+	}
+
+	if (initInfo.spellIndex.has_value())
+	{
+		entityInst.spellStateID = this->spellStates.alloc();
+		if (entityInst.spellStateID < 0)
+		{
+			DebugCrash("Couldn't allocate EntitySpellStateID.");
+		}
+
+		EntitySpellState &spellState = this->spellStates.get(entityInst.spellStateID);
+		spellState.spellIndex = *initInfo.spellIndex;
 	}
 
 	if (entityDef.type == EntityDefinitionType::Vfx)
@@ -2455,6 +2472,11 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 		if (entityInst.combatStateID >= 0)
 		{
 			this->combatStates.free(entityInst.combatStateID);
+		}
+
+		if (entityInst.spellStateID >= 0)
+		{
+			this->spellStates.free(entityInst.spellStateID);
 		}
 
 		if (entityInst.npcNameID >= 0)

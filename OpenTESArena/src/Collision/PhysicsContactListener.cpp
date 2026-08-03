@@ -88,7 +88,7 @@ namespace
 		const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);		
 	}*/
 
-	void OnProjectileVsVoxelContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileInstID, VfxEntityAnimationType projectileVfxAnimType,
+	void OnProjectileVsVoxelContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileEntityInstID, VfxEntityAnimationType projectileVfxAnimType,
 		const JPH::Body &voxelBody, JPH::SubShapeID voxelSubShapeID, bool isVoxelSensor, Game &game)
 	{
 		if (isVoxelSensor)
@@ -99,19 +99,21 @@ namespace
 		// Note: this handler doesn't support getting the exact voxel that was hit due to collider combining.
 		std::lock_guard<std::mutex> lockGuard(ProjectileVsVoxelMutex);
 
+		GameState &gameState = game.gameState;
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+
 		if (projectileVfxAnimType == VfxEntityAnimationType::SpellProjectile)
 		{
+			const EntityInstance &projectileEntityInst = entityChunkManager.entities.get(projectileEntityInstID);
+			const EntitySpellState &projectileSpellState = entityChunkManager.spellStates.get(projectileEntityInst.spellStateID);
 			const JPH::RVec3 projectilePhysicsPosition = projectileBody.GetPosition();
 			const WorldDouble3 projectileWorldPosition(
 				static_cast<SNDouble>(projectilePhysicsPosition.GetX()),
 				static_cast<double>(projectilePhysicsPosition.GetY()),
 				static_cast<WEDouble>(projectilePhysicsPosition.GetZ()));
 
-			GameState &gameState = game.gameState;
-			Random &random = game.random;
-
-			const int spellExplosionIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT); // @todo provide as parameter
-			const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellExplosionIndex);
+			const int spellIndex = projectileSpellState.spellIndex;
+			const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellIndex);
 			const EntityDefinition &explosionEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(explosionEntityDefID);
 			const EntityAnimationDefinition &explosionAnimDef = explosionEntityDef.animDef;
 
@@ -121,17 +123,17 @@ namespace
 			explosionEntityInitInfo.initialAnimStateIndex = *explosionAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 			explosionEntityInitInfo.isSensorCollider = true;
 			explosionEntityInitInfo.canBeKilled = false;
+			explosionEntityInitInfo.spellIndex = spellIndex;
 			gameState.queueEntityInstantiate(explosionEntityInitInfo);
 
 			AudioManager &audioManager = game.audioManager;
 			audioManager.playSoundOneShot(ArenaSoundName::Explode, projectileWorldPosition);
 		}
 
-		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of a projectile dying
+		entityChunkManager.queueEntityDestroy(projectileEntityInstID, true); // @todo shouldn't need to notify chunk of a projectile dying
 	}
 
-	void OnProjectileVsEntityContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileInstID, VfxEntityAnimationType projectileVfxAnimType,
+	void OnProjectileVsEntityContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileEntityInstID, VfxEntityAnimationType projectileVfxAnimType,
 		const JPH::Body &entityBody, EntityInstanceID entityInstID, Game &game)
 	{
 		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
@@ -173,7 +175,7 @@ namespace
 
 		gameState.addCombatEntityResult(entityInstID, sourceType);
 
-		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of a projectile dying
+		entityChunkManager.queueEntityDestroy(projectileEntityInstID, true); // @todo shouldn't need to notify chunk of a projectile dying
 	}
 }
 

@@ -38,6 +38,11 @@ bool EntityInstance::canAcceptCombatHits() const
 	return this->canBeKilledInCombat() || this->canBeLocked();
 }
 
+bool EntityInstance::isSpell() const
+{
+	return this->spellStateID >= 0;
+}
+
 bool EntityInstance::canUseElevatedPlatforms() const
 {
 	return this->isTransformStatic();
@@ -63,6 +68,7 @@ void EntityInstance::clear()
 	this->animInstID = -1;
 	this->behaviorStateID = -1;
 	this->combatStateID = -1;
+	this->spellStateID = -1;
 	this->npcNameID = -1;
 	this->dialogueStateID = -1;
 	this->paletteIndicesInstID = -1;

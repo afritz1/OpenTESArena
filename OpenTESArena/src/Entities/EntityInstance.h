@@ -12,6 +12,7 @@ using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
 using EntityBehaviorStateID = int;
 using EntityCombatStateID = int;
+using EntitySpellStateID = int;
 using EntityNpcNameID = int;
 using EntityDialogueStateID = int;
 using EntityPaletteIndicesInstanceID = int;
@@ -28,6 +29,7 @@ struct EntityInstance
 	EntityAnimationInstanceID animInstID;
 	EntityBehaviorStateID behaviorStateID;
 	EntityCombatStateID combatStateID;
+	EntitySpellStateID spellStateID;
 	EntityNpcNameID npcNameID;
 	EntityDialogueStateID dialogueStateID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
@@ -48,6 +50,8 @@ struct EntityInstance
 
 	bool canBeKilledInCombat() const;
 	bool canAcceptCombatHits() const;
+
+	bool isSpell() const;
 
 	// Whether the entity can be placed on raised platforms.
 	bool canUseElevatedPlatforms() const;

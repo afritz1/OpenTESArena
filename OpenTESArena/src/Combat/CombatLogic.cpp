@@ -180,11 +180,10 @@ void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double2 direction, E
 	entityChunkManager.createEntity(bowProjectileEntityInitInfo, random, physicsSystem, renderer);
 }
 
-void CombatLogic::spawnSpellProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager, Random &random,
+void CombatLogic::spawnSpellProjectile(int spellIndex, WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager, Random &random,
 	AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {	
-	const int spellProjectileIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT);
-	const EntityDefID projectileEntityDefID = CombatLogic::getSpellProjectileEntityDefID(spellProjectileIndex);
+	const EntityDefID projectileEntityDefID = CombatLogic::getSpellProjectileEntityDefID(spellIndex);
 	const EntityDefinition &projectileEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(projectileEntityDefID);
 	const EntityAnimationDefinition &projectileAnimDef = projectileEntityDef.animDef;
 
@@ -195,16 +194,16 @@ void CombatLogic::spawnSpellProjectile(WorldDouble3 position, Double2 direction,
 	projectileEntityInitInfo.isSensorCollider = true;
 	projectileEntityInitInfo.canBeKilled = false;
 	projectileEntityInitInfo.direction = direction;
+	projectileEntityInitInfo.spellIndex = spellIndex;
 	entityChunkManager.createEntity(projectileEntityInitInfo, random, physicsSystem, renderer);
 
 	audioManager.playSoundOneShot(ArenaSoundName::SlowBall, position);
 }
 
-void CombatLogic::spawnSpellExplosion(WorldDouble3 position, EntityChunkManager &entityChunkManager, Random &random, AudioManager &audioManager,
+void CombatLogic::spawnSpellExplosion(int spellIndex, WorldDouble3 position, EntityChunkManager &entityChunkManager, Random &random, AudioManager &audioManager,
 	JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
-	const int spellExplosionIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT); // @todo provide as parameter
-	const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellExplosionIndex);
+	const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellIndex);
 	const EntityDefinition &explosionEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(explosionEntityDefID);
 	const EntityAnimationDefinition &explosionAnimDef = explosionEntityDef.animDef;
 
@@ -214,6 +213,7 @@ void CombatLogic::spawnSpellExplosion(WorldDouble3 position, EntityChunkManager 
 	entityInitInfo.initialAnimStateIndex = *explosionAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 	entityInitInfo.isSensorCollider = true;
 	entityInitInfo.canBeKilled = false;
+	entityInitInfo.spellIndex = spellIndex;
 	entityChunkManager.createEntity(entityInitInfo, random, physicsSystem, renderer);
 
 	audioManager.playSoundOneShot(ArenaSoundName::Explode, position);
@@ -328,14 +328,6 @@ void CombatLogic::onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, CombatResultSource
 		constexpr bool isWeaponBashing = true;
 		MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isLockpickingSuccessful, isWeaponBashing);
 	}
-	else
-	{
-		if (sourceType == CombatResultSourceType::PlayerSpellProjectile)
-		{
-			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-			CombatLogic::spawnSpellExplosion(hitWorldVoxelCenter, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
-		}
-	}
 }
 
 void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, Game &game)
@@ -428,7 +420,8 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 			}
 			else if (isMagicalImpact)
 			{
-				CombatLogic::spawnSpellExplosion(hitVfxPosition, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
+				const EntitySpellState &hitEntitySpellState = entityChunkManager.spellStates.get(hitEntityInst.spellStateID);
+				CombatLogic::spawnSpellExplosion(hitEntitySpellState.spellIndex, hitVfxPosition, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
 			}
 		}
 		else

@@ -3320,9 +3320,12 @@ void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
 
 	player.currentSpellPoints -= spellPointCost;
 
-	const WorldDouble3 spellProjectilePosition = player.getPhysicsPosition();
 	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-	CombatLogic::spawnSpellProjectile(spellProjectilePosition, player.getGroundDirectionXZ(), entityChunkManager, game.random, game.audioManager, game.physicsSystem, game.renderer);
+	Random &random = game.random;
+
+	const int spellIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT);
+	const WorldDouble3 spellProjectilePosition = player.getPhysicsPosition();
+	CombatLogic::spawnSpellProjectile(spellIndex, spellProjectilePosition, player.getGroundDirectionXZ(), entityChunkManager, random, game.audioManager, game.physicsSystem, game.renderer);
 }
 
 void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)
