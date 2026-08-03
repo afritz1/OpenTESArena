@@ -2761,8 +2761,9 @@ UiButtonCallback GameWorldUI::makeShopkeeperItemSellCallback(int playerInventory
 		const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(selectedItemInst.defID);
 		const std::string selectedItemDisplayName = selectedItemDef.getDisplayNameWithoutQty();
 		const int selectedItemGoldValue = selectedItemDef.getGoldValue();
+		const int selectedItemGoldValueForSelling = (3 * selectedItemGoldValue) / 4; // 75%
 
-		player.gold += selectedItemGoldValue;
+		player.gold += selectedItemGoldValueForSelling;
 		selectedItemInst.clear();
 		playerInventory.compact();
 
@@ -2775,7 +2776,7 @@ UiButtonCallback GameWorldUI::makeShopkeeperItemSellCallback(int playerInventory
 			}
 		}
 
-		const std::string text = String::format("Sold %s for %d gold.", selectedItemDisplayName.c_str(), selectedItemGoldValue);
+		const std::string text = String::format("Sold %s for %d gold.", selectedItemDisplayName.c_str(), selectedItemGoldValueForSelling);
 		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
 	};
 }
