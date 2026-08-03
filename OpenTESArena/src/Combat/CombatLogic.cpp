@@ -30,6 +30,11 @@ Span<const EntityInstanceID> CombatHitSearchResult::getEntities() const
 	return Span<const EntityInstanceID>(this->entities, this->entityCount);
 }
 
+bool CombatLogic::canSourceTypeDamageDoor(CombatResultSourceType sourceType)
+{
+	return sourceType == CombatResultSourceType::PlayerMeleeAttack;
+}
+
 void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double searchRadius, double ceilingScale,
 	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, CombatHitSearchResult *outHitSearchResult)
 {
@@ -137,6 +142,67 @@ void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double2 direction, E
 	entityChunkManager.createEntity(bowProjectileEntityInitInfo, random, physicsSystem, renderer);
 }
 
+void CombatLogic::spawnSpellProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager, Random &random,
+	AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+{
+	const int projectileVfxIndex = random.next(12); // @todo actual spell logic
+
+	EntityDefinitionKey projectileEntityDefKey;
+	projectileEntityDefKey.initVfx(VfxEntityAnimationType::SpellProjectile, projectileVfxIndex);
+
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	EntityDefID projectileEntityDefID;
+	if (!entityDefLibrary.tryGetDefinitionID(projectileEntityDefKey, &projectileEntityDefID))
+	{
+		DebugCrash("Couldn't get spell projectile entity definition ID.");
+	}
+
+	const EntityDefinition &projectileEntityDef = entityDefLibrary.getDefinition(projectileEntityDefID);
+	const EntityAnimationDefinition &projectileAnimDef = projectileEntityDef.animDef;
+
+	EntityInitInfo projectileEntityInitInfo;
+	projectileEntityInitInfo.defID = projectileEntityDefID;
+	projectileEntityInitInfo.feetPosition = position + (Double3(direction.x, 0.0, direction.y) * 0.10);
+	projectileEntityInitInfo.initialAnimStateIndex = *projectileAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+	projectileEntityInitInfo.isSensorCollider = true;
+	projectileEntityInitInfo.canBeKilled = false;
+	projectileEntityInitInfo.direction = direction;
+	entityChunkManager.createEntity(projectileEntityInitInfo, random, physicsSystem, renderer);
+
+	audioManager.playSoundOneShot(ArenaSoundName::SlowBall, position);
+}
+
+void CombatLogic::spawnSpellExplosion(WorldDouble3 position, EntityChunkManager &entityChunkManager, Random &random, AudioManager &audioManager,
+	JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+{
+	// @todo provide spell index argument so we know which vfx animation to use
+
+	const int projectileVfxIndex = 0;
+
+	EntityDefinitionKey projectileEntityDefKey;
+	projectileEntityDefKey.initVfx(VfxEntityAnimationType::SpellExplosion, projectileVfxIndex);
+
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	EntityDefID projectileEntityDefID;
+	if (!entityDefLibrary.tryGetDefinitionID(projectileEntityDefKey, &projectileEntityDefID))
+	{
+		DebugCrash("Couldn't get spell explosion entity definition ID.");
+	}
+
+	const EntityDefinition &projectileEntityDef = entityDefLibrary.getDefinition(projectileEntityDefID);
+	const EntityAnimationDefinition &projectileAnimDef = projectileEntityDef.animDef;
+
+	EntityInitInfo projectileEntityInitInfo;
+	projectileEntityInitInfo.defID = projectileEntityDefID;
+	projectileEntityInitInfo.feetPosition = position;
+	projectileEntityInitInfo.initialAnimStateIndex = *projectileAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+	projectileEntityInitInfo.isSensorCollider = true;
+	projectileEntityInitInfo.canBeKilled = false;
+	entityChunkManager.createEntity(projectileEntityInitInfo, random, physicsSystem, renderer);
+
+	audioManager.playSoundOneShot(ArenaSoundName::Explode, position);
+}
+
 void CombatLogic::spawnHitVfx(const EntityDefinition &hitEntityDef, const WorldDouble3 &position, EntityChunkManager &entityChunkManager,
 	Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
@@ -169,7 +235,7 @@ void CombatLogic::spawnHitVfx(const EntityDefinition &hitEntityDef, const WorldD
 	entityChunkManager.createEntity(initInfo, random, physicsSystem, renderer);
 }
 
-void CombatLogic::onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, bool anyWeaponEquipped, Game &game)
+void CombatLogic::onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, CombatResultSourceType sourceType, Game &game)
 {
 	const CoordInt3 hitVoxelCoord = VoxelUtils::worldVoxelToCoord(hitWorldVoxel);
 	const VoxelInt3 hitVoxel = hitVoxelCoord.voxel;
@@ -219,33 +285,53 @@ void CombatLogic::onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, bool anyWeaponEqui
 	const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
 
 	AudioManager &audioManager = game.audioManager;
-	audioManager.playSoundOneShot(ArenaSoundName::Bash, hitWorldVoxelCenter);
 
-	if (!anyWeaponEquipped)
+	if (CombatLogic::canSourceTypeDamageDoor(sourceType))
 	{
-		player.currentHealth -= ArenaPlayerUtils::getSelfDamageFromDoorBashWithFists(random);
-	}
+		audioManager.playSoundOneShot(ArenaSoundName::Bash, hitWorldVoxelCenter);
 
-	const int doorBashDamage = ArenaPlayerUtils::DoorBashMinDamageRequired; // @todo: Calculate damage
-	if (!ArenaPlayerUtils::isDoorBashSuccessful(doorBashDamage, lockDef.lockLevel, player.primaryAttributes, random))
+		if (sourceType == CombatResultSourceType::PlayerMeleeAttack)
+		{
+			const ItemDefinitionID playerEquippedWeaponItemDefID = player.getEquippedWeaponItemDefID();
+			const bool isFists = playerEquippedWeaponItemDefID < 0;
+			if (isFists)
+			{
+				player.currentHealth -= ArenaPlayerUtils::getSelfDamageFromDoorBashWithFists(random);
+			}
+		}
+
+		const int doorBashDamage = ArenaPlayerUtils::DoorBashMinDamageRequired; // @todo: Calculate damage
+		if (!ArenaPlayerUtils::isDoorBashSuccessful(doorBashDamage, lockDef.lockLevel, player.primaryAttributes, random))
+		{
+			return;
+		}
+
+		constexpr bool isApplyingDoorKeyToLock = false;
+		constexpr int doorKeyID = -1;
+		constexpr bool isLockpickingSuccessful = false;
+		constexpr bool isWeaponBashing = true;
+		MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isLockpickingSuccessful, isWeaponBashing);
+	}
+	else
 	{
-		return;
+		if (sourceType == CombatResultSourceType::PlayerSpellProjectile)
+		{
+			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+			CombatLogic::spawnSpellExplosion(hitWorldVoxelCenter, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
+		}
 	}
-
-	constexpr bool isApplyingDoorKeyToLock = false;
-	constexpr int doorKeyID = -1;
-	constexpr bool isLockpickingSuccessful = false;
-	constexpr bool isWeaponBashing = true;
-	MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isLockpickingSuccessful, isWeaponBashing);
 }
 
-void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, bool isFromMeleeWeapon, Game &game)
+void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, Game &game)
 {
 	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const EntityInstance &hitEntityInst = entityChunkManager.entities.get(hitEntityInstID);
 	const WorldDouble3 hitEntityPosition = entityChunkManager.positions.get(hitEntityInst.positionID);
 	const BoundingBox3D &hitEntityBBox = entityChunkManager.boundingBoxes.get(hitEntityInst.bboxID);
 	const WorldDouble3 hitEntityMiddlePosition(hitEntityPosition.x, hitEntityPosition.y + hitEntityBBox.halfHeight, hitEntityPosition.z);
+
+	const bool isPhysicalImpact = (sourceType == CombatResultSourceType::PlayerMeleeAttack) || (sourceType == CombatResultSourceType::PlayerBowProjectile);
+	const bool isMagicalImpact = sourceType == CombatResultSourceType::PlayerSpellProjectile;
 
 	const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
 	const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
@@ -319,13 +405,22 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, bool isF
 				hitEntityPosition.y + hitVfxHeightBias,
 				hitEntityPosition.z + hitVfxPositionBias.y);
 
-			CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, game.renderer);
-
-			audioManager.playSoundOneShot(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
+			if (isPhysicalImpact)
+			{
+				CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, game.renderer);
+				audioManager.playSoundOneShot(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
+			}
+			else if (isMagicalImpact)
+			{
+				CombatLogic::spawnSpellExplosion(hitVfxPosition, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
+			}
 		}
 		else
 		{
-			audioManager.playSoundOneShot(ArenaSoundName::Clank, hitEntityMiddlePosition);
+			if (isPhysicalImpact)
+			{
+				audioManager.playSoundOneShot(ArenaSoundName::Clank, hitEntityMiddlePosition);
+			}
 		}
 	}
 	else if (canHitEntityLockBeBroken)

@@ -483,20 +483,38 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (entityDef.type == EntityDefinitionType::Vfx)
 	{
-		if (entityDef.vfx.type == VfxEntityAnimationType::BowProjectile)
-		{
-			constexpr double bowProjectileSpeed = 3.0;
-			const Double3 bowProjectileDirection(initInfo.direction->x, 0.0, initInfo.direction->y);
-			const Double3 bowProjectileVelocity = bowProjectileDirection * bowProjectileSpeed;
-			const JPH::Vec3 bowProjectilePhysicsVelocity(
-				static_cast<float>(bowProjectileVelocity.x),
-				static_cast<float>(bowProjectileVelocity.y),
-				static_cast<float>(bowProjectileVelocity.z));
+		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-			JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
-			bodyInterface.SetLinearVelocity(entityInst.physicsBodyID, bowProjectilePhysicsVelocity);
+		double projectileSpeed = 0.0;
+		Double3 projectileDirection;
+		Double3 projectileVelocity;
+		double projectileGravity = 0.0;
+
+		const VfxEntityAnimationType vfxEntityAnimType = entityDef.vfx.type;
+		if (vfxEntityAnimType == VfxEntityAnimationType::BowProjectile)
+		{
+			projectileSpeed = 3.0;
+			projectileDirection = Double3(initInfo.direction->x, 0.0, initInfo.direction->y);
+			projectileVelocity = projectileDirection * projectileSpeed;
+			projectileGravity = 0.02;
+		}
+		else if (vfxEntityAnimType == VfxEntityAnimationType::SpellProjectile)
+		{
+			projectileSpeed = 2.5;
+			projectileDirection = Double3(initInfo.direction->x, 0.0, initInfo.direction->y);
+			projectileVelocity = projectileDirection * projectileSpeed;
+		}
+
+		if (projectileSpeed > 0.0)
+		{
+			const JPH::Vec3 projectilePhysicsVelocity(
+				static_cast<float>(projectileVelocity.x),
+				static_cast<float>(projectileVelocity.y),
+				static_cast<float>(projectileVelocity.z));
+
+			bodyInterface.SetLinearVelocity(entityInst.physicsBodyID, projectilePhysicsVelocity);
 			bodyInterface.SetMotionType(entityInst.physicsBodyID, JPH::EMotionType::Dynamic, JPH::EActivation::Activate);
-			bodyInterface.SetGravityFactor(entityInst.physicsBodyID, 0.02f);
+			bodyInterface.SetGravityFactor(entityInst.physicsBodyID, static_cast<float>(projectileGravity));
 		}
 	}
 
@@ -1961,8 +1979,9 @@ void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager 
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const VfxEntityDefinition &vfxEntityDef = entityDef.vfx;
-		if (vfxEntityDef.type == VfxEntityAnimationType::BowProjectile)
+		if (vfxEntityDef.type == VfxEntityAnimationType::BowProjectile || vfxEntityDef.type == VfxEntityAnimationType::SpellProjectile)
 		{
+			// @todo maybe change this to distanceSqr from player so it's more general
 			const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 			if (entityPosition.y < 0.0)
 			{

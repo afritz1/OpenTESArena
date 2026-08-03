@@ -18,8 +18,26 @@ namespace
 	// Required in contact listeners when Jolt is multi-threaded.
 	// - @todo ideally there would be thread-safe queues instead of locking per contact
 	std::mutex PlayerVsVoxelMutex;
-	std::mutex BowProjectileVsVoxelMutex;
-	std::mutex BowProjectileVsEntityMutex;
+	std::mutex ProjectileVsVoxelMutex;
+	std::mutex ProjectileVsEntityMutex;
+
+	// Converts the physics collider's center of mass to a voxel coordinate. The collider might be combined which
+	// makes this unsuitable for anything but single-voxel sensor colliders currently.
+	WorldInt3 GetVoxelBodyWorldVoxel(const JPH::Body &body, JPH::SubShapeID subShapeID, double ceilingScale)
+	{
+		const JPH::Vec3 otherBodyScale = JPH::Vec3::sReplicate(1.0f);
+
+		// Determine which subshape was hit since it's in a compound shape.
+		JPH::SubShapeID remainderSubShapeID;
+		const JPH::TransformedShape otherSubShapeTransformed = body.GetShape()->GetSubShapeTransformedShape(subShapeID, body.GetCenterOfMassPosition(), body.GetRotation(), otherBodyScale, remainderSubShapeID);
+
+		const JPH::RVec3 otherSubShapePosition = otherSubShapeTransformed.mShapePositionCOM;
+		const WorldDouble3 otherSubShapeWorldPosition(
+			static_cast<SNInt>(otherSubShapePosition.GetX()),
+			static_cast<int>(otherSubShapePosition.GetY()),
+			static_cast<WEInt>(otherSubShapePosition.GetZ()));
+		return VoxelUtils::pointToVoxel(otherSubShapeWorldPosition, ceilingScale);
+	}
 
 	void OnPlayerVsVoxelContactAdded(const JPH::Body &playerBody, const JPH::Body &voxelBody, JPH::SubShapeID voxelSubShapeID, bool isVoxelSensor, Game &game)
 	{
@@ -34,17 +52,8 @@ namespace
 		JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 		GameState &gameState = game.gameState;
 		const double ceilingScale = gameState.getActiveCeilingScale();
-
-		// Determine which sensor subshape was hit since it's in a compound shape.
-		const JPH::Vec3 otherBodyScale = JPH::Vec3::sReplicate(1.0f);
-		JPH::SubShapeID remainderSubShapeID;
-		const JPH::TransformedShape otherSubShapeTransformed = voxelBody.GetShape()->GetSubShapeTransformedShape(voxelSubShapeID, voxelBody.GetCenterOfMassPosition(), voxelBody.GetRotation(), otherBodyScale, remainderSubShapeID);
-		const JPH::RVec3 otherSubShapePosition = otherSubShapeTransformed.mShapePositionCOM;
-		const CoordDouble3 otherSubShapeCoord = VoxelUtils::worldPointToCoord(WorldDouble3(
-			static_cast<SNDouble>(otherSubShapePosition.GetX()),
-			static_cast<double>(otherSubShapePosition.GetY()),
-			static_cast<WEDouble>(otherSubShapePosition.GetZ())));
-		const CoordInt3 otherSubShapeVoxelCoord(otherSubShapeCoord.chunk, VoxelUtils::pointToVoxel(otherSubShapeCoord.point, ceilingScale));
+		const WorldInt3 otherSubShapeWorldVoxel = GetVoxelBodyWorldVoxel(voxelBody, voxelSubShapeID, ceilingScale);
+		const CoordInt3 otherSubShapeVoxelCoord = VoxelUtils::worldVoxelToCoord(otherSubShapeWorldVoxel);
 		MapLogic::handleTriggersInVoxel(game, otherSubShapeVoxelCoord);
 
 		const MapType activeMapType = gameState.getActiveMapType();
@@ -78,19 +87,24 @@ namespace
 		const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);		
 	}*/
 
-	void OnBowProjectileVsVoxelContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileInstID, const JPH::Body &voxelBody, JPH::SubShapeID voxelSubShapeID, bool isVoxelSensor, EntityChunkManager &entityChunkManager)
+	void OnProjectileVsVoxelContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileInstID, VfxEntityAnimationType projectileVfxAnimType,
+		const JPH::Body &voxelBody, JPH::SubShapeID voxelSubShapeID, bool isVoxelSensor, Game &game)
 	{
 		if (isVoxelSensor)
 		{
 			return;
 		}
 
-		std::lock_guard<std::mutex> lockGuard(BowProjectileVsVoxelMutex);
+		// Note: this doesn't support getting the exact voxel that was hit due to collider combining.
 
-		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of an arrow dying
+		std::lock_guard<std::mutex> lockGuard(ProjectileVsVoxelMutex);
+
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of a projectile dying
 	}
 
-	void OnBowProjectileVsEntityContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileInstID, const JPH::Body &entityBody, EntityInstanceID entityInstID, Game &game)
+	void OnProjectileVsEntityContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileInstID, VfxEntityAnimationType projectileVfxAnimType,
+		const JPH::Body &entityBody, EntityInstanceID entityInstID, Game &game)
 	{
 		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
@@ -111,13 +125,27 @@ namespace
 			return;
 		}
 
-		std::lock_guard<std::mutex> lockGuard(BowProjectileVsEntityMutex);
-
 		GameState &gameState = game.gameState;
-		constexpr bool isFromMeleeWeapon = false;
-		gameState.addCombatEntityResult(entityInstID, isFromMeleeWeapon);
+		
+		CombatResultSourceType sourceType;
+		switch (projectileVfxAnimType)
+		{
+		case VfxEntityAnimationType::BowProjectile:
+			sourceType = CombatResultSourceType::PlayerBowProjectile;
+			break;
+		case VfxEntityAnimationType::SpellProjectile:
+			sourceType = CombatResultSourceType::PlayerSpellProjectile;
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(projectileVfxAnimType)));
+			break;
+		}
 
-		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of an arrow dying
+		std::lock_guard<std::mutex> lockGuard(ProjectileVsEntityMutex);
+
+		gameState.addCombatEntityResult(entityInstID, sourceType);
+
+		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of a projectile dying
 	}
 }
 
@@ -141,10 +169,14 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 	const JPH::BodyID playerBodyID = player.physicsCharacter->GetBodyID();
 
 	const JPH::Body *playerBody = nullptr;
-	const JPH::Body *bowProjectileBody = nullptr;
-	EntityInstanceID bowProjectileEntityInstID = -1;
+
+	const JPH::Body *projectileBody = nullptr;
+	EntityInstanceID projectileEntityInstID = -1;
+	VfxEntityAnimationType projectileVfxAnimType = static_cast<VfxEntityAnimationType>(-1);
+
 	const JPH::Body *otherBody = nullptr;
 	JPH::SubShapeID otherSubShapeID;
+
 	if (playerBodyID == body1.GetID())
 	{
 		playerBody = &body1;
@@ -163,23 +195,27 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 		{
 			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-			if (entityDef.vfx.type != VfxEntityAnimationType::BowProjectile)
+			const VfxEntityAnimationType entityVfxAnimType = entityDef.vfx.type;
+			const bool isProjectile = (entityVfxAnimType == VfxEntityAnimationType::BowProjectile) || (entityVfxAnimType == VfxEntityAnimationType::SpellProjectile);
+			if (!isProjectile)
 			{
 				continue;
 			}
 
 			if (entityInst.physicsBodyID == body1.GetID())
 			{
-				bowProjectileBody = &body1;
-				bowProjectileEntityInstID = entityInstID;
+				projectileBody = &body1;
+				projectileEntityInstID = entityInstID;
+				projectileVfxAnimType = entityVfxAnimType;
 				otherBody = &body2;
 				otherSubShapeID = manifold.mSubShapeID2;
 				break;
 			}
 			else if (entityInst.physicsBodyID == body2.GetID())
 			{
-				bowProjectileBody = &body2;
-				bowProjectileEntityInstID = entityInstID;
+				projectileBody = &body2;
+				projectileEntityInstID = entityInstID;
+				projectileVfxAnimType = entityVfxAnimType;
 				otherBody = &body1;
 				otherSubShapeID = manifold.mSubShapeID1;
 				break;
@@ -198,8 +234,8 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 
 	const bool isPlayerVsEntityCollision = (playerBody != nullptr) && (otherBodyEntityInstanceID >= 0);
 	const bool isPlayerVsVoxelCollision = (playerBody != nullptr) && !isPlayerVsEntityCollision;
-	const bool isBowProjectileVsEntityCollision = (bowProjectileBody != nullptr) && (otherBodyEntityInstanceID >= 0);
-	const bool isBowProjectileVsVoxelCollision = (bowProjectileBody != nullptr) && !isBowProjectileVsEntityCollision;
+	const bool isProjectileVsEntityCollision = (projectileBody != nullptr) && (otherBodyEntityInstanceID >= 0);
+	const bool isProjectileVsVoxelCollision = (projectileBody != nullptr) && !isProjectileVsEntityCollision;
 
 	if (isPlayerVsVoxelCollision)
 	{
@@ -212,13 +248,13 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 			OnPlayerVsEntitySensorContactAdded(*playerBody, *otherBody, this->game);
 		}*/
 	}
-	else if (isBowProjectileVsVoxelCollision)
+	else if (isProjectileVsVoxelCollision)
 	{
-		OnBowProjectileVsVoxelContactAdded(*bowProjectileBody, bowProjectileEntityInstID, *otherBody, otherSubShapeID, otherBody->IsSensor(), entityChunkManager);
+		OnProjectileVsVoxelContactAdded(*projectileBody, projectileEntityInstID, projectileVfxAnimType, *otherBody, otherSubShapeID, otherBody->IsSensor(), this->game);
 	}
-	else if (isBowProjectileVsEntityCollision)
+	else if (isProjectileVsEntityCollision)
 	{
-		OnBowProjectileVsEntityContactAdded(*bowProjectileBody, bowProjectileEntityInstID, *otherBody, otherBodyEntityInstanceID, this->game);
+		OnProjectileVsEntityContactAdded(*projectileBody, projectileEntityInstID, projectileVfxAnimType, *otherBody, otherBodyEntityInstanceID, this->game);
 	}
 }
 

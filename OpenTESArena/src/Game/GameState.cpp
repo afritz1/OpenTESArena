@@ -152,25 +152,25 @@ bool EntityEncounterSpawnInfo::isCityGuards() const
 
 CombatVoxelResult::CombatVoxelResult()
 {
-	this->isFromWeapon = false;
+	this->sourceType = static_cast<CombatResultSourceType>(-1);
 }
 
-void CombatVoxelResult::init(WorldInt3 voxel, bool isFromWeapon)
+void CombatVoxelResult::init(WorldInt3 voxel, CombatResultSourceType sourceType)
 {
 	this->voxel = voxel;
-	this->isFromWeapon = isFromWeapon;
+	this->sourceType = sourceType;
 }
 
 CombatEntityResult::CombatEntityResult()
 {
 	this->entityInstID = -1;
-	this->isFromMeleeWeapon = false;
+	this->sourceType = static_cast<CombatResultSourceType>(-1);
 }
 
-void CombatEntityResult::init(EntityInstanceID entityInstID, bool isFromMeleeWeapon)
+void CombatEntityResult::init(EntityInstanceID entityInstID, CombatResultSourceType sourceType)
 {
 	this->entityInstID = entityInstID;
-	this->isFromMeleeWeapon = isFromMeleeWeapon;
+	this->sourceType = sourceType;
 }
 
 void CombatResults::clear()
@@ -821,17 +821,17 @@ void GameState::clearTavernRentedRoomState()
 	this->tavernRentedRoomState.clear();
 }
 
-void GameState::addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon)
+void GameState::addCombatVoxelResult(WorldInt3 voxel, CombatResultSourceType sourceType)
 {
 	CombatVoxelResult result;
-	result.init(voxel, isFromWeapon);
+	result.init(voxel, sourceType);
 	this->combatResults.voxelResults.emplace_back(std::move(result));
 }
 
-void GameState::addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon)
+void GameState::addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType)
 {
 	CombatEntityResult result;
-	result.init(entityInstID, isFromMeleeWeapon);
+	result.init(entityInstID, sourceType);
 	this->combatResults.entityResults.emplace_back(std::move(result));
 }
 
@@ -1806,12 +1806,12 @@ void GameState::tickCombatResults(Game &game)
 	// These are applied after physics simulation since contact added handlers may create bodies for hit VFX etc. which is disallowed.
 	for (const CombatVoxelResult &result : this->combatResults.voxelResults)
 	{
-		CombatLogic::onVoxelHitByPlayer(result.voxel, result.isFromWeapon, game);
+		CombatLogic::onVoxelHitByPlayer(result.voxel, result.sourceType, game);
 	}
 
 	for (const CombatEntityResult &result : this->combatResults.entityResults)
 	{
-		CombatLogic::onEntityHitByPlayer(result.entityInstID, result.isFromMeleeWeapon, game);
+		CombatLogic::onEntityHitByPlayer(result.entityInstID, result.sourceType, game);
 	}
 
 	this->combatResults.clear();

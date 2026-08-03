@@ -8,11 +8,14 @@
 
 #include "components/utilities/Span.h"
 
+class AudioManager;
 class EntityChunkManager;
 class Game;
 class Random;
 class Renderer;
 class VoxelChunkManager;
+
+enum class CombatResultSourceType;
 
 // Stores voxels and entities that can be considered for attack calculation.
 struct CombatHitSearchResult
@@ -33,14 +36,20 @@ struct CombatHitSearchResult
 
 namespace CombatLogic
 {
+	bool canSourceTypeDamageDoor(CombatResultSourceType sourceType);
+
 	void getHitSearchResult(const WorldDouble3 &searchPoint, double searchRadius, double ceilingScale,
 		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, CombatHitSearchResult *outHitSearchResult);
 
 	void spawnBowProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager,
 		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
+	void spawnSpellProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager, Random &random,
+		AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
+	void spawnSpellExplosion(WorldDouble3 position, EntityChunkManager &entityChunkManager, Random &random,
+		AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 	void spawnHitVfx(const EntityDefinition &hitEntityDef, const WorldDouble3 &position, EntityChunkManager &entityChunkManager,
 		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 
-	void onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, bool anyWeaponEquipped, Game &game);
-	void onEntityHitByPlayer(EntityInstanceID hitEntityInstID, bool isFromMeleeWeapon, Game &game);
+	void onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, CombatResultSourceType sourceType, Game &game);
+	void onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, Game &game);
 }

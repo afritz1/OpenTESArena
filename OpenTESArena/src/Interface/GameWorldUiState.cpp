@@ -8,9 +8,11 @@
 #include "LogbookUiState.h"
 #include "PauseMenuUiState.h"
 #include "WorldMapUiState.h"
+#include "../Assets/ArenaSoundName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
+#include "../Combat/CombatLogic.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
@@ -3302,7 +3304,25 @@ void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
 		return;
 	}
 
-	DebugLog("Magic.");
+	Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	if (!charClassDef.castsMagic)
+	{
+		return;
+	}
+
+	const int spellPointCost = 10; // @todo original spell costs
+	const bool canPlayerAffordSpellCast = static_cast<int>(player.currentSpellPoints) >= spellPointCost;
+	if (!canPlayerAffordSpellCast)
+	{
+		return;
+	}
+
+	player.currentSpellPoints -= spellPointCost;
+
+	const WorldDouble3 spellProjectilePosition = player.getPhysicsPosition();
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	CombatLogic::spawnSpellProjectile(spellProjectilePosition, player.getGroundDirectionXZ(), entityChunkManager, game.random, game.audioManager, game.physicsSystem, game.renderer);
 }
 
 void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)

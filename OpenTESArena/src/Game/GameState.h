@@ -59,26 +59,33 @@ struct EntityEncounterSpawnInfo
 	bool isCityGuards() const;
 };
 
+enum class CombatResultSourceType
+{
+	PlayerMeleeAttack,
+	PlayerBowProjectile,
+	PlayerSpellProjectile
+};
+
 // A voxel was hit/affected by something in combat.
 struct CombatVoxelResult
 {
 	WorldInt3 voxel;
-	bool isFromWeapon; // If hit by a weapon, or by fists.
+	CombatResultSourceType sourceType;
 
 	CombatVoxelResult();
 
-	void init(WorldInt3 voxel, bool isFromWeapon);
+	void init(WorldInt3 voxel, CombatResultSourceType sourceType);
 };
 
 // An entity was hit/affected by something in combat.
 struct CombatEntityResult
 {
 	EntityInstanceID entityInstID;
-	bool isFromMeleeWeapon; // From melee, or from ranged.
+	CombatResultSourceType sourceType;
 
 	CombatEntityResult();
 
-	void init(EntityInstanceID entityInstID, bool isFromMeleeWeapon);
+	void init(EntityInstanceID entityInstID, CombatResultSourceType sourceType);
 };
 
 struct CombatResults
@@ -266,8 +273,8 @@ public:
 	void setTavernRentedRoom(int roomType, int hours);
 	void clearTavernRentedRoomState();
 
-	void addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon);
-	void addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon);
+	void addCombatVoxelResult(WorldInt3 voxel, CombatResultSourceType sourceType);
+	void addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType);
 
 	int spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
 	void queueCityGuardEncounter(Game &game);
