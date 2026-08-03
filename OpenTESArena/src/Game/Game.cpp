@@ -942,6 +942,7 @@ void Game::loop()
 				this->gameState.tickEntitiesPostPhysicsStep(*this);
 
 				this->gameState.tickCombatResults(*this);
+				this->gameState.tickEntityInstantiations(*this);
 
 				if (this->gameState.hasPendingLevelTransitionCalculation())
 				{

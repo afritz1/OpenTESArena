@@ -116,20 +116,58 @@ void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double sea
 	}
 }
 
-void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager,
-	Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+EntityDefID CombatLogic::getBowProjectileEntityDefID()
 {
 	EntityDefinitionKey bowProjectileEntityDefKey;
 	bowProjectileEntityDefKey.initVfx(VfxEntityAnimationType::BowProjectile, 0);
 
-	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 	EntityDefID bowProjectileEntityDefID;
-	if (!entityDefLibrary.tryGetDefinitionID(bowProjectileEntityDefKey, &bowProjectileEntityDefID))
+	if (!EntityDefinitionLibrary::getInstance().tryGetDefinitionID(bowProjectileEntityDefKey, &bowProjectileEntityDefID))
 	{
-		DebugCrash("Couldn't get bow projectile entity definition ID.");
+		DebugLogError("Couldn't get bow projectile entity definition ID.");
+		return -1;
 	}
 
-	const EntityDefinition &bowProjectileEntityDef = entityDefLibrary.getDefinition(bowProjectileEntityDefID);
+	return bowProjectileEntityDefID;
+}
+
+EntityDefID CombatLogic::getSpellProjectileEntityDefID(int spellIndex)
+{
+	EntityDefinitionKey projectileEntityDefKey;
+	projectileEntityDefKey.initVfx(VfxEntityAnimationType::SpellProjectile, spellIndex);
+
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	EntityDefID projectileEntityDefID;
+	if (!entityDefLibrary.tryGetDefinitionID(projectileEntityDefKey, &projectileEntityDefID))
+	{
+		DebugLogError("Couldn't get spell projectile entity definition ID.");
+		return -1;
+	}
+
+	return projectileEntityDefID;
+}
+
+EntityDefID CombatLogic::getSpellExplosionEntityDefID(int spellIndex)
+{
+	EntityDefinitionKey projectileEntityDefKey;
+	projectileEntityDefKey.initVfx(VfxEntityAnimationType::SpellExplosion, spellIndex);
+
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	EntityDefID projectileEntityDefID;
+	if (!entityDefLibrary.tryGetDefinitionID(projectileEntityDefKey, &projectileEntityDefID))
+	{
+		DebugLogError("Couldn't get spell explosion entity definition ID.");
+		return -1;
+	}
+
+	return projectileEntityDefID;
+}
+
+void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager,
+	Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+{	
+	const EntityDefID bowProjectileEntityDefID = CombatLogic::getBowProjectileEntityDefID();
+	const EntityDefinition &bowProjectileEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(bowProjectileEntityDefID);
 	const EntityAnimationDefinition &bowProjectileAnimDef = bowProjectileEntityDef.animDef;
 
 	EntityInitInfo bowProjectileEntityInitInfo;
@@ -144,20 +182,10 @@ void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double2 direction, E
 
 void CombatLogic::spawnSpellProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager, Random &random,
 	AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
-{
-	const int projectileVfxIndex = random.next(12); // @todo actual spell logic
-
-	EntityDefinitionKey projectileEntityDefKey;
-	projectileEntityDefKey.initVfx(VfxEntityAnimationType::SpellProjectile, projectileVfxIndex);
-
-	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-	EntityDefID projectileEntityDefID;
-	if (!entityDefLibrary.tryGetDefinitionID(projectileEntityDefKey, &projectileEntityDefID))
-	{
-		DebugCrash("Couldn't get spell projectile entity definition ID.");
-	}
-
-	const EntityDefinition &projectileEntityDef = entityDefLibrary.getDefinition(projectileEntityDefID);
+{	
+	const int spellProjectileIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT);
+	const EntityDefID projectileEntityDefID = CombatLogic::getSpellProjectileEntityDefID(spellProjectileIndex);
+	const EntityDefinition &projectileEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(projectileEntityDefID);
 	const EntityAnimationDefinition &projectileAnimDef = projectileEntityDef.animDef;
 
 	EntityInitInfo projectileEntityInitInfo;
@@ -175,30 +203,18 @@ void CombatLogic::spawnSpellProjectile(WorldDouble3 position, Double2 direction,
 void CombatLogic::spawnSpellExplosion(WorldDouble3 position, EntityChunkManager &entityChunkManager, Random &random, AudioManager &audioManager,
 	JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
-	// @todo provide spell index argument so we know which vfx animation to use
+	const int spellExplosionIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT); // @todo provide as parameter
+	const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellExplosionIndex);
+	const EntityDefinition &explosionEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(explosionEntityDefID);
+	const EntityAnimationDefinition &explosionAnimDef = explosionEntityDef.animDef;
 
-	const int projectileVfxIndex = 0;
-
-	EntityDefinitionKey projectileEntityDefKey;
-	projectileEntityDefKey.initVfx(VfxEntityAnimationType::SpellExplosion, projectileVfxIndex);
-
-	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-	EntityDefID projectileEntityDefID;
-	if (!entityDefLibrary.tryGetDefinitionID(projectileEntityDefKey, &projectileEntityDefID))
-	{
-		DebugCrash("Couldn't get spell explosion entity definition ID.");
-	}
-
-	const EntityDefinition &projectileEntityDef = entityDefLibrary.getDefinition(projectileEntityDefID);
-	const EntityAnimationDefinition &projectileAnimDef = projectileEntityDef.animDef;
-
-	EntityInitInfo projectileEntityInitInfo;
-	projectileEntityInitInfo.defID = projectileEntityDefID;
-	projectileEntityInitInfo.feetPosition = position;
-	projectileEntityInitInfo.initialAnimStateIndex = *projectileAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
-	projectileEntityInitInfo.isSensorCollider = true;
-	projectileEntityInitInfo.canBeKilled = false;
-	entityChunkManager.createEntity(projectileEntityInitInfo, random, physicsSystem, renderer);
+	EntityInitInfo entityInitInfo;
+	entityInitInfo.defID = explosionEntityDefID;
+	entityInitInfo.feetPosition = position;
+	entityInitInfo.initialAnimStateIndex = *explosionAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+	entityInitInfo.isSensorCollider = true;
+	entityInitInfo.canBeKilled = false;
+	entityChunkManager.createEntity(entityInitInfo, random, physicsSystem, renderer);
 
 	audioManager.playSoundOneShot(ArenaSoundName::Explode, position);
 }

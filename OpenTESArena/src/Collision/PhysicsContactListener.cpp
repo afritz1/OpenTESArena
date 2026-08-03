@@ -5,6 +5,7 @@
 #include "Jolt/Physics/Body/Body.h"
 
 #include "PhysicsContactListener.h"
+#include "../Assets/ArenaSoundName.h"
 #include "../Combat/CombatLogic.h"
 #include "../Game/Game.h"
 #include "../Voxels/VoxelUtils.h"
@@ -95,9 +96,36 @@ namespace
 			return;
 		}
 
-		// Note: this doesn't support getting the exact voxel that was hit due to collider combining.
-
+		// Note: this handler doesn't support getting the exact voxel that was hit due to collider combining.
 		std::lock_guard<std::mutex> lockGuard(ProjectileVsVoxelMutex);
+
+		if (projectileVfxAnimType == VfxEntityAnimationType::SpellProjectile)
+		{
+			const JPH::RVec3 projectilePhysicsPosition = projectileBody.GetPosition();
+			const WorldDouble3 projectileWorldPosition(
+				static_cast<SNDouble>(projectilePhysicsPosition.GetX()),
+				static_cast<double>(projectilePhysicsPosition.GetY()),
+				static_cast<WEDouble>(projectilePhysicsPosition.GetZ()));
+
+			GameState &gameState = game.gameState;
+			Random &random = game.random;
+
+			const int spellExplosionIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT); // @todo provide as parameter
+			const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellExplosionIndex);
+			const EntityDefinition &explosionEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(explosionEntityDefID);
+			const EntityAnimationDefinition &explosionAnimDef = explosionEntityDef.animDef;
+
+			EntityInitInfo explosionEntityInitInfo;
+			explosionEntityInitInfo.defID = explosionEntityDefID;
+			explosionEntityInitInfo.feetPosition = projectileWorldPosition;
+			explosionEntityInitInfo.initialAnimStateIndex = *explosionAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+			explosionEntityInitInfo.isSensorCollider = true;
+			explosionEntityInitInfo.canBeKilled = false;
+			gameState.queueEntityInstantiate(explosionEntityInitInfo);
+
+			AudioManager &audioManager = game.audioManager;
+			audioManager.playSoundOneShot(ArenaSoundName::Explode, projectileWorldPosition);
+		}
 
 		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of a projectile dying

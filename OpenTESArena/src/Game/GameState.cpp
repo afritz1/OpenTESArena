@@ -726,6 +726,7 @@ void GameState::clearMaps()
 	this->nextMusicFunc = SceneChangeMusicFunc();
 	this->nextJingleMusicFunc = SceneChangeMusicFunc();
 	this->combatResults.clear();
+	this->queuedEntityInitInfos.clear();
 	this->guardSpawnState.clearQueue();
 }
 
@@ -833,6 +834,11 @@ void GameState::addCombatEntityResult(EntityInstanceID entityInstID, CombatResul
 	CombatEntityResult result;
 	result.init(entityInstID, sourceType);
 	this->combatResults.entityResults.emplace_back(std::move(result));
+}
+
+void GameState::queueEntityInstantiate(const EntityInitInfo &initInfo)
+{
+	this->queuedEntityInitInfos.emplace_back(initInfo);
 }
 
 int GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
@@ -1179,6 +1185,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.random, textureManager);
 
+	this->queuedEntityInitInfos.clear();
 	this->guardSpawnState.clearQueue();
 	this->automapDirectionsDetailEntries.clear();
 
@@ -1815,6 +1822,18 @@ void GameState::tickCombatResults(Game &game)
 	}
 
 	this->combatResults.clear();
+}
+
+void GameState::tickEntityInstantiations(Game &game)
+{
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+
+	for (const EntityInitInfo &initInfo : this->queuedEntityInitInfos)
+	{
+		entityChunkManager.createEntity(initInfo, game.random, game.physicsSystem, game.renderer);
+	}
+
+	this->queuedEntityInitInfos.clear();
 }
 
 void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)

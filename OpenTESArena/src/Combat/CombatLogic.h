@@ -41,6 +41,12 @@ namespace CombatLogic
 	void getHitSearchResult(const WorldDouble3 &searchPoint, double searchRadius, double ceilingScale,
 		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, CombatHitSearchResult *outHitSearchResult);
 
+	static constexpr int SPELL_PROJECTILE_TYPE_COUNT = 12; // For animation lookups
+
+	EntityDefID getBowProjectileEntityDefID();
+	EntityDefID getSpellProjectileEntityDefID(int spellIndex);
+	EntityDefID getSpellExplosionEntityDefID(int spellIndex);
+
 	void spawnBowProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager,
 		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 	void spawnSpellProjectile(WorldDouble3 position, Double2 direction, EntityChunkManager &entityChunkManager, Random &random,

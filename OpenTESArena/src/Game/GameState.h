@@ -27,6 +27,7 @@ class ProvinceDefinition;
 
 enum class MapType;
 
+struct EntityInitInfo;
 struct MusicDefinition;
 struct RenderCamera;
 
@@ -189,6 +190,8 @@ private:
 
 	CombatResults combatResults;
 
+	std::vector<EntityInitInfo> queuedEntityInitInfos; // For creating VFX after physics simulation completes each frame.
+
 	GuardSpawnState guardSpawnState;
 
 	std::vector<DialogueDirectionsDetailEntry> automapDirectionsDetailEntries; // Stored directions from NPCs that appear on the automap.
@@ -276,6 +279,8 @@ public:
 	void addCombatVoxelResult(WorldInt3 voxel, CombatResultSourceType sourceType);
 	void addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType);
 
+	void queueEntityInstantiate(const EntityInitInfo &initInfo);
+
 	int spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
 	void queueCityGuardEncounter(Game &game);
 
@@ -302,6 +307,7 @@ public:
 	void tickEntitiesPostPhysicsStep(Game &game);
 	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
 	void tickCombatResults(Game &game);
+	void tickEntityInstantiations(Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(double dt, const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game);
 };
