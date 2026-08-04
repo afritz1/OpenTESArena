@@ -112,18 +112,7 @@ namespace
 				static_cast<double>(projectilePhysicsPosition.GetY()),
 				static_cast<WEDouble>(projectilePhysicsPosition.GetZ()));
 
-			const int spellIndex = projectileSpellState.spellIndex;
-			const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellIndex);
-			const EntityDefinition &explosionEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(explosionEntityDefID);
-			const EntityAnimationDefinition &explosionAnimDef = explosionEntityDef.animDef;
-
-			EntityInitInfo explosionEntityInitInfo;
-			explosionEntityInitInfo.defID = explosionEntityDefID;
-			explosionEntityInitInfo.feetPosition = projectileWorldPosition;
-			explosionEntityInitInfo.initialAnimStateIndex = *explosionAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
-			explosionEntityInitInfo.isSensorCollider = true;
-			explosionEntityInitInfo.canBeKilled = false;
-			explosionEntityInitInfo.spellIndex = spellIndex;
+			const EntityInitInfo explosionEntityInitInfo = CombatLogic::getSpellExplosionEntityInitInfo(projectileWorldPosition, projectileSpellState.spellIndex);
 			gameState.queueEntityInstantiate(explosionEntityInitInfo);
 
 			AudioManager &audioManager = game.audioManager;

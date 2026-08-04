@@ -3324,7 +3324,7 @@ void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
 	Random &random = game.random;
 
 	const int spellIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT);
-	const WorldDouble3 spellProjectilePosition = player.getPhysicsPosition();
+	const WorldDouble3 spellProjectilePosition = player.getEyePosition() - Double3(0.0, 0.20, 0.0);
 	CombatLogic::spawnSpellProjectile(spellIndex, spellProjectilePosition, player.forward, entityChunkManager, random, game.audioManager, game.physicsSystem, game.renderer);
 }
 

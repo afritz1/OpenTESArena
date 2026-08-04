@@ -17,6 +17,8 @@ class VoxelChunkManager;
 
 enum class CombatResultSourceType;
 
+struct EntityInitInfo;
+
 // Stores voxels and entities that can be considered for attack calculation.
 struct CombatHitSearchResult
 {
@@ -46,6 +48,8 @@ namespace CombatLogic
 	EntityDefID getBowProjectileEntityDefID();
 	EntityDefID getSpellProjectileEntityDefID(int spellIndex);
 	EntityDefID getSpellExplosionEntityDefID(int spellIndex);
+
+	EntityInitInfo getSpellExplosionEntityInitInfo(WorldDouble3 position, int spellIndex);
 
 	void spawnBowProjectile(WorldDouble3 position, Double3 direction, EntityChunkManager &entityChunkManager,
 		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);

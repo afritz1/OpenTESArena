@@ -163,6 +163,26 @@ EntityDefID CombatLogic::getSpellExplosionEntityDefID(int spellIndex)
 	return projectileEntityDefID;
 }
 
+EntityInitInfo CombatLogic::getSpellExplosionEntityInitInfo(WorldDouble3 position, int spellIndex)
+{
+	const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellIndex);
+	const EntityDefinition &explosionEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(explosionEntityDefID);
+	const EntityAnimationDefinition &explosionAnimDef = explosionEntityDef.animDef;
+
+	double maxAnimWidth, maxAnimHeight;
+	EntityUtils::getAnimationMaxDims(explosionAnimDef, &maxAnimWidth, &maxAnimHeight);
+	const Double3 halfHeightOffset(0.0, maxAnimHeight * 0.50, 0.0);
+
+	EntityInitInfo entityInitInfo;
+	entityInitInfo.defID = explosionEntityDefID;
+	entityInitInfo.feetPosition = position - halfHeightOffset;
+	entityInitInfo.initialAnimStateIndex = *explosionAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+	entityInitInfo.isSensorCollider = true;
+	entityInitInfo.canBeKilled = false;
+	entityInitInfo.spellIndex = spellIndex;
+	return entityInitInfo;
+}
+
 void CombatLogic::spawnBowProjectile(WorldDouble3 position, Double3 direction, EntityChunkManager &entityChunkManager,
 	Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {	
@@ -203,17 +223,7 @@ void CombatLogic::spawnSpellProjectile(int spellIndex, WorldDouble3 position, Do
 void CombatLogic::spawnSpellExplosion(int spellIndex, WorldDouble3 position, EntityChunkManager &entityChunkManager, Random &random, AudioManager &audioManager,
 	JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
-	const EntityDefID explosionEntityDefID = CombatLogic::getSpellExplosionEntityDefID(spellIndex);
-	const EntityDefinition &explosionEntityDef = EntityDefinitionLibrary::getInstance().getDefinition(explosionEntityDefID);
-	const EntityAnimationDefinition &explosionAnimDef = explosionEntityDef.animDef;
-
-	EntityInitInfo entityInitInfo;
-	entityInitInfo.defID = explosionEntityDefID;
-	entityInitInfo.feetPosition = position;
-	entityInitInfo.initialAnimStateIndex = *explosionAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
-	entityInitInfo.isSensorCollider = true;
-	entityInitInfo.canBeKilled = false;
-	entityInitInfo.spellIndex = spellIndex;
+	const EntityInitInfo entityInitInfo = CombatLogic::getSpellExplosionEntityInitInfo(position, spellIndex);
 	entityChunkManager.createEntity(entityInitInfo, random, physicsSystem, renderer);
 
 	audioManager.playSoundOneShot(ArenaSoundName::Explode, position);
