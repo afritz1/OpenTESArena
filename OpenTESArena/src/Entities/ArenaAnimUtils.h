@@ -209,7 +209,7 @@ namespace ArenaAnimUtils
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out animation for spell projectile, explosion, or melee VFX.
-	bool tryMakeVfxAnim(const std::string &animFilename, bool isLooping, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
+	bool tryMakeVfxAnim(const std::string &animFilename, bool isLooping, bool isAspectCorrected, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Transforms the palette indices used for a citizen's clothes and skin. The given seed value is
 	// "pure random" and can essentially be anything.

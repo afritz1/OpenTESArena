@@ -174,7 +174,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	{
 		const std::string animFilename = String::toUppercase(spellProjectileAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, textureManager, &animDef))
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, true, textureManager, &animDef))
 		{
 			DebugLogError("Couldn't create VFX animation definition for spell projectile \"" + animFilename + "\".");
 			continue;
@@ -192,7 +192,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	{
 		const std::string animFilename = String::toUppercase(spellExplosionAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, textureManager, &animDef))
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, true, textureManager, &animDef))
 		{
 			DebugLogError("Couldn't create VFX animation definition for spell explosion \"" + animFilename + "\".");
 			continue;
@@ -210,7 +210,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	{
 		const std::string animFilename = String::toUppercase(meleeVfxAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, textureManager, &animDef))
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, false, textureManager, &animDef))
 		{
 			DebugLogError("Couldn't create VFX animation definition for melee strike \"" + animFilename + "\".");
 			continue;
@@ -228,7 +228,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	{
 		const std::string animFilename = String::toUppercase(bowProjectileAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, textureManager, &animDef))
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, true, textureManager, &animDef))
 		{
 			DebugLogError("Couldn't create VFX animation definition for bow projectile \"" + animFilename + "\".");
 			continue;

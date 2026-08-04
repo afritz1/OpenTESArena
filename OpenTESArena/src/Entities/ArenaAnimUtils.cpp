@@ -8,6 +8,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Entities/ArenaEntityUtils.h"
 #include "../Entities/EntityDefinition.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Stats/CharacterClassDefinition.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../World/MapType.h"
@@ -78,9 +79,14 @@ namespace ArenaAnimUtils
 		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
 	}
 
-	void MakeVfxKeyframeDimensions(int width, int height, double *outWidth, double *outHeight)
+	void MakeVfxKeyframeDimensions(int width, int height, bool isAspectCorrected, double *outWidth, double *outHeight)
 	{
 		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
+		
+		if (isAspectCorrected)
+		{
+			*outHeight *= ArenaRenderUtils::TALL_PIXEL_RATIO; // Makes spell projectiles/explosions look better
+		}
 	}
 
 	int GetCitizenAnimationFilenameIndex(bool isMale, ArenaClimateType climateType)
@@ -1313,7 +1319,7 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaClimateType climateType, bool isMa
 	return true;
 }
 
-bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLooping, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
+bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLooping, bool isAspectCorrected, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	DebugAssert(outAnimDef->stateCount == 0);
 	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
@@ -1335,7 +1341,7 @@ bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLoop
 	for (int i = 0; i < keyframeCount; i++)
 	{
 		double width, height;
-		MakeVfxKeyframeDimensions(textureFileMetadata.getWidth(i), textureFileMetadata.getHeight(i), &width, &height);
+		MakeVfxKeyframeDimensions(textureFileMetadata.getWidth(i), textureFileMetadata.getHeight(i), isAspectCorrected, &width, &height);
 
 		TextureAsset textureAsset(textureFileMetadata.getFilename(), i);
 		outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
