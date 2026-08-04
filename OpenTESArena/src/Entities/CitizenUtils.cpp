@@ -22,13 +22,11 @@ namespace
 	// Allowed directions for citizens to walk.
 	constexpr std::pair<CardinalDirectionName, Double3> CitizenDirections[] =
 	{
-		{ CardinalDirectionName::North, Double3(CardinalDirection::North.x, 0.0, CardinalDirection::North.y) },
-		{ CardinalDirectionName::East, Double3(CardinalDirection::East.x, 0.0, CardinalDirection::East.y) },
-		{ CardinalDirectionName::South, Double3(CardinalDirection::South.x, 0.0, CardinalDirection::South.y) },
-		{ CardinalDirectionName::West, Double3(CardinalDirection::West.x, 0.0, CardinalDirection::West.y) }
+		{ CardinalDirectionName::North, CardinalDirection::North3D },
+		{ CardinalDirectionName::East, CardinalDirection::East3D },
+		{ CardinalDirectionName::South, CardinalDirection::South3D },
+		{ CardinalDirectionName::West, CardinalDirection::West3D }
 	};
-
-	static_assert(sizeof(CardinalDirection::North) == sizeof(double) * 2);
 }
 
 void CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID,

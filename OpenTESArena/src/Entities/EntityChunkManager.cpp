@@ -1073,8 +1073,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			if (isDynamicEntity)
 			{
-				const Double2 defaultDirectionXZ = CardinalDirection::North;
-				initInfo.direction = Double3(defaultDirectionXZ.x, 0.0, defaultDirectionXZ.y);
+				initInfo.direction = CardinalDirection::North3D;
 				
 				if (entityDefType == EntityDefinitionType::Enemy)
 				{
@@ -1491,7 +1490,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 		}
 		else
 		{
-			dirToPlayerXZ = CardinalDirection::North; // In case player is standing on top of them
+			dirToPlayerXZ = CardinalDirection::North2D; // In case player is standing on top of them
 		}
 
 		const Double3 dirToPlayer(dirToPlayerXZ.x, 0.0, dirToPlayerXZ.y);

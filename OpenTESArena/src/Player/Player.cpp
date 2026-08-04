@@ -325,8 +325,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->setPhysicsPositionRelativeToFeet(WorldDouble3::Zero);
 	this->setPhysicsVelocity(Double3::Zero);
 
-	const Double3 cameraDirection(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
-	this->setCameraFrameFromDirection(cameraDirection);
+	this->setCameraFrameFromDirection(CardinalDirection::North3D);
 	this->movementType = PlayerMovementType::Default;
 	this->movementSoundProgress = 0.0;
 }

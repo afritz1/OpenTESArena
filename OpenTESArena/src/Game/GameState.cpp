@@ -903,7 +903,7 @@ int GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo 
 		spawnEntityInitInfo.initialAnimStateIndex = *spawnAnimDef.findStateIndex(spawnAnimDef.initialStateName);
 		spawnEntityInitInfo.isSensorCollider = false;
 		spawnEntityInitInfo.canBeKilled = true;
-		spawnEntityInitInfo.direction = Double3(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
+		spawnEntityInitInfo.direction = CardinalDirection::North3D;
 
 		if (!isCreature)
 		{

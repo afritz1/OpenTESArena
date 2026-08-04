@@ -10,10 +10,15 @@ namespace CardinalDirection
 {
 	// Cardinal directions in the XZ plane (bird's eye view).
 	// CANNOT INITIALIZE FROM VOXELUTILS due to global initialization order uncertainty.
-	constexpr WorldDouble2 North(-1.0, 0.0);
-	constexpr WorldDouble2 South(1.0, 0.0);
-	constexpr WorldDouble2 East(0.0, -1.0);
-	constexpr WorldDouble2 West(0.0, 1.0);
+	constexpr WorldDouble2 North2D(-1.0, 0.0);
+	constexpr WorldDouble2 South2D(1.0, 0.0);
+	constexpr WorldDouble2 East2D(0.0, -1.0);
+	constexpr WorldDouble2 West2D(0.0, 1.0);
+
+	constexpr WorldDouble3 North3D(-1.0, 0.0, 0.0);
+	constexpr WorldDouble3 South3D(1.0, 0.0, 0.0);
+	constexpr WorldDouble3 East3D(0.0, 0.0, -1.0);
+	constexpr WorldDouble3 West3D(0.0, 0.0, 1.0);
 
 	constexpr Degrees DegreesNorth = 270.0;
 	constexpr Degrees DegreesSouth = 90.0;
@@ -32,5 +37,5 @@ namespace CardinalDirection
 		{ CardinalDirectionName::NorthWest, "Northwest" }
 	};
 
-	CardinalDirectionName getDirectionName(const WorldDouble2 &direction);
+	CardinalDirectionName getDirectionName(WorldDouble2 direction);
 }

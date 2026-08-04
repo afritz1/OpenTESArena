@@ -3,13 +3,13 @@
 
 #include "components/debug/Debug.h"
 
-CardinalDirectionName CardinalDirection::getDirectionName(const WorldDouble2 &direction)
+CardinalDirectionName CardinalDirection::getDirectionName(WorldDouble2 direction)
 {
 	// @todo make these constexpr in .h file with sqrt(2)/2 hardcoded probably
-	const WorldDouble2 northEast = CardinalDirection::North.slerp(CardinalDirection::East, 0.5);
-	const WorldDouble2 southEast = CardinalDirection::South.slerp(CardinalDirection::East, 0.5);
-	const WorldDouble2 southWest = CardinalDirection::South.slerp(CardinalDirection::West, 0.5);
-	const WorldDouble2 northWest = CardinalDirection::North.slerp(CardinalDirection::West, 0.5);
+	const WorldDouble2 northEast = CardinalDirection::North2D.slerp(CardinalDirection::East2D, 0.5);
+	const WorldDouble2 southEast = CardinalDirection::South2D.slerp(CardinalDirection::East2D, 0.5);
+	const WorldDouble2 southWest = CardinalDirection::South2D.slerp(CardinalDirection::West2D, 0.5);
+	const WorldDouble2 northWest = CardinalDirection::North2D.slerp(CardinalDirection::West2D, 0.5);
 
 	// Each direction gets an equal slice of the circle's area.
 	// (I'm not sure why the deviation is 1/12th; at a glance it should be 1/8th).
@@ -22,7 +22,7 @@ CardinalDirectionName CardinalDirection::getDirectionName(const WorldDouble2 &di
 	// Find the cardinal direction closest to the given direction. Start with
 	// a default name and figure out the true one from there.
 	auto name = CardinalDirectionName::North;
-	if (isCloseEnoughTo(CardinalDirection::North))
+	if (isCloseEnoughTo(CardinalDirection::North2D))
 	{
 		name = CardinalDirectionName::North;
 	}
@@ -30,7 +30,7 @@ CardinalDirectionName CardinalDirection::getDirectionName(const WorldDouble2 &di
 	{
 		name = CardinalDirectionName::NorthEast;
 	}
-	else if (isCloseEnoughTo(CardinalDirection::East))
+	else if (isCloseEnoughTo(CardinalDirection::East2D))
 	{
 		name = CardinalDirectionName::East;
 	}
@@ -38,7 +38,7 @@ CardinalDirectionName CardinalDirection::getDirectionName(const WorldDouble2 &di
 	{
 		name = CardinalDirectionName::SouthEast;
 	}
-	else if (isCloseEnoughTo(CardinalDirection::South))
+	else if (isCloseEnoughTo(CardinalDirection::South2D))
 	{
 		name = CardinalDirectionName::South;
 	}
@@ -46,7 +46,7 @@ CardinalDirectionName CardinalDirection::getDirectionName(const WorldDouble2 &di
 	{
 		name = CardinalDirectionName::SouthWest;
 	}
-	else if (isCloseEnoughTo(CardinalDirection::West))
+	else if (isCloseEnoughTo(CardinalDirection::West2D))
 	{
 		name = CardinalDirectionName::West;
 	}
