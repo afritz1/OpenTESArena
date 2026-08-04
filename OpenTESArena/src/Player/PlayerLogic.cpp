@@ -1159,8 +1159,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 			for (const EntityInstanceID hitEntityInstID : hitSearchResult.getEntities())
 			{
-				constexpr bool isFromMeleeWeapon = true;
-				gameState.addCombatEntityResult(hitEntityInstID, CombatResultSourceType::PlayerMeleeAttack);
+				constexpr EntityInstanceID sourceEntityInstID = -1;
+				gameState.addCombatEntityResult(hitEntityInstID, CombatResultSourceType::PlayerMeleeAttack, sourceEntityInstID);
 			}
 		}
 	}

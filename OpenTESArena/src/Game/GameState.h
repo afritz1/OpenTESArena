@@ -83,10 +83,11 @@ struct CombatEntityResult
 {
 	EntityInstanceID entityInstID;
 	CombatResultSourceType sourceType;
+	EntityInstanceID sourceEntityInstID; // Set if the source of this result was an entity (i.e. projectile).
 
 	CombatEntityResult();
 
-	void init(EntityInstanceID entityInstID, CombatResultSourceType sourceType);
+	void init(EntityInstanceID entityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID);
 };
 
 struct CombatResults
@@ -277,7 +278,7 @@ public:
 	void clearTavernRentedRoomState();
 
 	void addCombatVoxelResult(WorldInt3 voxel, CombatResultSourceType sourceType);
-	void addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType);
+	void addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID);
 
 	void queueEntityInstantiate(const EntityInitInfo &initInfo);
 

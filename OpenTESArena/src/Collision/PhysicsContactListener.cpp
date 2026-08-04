@@ -173,7 +173,7 @@ namespace
 
 		std::lock_guard<std::mutex> lockGuard(ProjectileVsEntityMutex);
 
-		gameState.addCombatEntityResult(entityInstID, sourceType);
+		gameState.addCombatEntityResult(entityInstID, sourceType, projectileEntityInstID);
 
 		entityChunkManager.queueEntityDestroy(projectileEntityInstID, true); // @todo shouldn't need to notify chunk of a projectile dying
 	}

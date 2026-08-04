@@ -330,7 +330,7 @@ void CombatLogic::onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, CombatResultSource
 	}
 }
 
-void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, Game &game)
+void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID, Game &game)
 {
 	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const EntityInstance &hitEntityInst = entityChunkManager.entities.get(hitEntityInstID);
@@ -420,8 +420,9 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 			}
 			else if (isMagicalImpact)
 			{
-				const EntitySpellState &hitEntitySpellState = entityChunkManager.spellStates.get(hitEntityInst.spellStateID);
-				CombatLogic::spawnSpellExplosion(hitEntitySpellState.spellIndex, hitVfxPosition, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
+				const EntityInstance &sourceEntityInst = entityChunkManager.entities.get(sourceEntityInstID);
+				const EntitySpellState &sourceEntitySpellState = entityChunkManager.spellStates.get(sourceEntityInst.spellStateID);
+				CombatLogic::spawnSpellExplosion(sourceEntitySpellState.spellIndex, hitVfxPosition, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
 			}
 		}
 		else

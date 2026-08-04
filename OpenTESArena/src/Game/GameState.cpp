@@ -165,12 +165,14 @@ CombatEntityResult::CombatEntityResult()
 {
 	this->entityInstID = -1;
 	this->sourceType = static_cast<CombatResultSourceType>(-1);
+	this->sourceEntityInstID = -1;
 }
 
-void CombatEntityResult::init(EntityInstanceID entityInstID, CombatResultSourceType sourceType)
+void CombatEntityResult::init(EntityInstanceID entityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID)
 {
 	this->entityInstID = entityInstID;
 	this->sourceType = sourceType;
+	this->sourceEntityInstID = sourceEntityInstID;
 }
 
 void CombatResults::clear()
@@ -829,10 +831,10 @@ void GameState::addCombatVoxelResult(WorldInt3 voxel, CombatResultSourceType sou
 	this->combatResults.voxelResults.emplace_back(std::move(result));
 }
 
-void GameState::addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType)
+void GameState::addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID)
 {
 	CombatEntityResult result;
-	result.init(entityInstID, sourceType);
+	result.init(entityInstID, sourceType, sourceEntityInstID);
 	this->combatResults.entityResults.emplace_back(std::move(result));
 }
 
@@ -1818,7 +1820,7 @@ void GameState::tickCombatResults(Game &game)
 
 	for (const CombatEntityResult &result : this->combatResults.entityResults)
 	{
-		CombatLogic::onEntityHitByPlayer(result.entityInstID, result.sourceType, game);
+		CombatLogic::onEntityHitByPlayer(result.entityInstID, result.sourceType, result.sourceEntityInstID, game);
 	}
 
 	this->combatResults.clear();

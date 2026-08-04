@@ -57,5 +57,5 @@ namespace CombatLogic
 		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 
 	void onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, CombatResultSourceType sourceType, Game &game);
-	void onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, Game &game);
+	void onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID, Game &game);
 }
