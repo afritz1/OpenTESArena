@@ -146,6 +146,7 @@ namespace ArenaRenderUtils
 	constexpr double PLAYER_FOG_LIGHT_START_RADIUS = 250.0 / MIFUtils::ARENA_UNITS;
 	constexpr double PLAYER_FOG_LIGHT_END_RADIUS = 575.0 / MIFUtils::ARENA_UNITS;
 	constexpr double STREETLIGHT_LIGHT_RADIUS = 3.0 * (MIFUtils::ARENA_UNITS / 100.0);
+	constexpr double SPELL_LIGHT_RADIUS = 200.0 / MIFUtils::ARENA_UNITS;
 
 	const std::string CHASM_WATER_FILENAME = "WATERANI.RCI";
 	const std::string CHASM_LAVA_FILENAME = "LAVAANI.RCI";
