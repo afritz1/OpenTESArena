@@ -3329,7 +3329,16 @@ void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
 
 	const int spellIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT);
 	const WorldDouble3 spellProjectilePosition = player.getEyePosition() - Double3(0.0, 0.20, 0.0);
-	CombatLogic::spawnSpellProjectile(spellIndex, spellProjectilePosition, player.forward, entityChunkManager, random, game.audioManager, game.physicsSystem, game.renderer);
+
+	Double3 projectileDirection = player.forward;
+	if (!game.options.getGraphics_ModernInterface())
+	{
+		const InputManager &inputManager = game.inputManager;
+		const Int2 mousePosition = inputManager.getMousePosition();
+		projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition);
+	}
+
+	CombatLogic::spawnSpellProjectile(spellIndex, spellProjectilePosition, projectileDirection, entityChunkManager, random, game.audioManager, game.physicsSystem, game.renderer);
 }
 
 void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)
