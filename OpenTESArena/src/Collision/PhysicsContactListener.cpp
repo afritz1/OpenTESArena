@@ -34,9 +34,9 @@ namespace
 
 		const JPH::RVec3 otherSubShapePosition = otherSubShapeTransformed.mShapePositionCOM;
 		const WorldDouble3 otherSubShapeWorldPosition(
-			static_cast<SNInt>(otherSubShapePosition.GetX()),
-			static_cast<int>(otherSubShapePosition.GetY()),
-			static_cast<WEInt>(otherSubShapePosition.GetZ()));
+			static_cast<SNDouble>(otherSubShapePosition.GetX()),
+			static_cast<double>(otherSubShapePosition.GetY()),
+			static_cast<WEDouble>(otherSubShapePosition.GetZ()));
 		return VoxelUtils::pointToVoxel(otherSubShapeWorldPosition, ceilingScale);
 	}
 
