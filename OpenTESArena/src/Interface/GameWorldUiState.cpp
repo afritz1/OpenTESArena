@@ -3145,15 +3145,19 @@ void GameWorldUI::onWindowResized(int width, int height)
 
 	Game &game = *state.game;
 	Renderer &renderer = game.renderer;
-	DebugAssert(state.playerHurtTextureID >= 0);
-	renderer.freeUiTexture(state.playerHurtTextureID);
+
+	if (state.playerHurtTextureID >= 0)
+	{
+		renderer.freeUiTexture(state.playerHurtTextureID);
+		state.playerHurtTextureID = -1;
+	}
 
 	UiManager &uiManager = game.uiManager;
 	const Window &window = game.window;
+	state.playerHurtTextureID = GameWorldUiView::allocPlayerHurtTexture(window.getSceneViewAspectRatio(), window.fullGameWindow, renderer);
+	
 	const UiElementInstanceID playerHurtImageElementInstID = uiManager.getElementByName(PlayerHurtImageElementName);
 	uiManager.setTransformSize(playerHurtImageElementInstID, window.getSceneViewDimensions());
-
-	state.playerHurtTextureID = GameWorldUiView::allocPlayerHurtTexture(window.getSceneViewAspectRatio(), window.fullGameWindow, renderer);
 	uiManager.setImageTexture(playerHurtImageElementInstID, state.playerHurtTextureID);
 }
 
