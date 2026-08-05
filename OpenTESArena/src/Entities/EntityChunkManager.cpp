@@ -40,8 +40,14 @@
 
 namespace
 {
-	constexpr double EnemyToPlayerDetectionDistance = 4.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
-	constexpr double EnemyToPlayerMeleeAttackDistance = 1.0; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
+	constexpr double EnemyToPlayerDetectionMinDistance = 4.0;
+	constexpr double EnemyToPlayerDetectionMinDistanceSqr = EnemyToPlayerDetectionMinDistance * EnemyToPlayerDetectionMinDistance;
+	constexpr double EnemyToPlayerDetectionMaxDistance = 6.0;
+	constexpr double EnemyToPlayerDetectionMaxDistanceSqr = EnemyToPlayerDetectionMaxDistance * EnemyToPlayerDetectionMaxDistance;
+	constexpr double EnemyToPlayerMeleeAttackMinDistance = 1.0;
+	constexpr double EnemyToPlayerMeleeAttackMinDistanceSqr = EnemyToPlayerMeleeAttackMinDistance * EnemyToPlayerMeleeAttackMinDistance;
+	constexpr double EnemyToPlayerMeleeAttackMaxDistance = 1.15;
+	constexpr double EnemyToPlayerMeleeAttackMaxDistanceSqr = EnemyToPlayerMeleeAttackMaxDistance * EnemyToPlayerMeleeAttackMaxDistance;
 
 	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isTransformStatic, bool hasBehavior, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
@@ -1547,14 +1553,14 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 		const EntityEnemyBehaviorStateType prevEnemyBehaviorStateType = enemyBehaviorState.type;
 
 		// Treat XZ and Y distances separately so the enemy doesn't move closer if the player jumps.
-		constexpr double detectionDistanceSqr = EnemyToPlayerDetectionDistance * EnemyToPlayerDetectionDistance;
-		constexpr double attackDistanceSqr = EnemyToPlayerMeleeAttackDistance * EnemyToPlayerMeleeAttackDistance;
-		const bool isCloseEnoughToDetectPlayer = (distToPlayerXZSqr <= detectionDistanceSqr) && (distToPlayerYSqr <= (detectionDistanceSqr * 2.0)); // @todo add "isFarEnoughToStopDetectPlayer"
-		const bool isCloseEnoughToAttackPlayer = (distToPlayerXZSqr <= attackDistanceSqr) && (distToPlayerYSqr <= (attackDistanceSqr * 2.0)); // @todo add "isFarEnoughToStopAttackPlayer"
+		const bool isCloseEnoughToStartDetectPlayer = (distToPlayerXZSqr <= EnemyToPlayerDetectionMinDistanceSqr) && (distToPlayerYSqr <= (EnemyToPlayerDetectionMinDistanceSqr * 2.0));
+		const bool isFarEnoughToStopDetectPlayer = (distToPlayerXZSqr > EnemyToPlayerDetectionMaxDistanceSqr) || (distToPlayerYSqr > (EnemyToPlayerDetectionMaxDistanceSqr * 2.0));
+		const bool isCloseEnoughToStartAttackPlayer = (distToPlayerXZSqr <= EnemyToPlayerMeleeAttackMinDistanceSqr) && (distToPlayerYSqr <= (EnemyToPlayerMeleeAttackMinDistanceSqr * 2.0));
+		const bool isFarEnoughToStopAttackPlayer = (distToPlayerXZSqr > EnemyToPlayerMeleeAttackMaxDistanceSqr) || (distToPlayerYSqr > (EnemyToPlayerMeleeAttackMaxDistanceSqr * 2.0));
 
 		if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::Idle)
 		{
-			if (!isCloseEnoughToDetectPlayer)
+			if (!isCloseEnoughToStartDetectPlayer)
 			{
 				continue;
 			}
@@ -1569,7 +1575,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 			DebugAssert(!physicsBodyID.IsInvalid());
 
-			if (!isCloseEnoughToDetectPlayer)
+			if (isFarEnoughToStopDetectPlayer)
 			{
 				enemyBehaviorState.type = EntityEnemyBehaviorStateType::Idle;
 				animInst.setStateIndex(*idleStateIndex);
@@ -1577,7 +1583,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 				continue;
 			}
 
-			if (!isCloseEnoughToAttackPlayer)
+			if (!isCloseEnoughToStartAttackPlayer)
 			{
 				constexpr double entityMoveSpeed = 1.50;
 				const Double2 entityVelocity = entityDir.getXZ() * entityMoveSpeed;
@@ -1621,7 +1627,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 
 			if (currentAnimStateIndex != *attackStateIndex)
 			{
-				if (!isCloseEnoughToAttackPlayer)
+				if (isFarEnoughToStopAttackPlayer)
 				{
 					enemyBehaviorState.secondsTillNextAttack = 0.0;
 					enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
@@ -1646,7 +1652,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 			{
 				enemyBehaviorState.hasAttemptedHit = true;
 
-				if (isCloseEnoughToAttackPlayer)
+				if (!isFarEnoughToStopAttackPlayer)
 				{
 					CombatLogic::onPlayerHitByEntity(entityInstID, game);
 				}
@@ -1658,7 +1664,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 				continue;
 			}
 
-			if (!isCloseEnoughToAttackPlayer)
+			if (isFarEnoughToStopAttackPlayer)
 			{
 				enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
 				enemyBehaviorState.hasAttemptedHit = false;
