@@ -661,59 +661,6 @@ Rect ChooseClassUiView::getDownButtonRect(Game &game)
 		chooseClassListUI.buttonDown.h);
 }
 
-UiListBoxInitInfo ChooseClassUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
-{
-	const char *fontName = ArenaFontName::A;
-	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
-	{
-		DebugCrash("Couldn't get class list box font \"" + std::string(fontName) + "\".");
-	}
-
-	constexpr int maxDisplayedItemCount = 6;
-	std::string dummyText;
-	for (int i = 0; i < maxDisplayedItemCount; i++)
-	{
-		if (i > 0)
-		{
-			dummyText += '\n';
-		}
-
-		std::string dummyLine(10, TextRenderUtils::LARGEST_CHAR); // Arbitrary worst-case line size.
-		dummyText += dummyLine;
-	}
-
-	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
-
-	UiListBoxInitInfo listBoxInitInfo;
-	listBoxInitInfo.textureWidth = textureGenInfo.width;
-	listBoxInitInfo.textureHeight = textureGenInfo.height;
-	listBoxInitInfo.itemPixelSpacing = 0;
-	listBoxInitInfo.fontName = fontName;
-	listBoxInitInfo.defaultTextColor = Color(85, 44, 20);
-	return listBoxInitInfo;
-}
-
-TextureAsset ChooseClassUiView::getListBoxTextureAsset()
-{
-	return TextureAsset(ArenaTextureName::PopUp2);
-}
-
-UiTextureID ChooseClassUiView::allocPopUpTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset paletteTextureAsset = CharacterCreationUiView::getNightSkyTextureAsset();
-	const TextureAsset textureAsset = ChooseClassUiView::getListBoxTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for class pop-up.");
-	}
-
-	return textureID;
-}
-
 TextureAsset ChooseRaceUiView::getBackgroundTextureAsset()
 {
 	return TextureAsset(ArenaTextureName::RaceSelect);

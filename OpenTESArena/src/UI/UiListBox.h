@@ -20,6 +20,7 @@ struct UiListBoxInitInfo
 	int itemPixelSpacing;
 	std::string fontName;
 	Color defaultTextColor; // Color of item text unless overridden.
+	Color highlightedTextColor;
 	MouseButtonTypeFlags mouseButtonFlags;
 	double scrollDeltaScale; // Multiplier of item height for each scroll.
 
@@ -51,18 +52,21 @@ struct UiListBox
 	int itemPixelSpacing;
 	int fontDefIndex; // Index in font library.
 	Color defaultTextColor;
+	Color highlightedTextColor;
 	double scrollDeltaScale; // Multiplier of item height for each scroll.
 
 	std::vector<UiListBoxItem> items;
 	MouseButtonTypeFlags mouseButtonFlags; // Mouse buttons allowed to trigger callback. Defaults to left mouse button only.
 	double scrollPixelOffset; // How many pixels the list box is currently scrolled down.
 
+	int highlightedItemIndex;
+
 	bool dirty;
 
 	UiListBox();
 
 	void init(UiTextureID textureID, int textureWidth, int textureHeight, Span<const int> columnPixelXOffsets, int itemPixelSpacing,
-		int fontDefIndex, Color defaultTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale);
+		int fontDefIndex, Color defaultTextColor, Color highlightedTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale);
 
 	void free(Renderer &renderer);
 

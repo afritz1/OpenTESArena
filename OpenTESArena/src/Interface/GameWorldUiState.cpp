@@ -2431,6 +2431,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	listBoxInitInfo.itemPixelSpacing = 0;
 	listBoxInitInfo.fontName = listBoxFontName;
 	listBoxInitInfo.defaultTextColor = Color(190, 113, 0);
+	listBoxInitInfo.highlightedTextColor = Color(251, 239, 77);
 	const UiElementInstanceID listBoxElementInstID = uiManager.createListBox(listBoxElementInitInfo, listBoxInitInfo, state.conversationModalContextInstID, renderer);
 
 	for (int i = 0; i < static_cast<int>(listBoxItemTextColumns.size()); i++)

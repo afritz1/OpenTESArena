@@ -695,6 +695,7 @@ UiListBoxInitInfo ProvinceSearchUiView::makeListBoxProperties()
 	listBoxInitInfo.textureHeight = textureGenInfo.height;
 	listBoxInitInfo.fontName = fontName;
 	listBoxInitInfo.defaultTextColor = Color(52, 24, 8);
+	listBoxInitInfo.highlightedTextColor = Color(0, 255, 255);
 	return listBoxInitInfo;
 }
 

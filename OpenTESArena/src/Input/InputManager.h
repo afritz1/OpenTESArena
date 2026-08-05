@@ -240,5 +240,5 @@ public:
 	void setTextInputMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(Game &game, double dt, const UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent);
+	void update(Game &game, double dt, UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent);
 };
