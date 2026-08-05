@@ -267,6 +267,7 @@ EntityCombatState::EntityCombatState()
 	this->isDying = false;
 	this->isDead = false;
 	this->hasBeenLootedBefore = false;
+	this->health = 0.0;
 }
 
 bool EntityCombatState::isInDeathState() const
@@ -444,19 +445,32 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 	}
 
 	int combatLevel = 0;
-	if (initInfo.humanEnemyLevel > 0)
+	int health = 0;
+	if (entityDef.type == EntityDefinitionType::Enemy)
 	{
-		combatLevel = initInfo.humanEnemyLevel;
-	}
-	else if (initInfo.hasCreatureSound)
-	{
-		DebugAssert(entityDef.type == EntityDefinitionType::Enemy);
 		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
 
-		DebugAssert(enemyDef.type == EnemyEntityDefinitionType::Creature);
-		const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
-		const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
-		combatLevel = creatureDef.level;
+		if (initInfo.humanEnemyLevel > 0)
+		{
+			combatLevel = initInfo.humanEnemyLevel;
+
+			const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
+			const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+			const CharacterClassDefinition &humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+			health = random.next(initInfo.humanEnemyLevel + 1) + (random.next(humanEnemyCharClassDef.healthDie + 1) * initInfo.humanEnemyLevel);
+		}
+		else if (initInfo.hasCreatureSound)
+		{
+			DebugAssert(enemyDef.type == EnemyEntityDefinitionType::Creature);
+			const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+			const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
+			combatLevel = creatureDef.level;
+			health = creatureDef.minHP + random.next(creatureDef.maxHP - creatureDef.minHP + 1);
+		}
+	}
+	else if (entityDef.type == EntityDefinitionType::Citizen)
+	{
+		health = 1;
 	}
 
 	if (initInfo.canBeKilled)
@@ -472,6 +486,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		combatState.isDying = false;
 		combatState.isDead = false;
 		combatState.hasBeenLootedBefore = false;
+		combatState.health = health;
 	}
 
 	if (initInfo.direction.has_value())

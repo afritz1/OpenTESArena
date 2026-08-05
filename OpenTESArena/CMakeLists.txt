@@ -138,6 +138,8 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/RayCastTypes.h")
 
 SET(TES_COMBAT
+    "${SRC_ROOT}/Combat/ArenaCombatUtils.cpp"
+    "${SRC_ROOT}/Combat/ArenaCombatUtils.h"
     "${SRC_ROOT}/Combat/CombatLogic.cpp"
     "${SRC_ROOT}/Combat/CombatLogic.h")
 

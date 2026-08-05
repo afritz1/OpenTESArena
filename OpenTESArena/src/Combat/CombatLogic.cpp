@@ -1,5 +1,6 @@
 #include <algorithm>
 
+#include "ArenaCombatUtils.h"
 #include "CombatLogic.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -8,6 +9,7 @@
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
+#include "../Items/ItemLibrary.h"
 #include "../Math/BoundingBox.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Voxels/VoxelChunkManager.h"
@@ -342,6 +344,12 @@ void CombatLogic::onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, CombatResultSource
 
 void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID, Game &game)
 {
+	GameState &gameState = game.gameState;
+	Player &player = game.player;
+	Random &random = game.random;
+	AudioManager &audioManager = game.audioManager;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
 	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const EntityInstance &hitEntityInst = entityChunkManager.entities.get(hitEntityInstID);
 	const WorldDouble3 hitEntityPosition = entityChunkManager.positions.get(hitEntityInst.positionID);
@@ -350,6 +358,34 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 
 	const bool isPhysicalImpact = (sourceType == CombatResultSourceType::PlayerMeleeAttack) || (sourceType == CombatResultSourceType::PlayerBowProjectile);
 	const bool isMagicalImpact = sourceType == CombatResultSourceType::PlayerSpellProjectile;
+
+	const DerivedAttributes playerDerivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(game.player.primaryAttributes);
+
+	int sourceDamage = 0;
+	if (sourceType == CombatResultSourceType::PlayerMeleeAttack)
+	{
+		const ItemDefinitionID playerEquippedWeaponItemDefID = player.getEquippedWeaponItemDefID();
+		if (playerEquippedWeaponItemDefID >= 0)
+		{
+			const ItemDefinition &playerEquippedWeaponItemDef = ItemLibrary::getInstance().getDefinition(playerEquippedWeaponItemDefID);
+			const WeaponItemDefinition &weaponItemDef = playerEquippedWeaponItemDef.weapon;
+			sourceDamage = weaponItemDef.damageMin + random.next(weaponItemDef.damageMax - weaponItemDef.damageMin + 1);
+		}
+		else
+		{
+			sourceDamage = 1 + random.next(2); // Fists @todo get gauntlets damage from ExeData (/wiki/Combat#damage-modifiers)
+		}
+
+		sourceDamage += playerDerivedAttributes.bonusDamage;
+	}
+	else if (sourceType == CombatResultSourceType::PlayerBowProjectile)
+	{
+		sourceDamage = 3 + random.next(8); // @todo store damage in projectile entity (needs to include bow damage, which may have been unequipped)
+	}
+	else if (sourceType == CombatResultSourceType::PlayerSpellProjectile)
+	{
+		sourceDamage = 10 + random.next(40); // @todo spell effects support
+	}
 
 	const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
 	const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
@@ -371,19 +407,65 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 		canHitEntityLockBeBroken = hitEntityLockState->isLocked;
 	}
 
-	GameState &gameState = game.gameState;
-	Player &player = game.player;
-	Random &random = game.random;
-	AudioManager &audioManager = game.audioManager;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
 	if (canHitEntityBeKilled)
 	{
-		// Simulate weapon swing against them.
-		const bool canHitEntityResistDamage = hitEntityDef.type == EntityDefinitionType::Enemy; // @todo give citizens only 1 hp
-		const bool isHitEntityHpAtZero = !canHitEntityResistDamage || random.nextBool(); // @todo actual hp dmg calculation
+		bool isHitEntityTakingDamage = true;
 
-		if (isHitEntityHpAtZero)
+		if (hitEntityDef.type == EntityDefinitionType::Enemy)
+		{
+			const int playerHitBonus = playerDerivedAttributes.bonusToHit;
+			const int playerLuckBonus = 0; // @todo
+
+			int hitEntityClassID = -1;
+			if (hitEntityDef.enemy.type == EnemyEntityDefinitionType::Human)
+			{
+				const int hitHumanEnemyCharClassDefID = hitEntityDef.enemy.human.charClassID;
+				const CharacterClassDefinition &hitEntityCharClassDef = CharacterClassLibrary::getInstance().getDefinition(hitHumanEnemyCharClassDefID);
+				hitEntityClassID = hitEntityCharClassDef.originalClassIndex;
+			}
+
+			int hitEntityDefenseBonus = 0; // @todo
+			int hitEntityLuckBonus = 0; // @todo
+
+			if (isPhysicalImpact)
+			{
+				isHitEntityTakingDamage = ArenaCombatUtils::isMeleeHitSuccessful(player.level, player.raceID, playerHitBonus, playerLuckBonus, hitEntityCombatState->level, hitEntityClassID, hitEntityDefenseBonus, hitEntityLuckBonus, game.arenaRandom);
+			}
+			else if (isMagicalImpact)
+			{
+				isHitEntityTakingDamage = true; // @todo spell effects/resist/willpower
+			}
+		}
+
+		if (isHitEntityTakingDamage)
+		{
+			hitEntityCombatState->health = std::max(hitEntityCombatState->health - sourceDamage, 0.0);
+
+			// Arbitrary height where the swing is hitting.
+			const double hitVfxHeightBias = std::min(PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.60, hitEntityBBox.halfHeight);
+
+			// Avoid z-fighting with entity.
+			const Double2 hitVfxPositionBias = -player.getGroundDirectionXZ() * 0.05;
+
+			const WorldDouble3 hitVfxPosition(
+				hitEntityPosition.x + hitVfxPositionBias.x,
+				hitEntityPosition.y + hitVfxHeightBias,
+				hitEntityPosition.z + hitVfxPositionBias.y);
+
+			if (isPhysicalImpact)
+			{
+				CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, game.renderer);
+				audioManager.playSoundOneShot(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
+			}
+			else if (isMagicalImpact)
+			{
+				const EntityInstance &sourceEntityInst = entityChunkManager.entities.get(sourceEntityInstID);
+				const EntitySpellState &sourceEntitySpellState = entityChunkManager.spellStates.get(sourceEntityInst.spellStateID);
+				CombatLogic::spawnSpellExplosion(sourceEntitySpellState.spellIndex, hitVfxPosition, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
+			}
+		}
+
+		if (hitEntityCombatState->health == 0.0)
 		{
 			hitEntityCombatState->isDying = true;
 
@@ -410,29 +492,6 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 				const int humanEnemyCalculatedExperience = ArenaEntityUtils::getHumanEnemyExperience(hitHumanEnemyLevel, hitHumanEnemyCharClassDefID, exeData);
 				player.experience += humanEnemyCalculatedExperience;
 				DebugLogFormat("%s gave %d XP.", hitEntityCharClassDef.name, humanEnemyCalculatedExperience);
-			}
-
-			// Arbitrary height where the swing is hitting.
-			const double hitVfxHeightBias = std::min(PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.60, hitEntityBBox.halfHeight);
-
-			// Avoid z-fighting with entity.
-			const Double2 hitVfxPositionBias = -player.getGroundDirectionXZ() * Constants::Epsilon;
-
-			const WorldDouble3 hitVfxPosition(
-				hitEntityPosition.x + hitVfxPositionBias.x,
-				hitEntityPosition.y + hitVfxHeightBias,
-				hitEntityPosition.z + hitVfxPositionBias.y);
-
-			if (isPhysicalImpact)
-			{
-				CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, game.renderer);
-				audioManager.playSoundOneShot(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
-			}
-			else if (isMagicalImpact)
-			{
-				const EntityInstance &sourceEntityInst = entityChunkManager.entities.get(sourceEntityInstID);
-				const EntitySpellState &sourceEntitySpellState = entityChunkManager.spellStates.get(sourceEntityInst.spellStateID);
-				CombatLogic::spawnSpellExplosion(sourceEntitySpellState.spellIndex, hitVfxPosition, entityChunkManager, random, audioManager, game.physicsSystem, game.renderer);
 			}
 		}
 		else

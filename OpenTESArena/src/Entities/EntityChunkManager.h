@@ -135,6 +135,8 @@ struct EntityCombatState
 	bool isDead;
 	bool hasBeenLootedBefore; // For awarding gold from creature corpse.
 
+	double health; // Don't need max health yet since monsters can't heal.
+
 	EntityCombatState();
 
 	bool isInDeathState() const;
