@@ -137,13 +137,41 @@ namespace
 					unequipItemsIf([&itemDef](const ItemDefinition &def) { return (def.type == ItemType::Armor) && (def.armor.typeID == itemDef.armor.typeID); });
 					break;
 				case ItemType::Shield:
-					unequipItemsIf([](const ItemDefinition &def) { return def.type == ItemType::Shield; });
+					unequipItemsIf([](const ItemDefinition &def)
+					{
+						if (def.type == ItemType::Shield)
+						{
+							return true;
+						}
+						else if (def.type == ItemType::Weapon)
+						{
+							return def.weapon.handCount == 2;
+						}
+						else
+						{
+							return false;
+						}
+					});
 					break;
 				case ItemType::Trinket:
 					break;
 				case ItemType::Weapon:
 				{
-					unequipItemsIf([](const ItemDefinition &def) { return def.type == ItemType::Weapon; });
+					unequipItemsIf([&itemDef](const ItemDefinition &def)
+					{
+						if (def.type == ItemType::Shield)
+						{
+							return (itemDef.type == ItemType::Weapon) && (itemDef.weapon.handCount == 2);
+						}
+						else if (def.type == ItemType::Weapon)
+						{
+							return true;
+						}
+						else
+						{
+							return false;
+						}
+					});
 
 					const ItemDefinitionID equippedItemDefID = player.getEquippedWeaponItemDefID();
 					player.setWeaponAnimationFromItem(equippedItemDefID); // Resets to sheathed animation state.
