@@ -43,7 +43,7 @@ namespace
 	constexpr double EnemyToPlayerDetectionDistance = 4.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
 	constexpr double EnemyToPlayerMeleeAttackDistance = 1.0; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
 
-	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isTransformStatic, bool isCharacter, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isTransformStatic, bool hasBehavior, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -76,7 +76,7 @@ namespace
 		{
 			motionType = JPH::EMotionType::Static;
 		}
-		else if (isCharacter)
+		else if (hasBehavior)
 		{
 			motionType = JPH::EMotionType::Dynamic;
 		}
@@ -85,13 +85,17 @@ namespace
 		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, motionType, capsuleObjectLayer);
 		capsuleSettings.mIsSensor = isSensor;
 
-		if (isCharacter) // Enemies.
+		if (hasBehavior) // Enemies/citizens.
 		{
 			capsuleSettings.mAllowedDOFs = JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationZ; // Constant Y position.
 			capsuleSettings.mAllowSleeping = false;
 			capsuleSettings.mFriction = 1.0f;
 			capsuleSettings.mLinearDamping = 10.0f; // Avoid sliding.
 			capsuleSettings.mGravityFactor = 0.0f;
+		}
+		else
+		{
+			capsuleSettings.mLinearDamping = 0.0f; // Keep projectiles from slowing down due to air resistance.
 		}
 
 		const JPH::Body *capsule = bodyInterface.CreateBody(capsuleSettings);
