@@ -712,6 +712,15 @@ const UiListBoxItemCallback &UiManager::getListBoxItemCallback(UiElementInstance
 	return listBox.items[itemIndex].callback;
 }
 
+int UiManager::getListBoxHighlightedItemIndex(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	return listBox.highlightedItemIndex;
+}
+
 void UiManager::setListBoxItemTextAtColumn(UiElementInstanceID elementInstID, int index, int column, const char *text)
 {
 	UiElement &element = this->elements.get(elementInstID);
@@ -1569,9 +1578,9 @@ void UiManager::update(double dt, Game &game)
 					itemHeight);
 
 				Color itemColor = item.overrideColor.value_or(listBox.defaultTextColor);
-				if (i == listBox.highlightedItemIndex)
+				if ((i == listBox.highlightedItemIndex) && listBox.highlightedTextColor.has_value())
 				{
-					itemColor = listBox.highlightedTextColor;
+					itemColor = *listBox.highlightedTextColor;
 				}
 
 				const Palette *tabColorPalette = nullptr; // No tab colors supported in list box text.

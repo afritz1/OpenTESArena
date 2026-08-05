@@ -52,7 +52,7 @@ UiListBox::UiListBox()
 }
 
 void UiListBox::init(UiTextureID textureID, int textureWidth, int textureHeight, Span<const int> columnPixelXOffsets, int itemPixelSpacing,
-	int fontDefIndex, Color defaultTextColor, Color highlightedTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale)
+	int fontDefIndex, Color defaultTextColor, std::optional<Color> highlightedTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale)
 {
 	DebugAssert(textureID >= 0);
 	DebugAssert(textureWidth > 0);

@@ -256,7 +256,26 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 				dstPixels.set(rightRect.x + x, y, srcColorRGBA);
 			}
 		}
+	}
+	else if (type == UiTexturePatternType::PlayerInventoryHighlight)
+	{
+		DebugAssert(width >= 2);
+		DebugAssert(height >= 2);
 
+		const uint32_t highlightColor = surface.mapRGBA(199, 32, 0, 255);
+		Span2D<uint32_t> dstPixels = surface.getPixels();
+
+		for (int x = 0; x < width; x++)
+		{
+			dstPixels.set(x, 0, highlightColor);
+			dstPixels.set(x, height - 1, highlightColor);
+		}
+
+		for (int y = 0; y < height; y++)
+		{
+			dstPixels.set(0, y, highlightColor);
+			dstPixels.set(width - 1, y, highlightColor);
+		}
 	}
 	else if (type == UiTexturePatternType::Custom1)
 	{

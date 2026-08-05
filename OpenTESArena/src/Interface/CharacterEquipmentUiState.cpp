@@ -16,7 +16,8 @@ namespace
 {
 	constexpr char ContextName_ItemDetail[] = "CharacterEquipmentItemDetail";
 
-	constexpr char ElementName_InventoryListBox[] = "CharacterEquipmentInventoryListBox";
+	constexpr char ElementName_InventoryListBox[] = "CharacterEquipmentInventoryListBox";	
+	constexpr char ElementName_InventoryListBoxHighlight[] = "CharacterEquipmentInventoryListBoxHighlight";
 
 	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
@@ -313,7 +314,25 @@ void CharacterEquipmentUI::destroy()
 
 void CharacterEquipmentUI::update(double dt)
 {
-	// Do nothing.
+	CharacterEquipmentUiState &state = CharacterEquipmentUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const Player &player = game.player;
+	const ItemInventory &playerInventory = player.inventory;
+	bool isListBoxHighlightVisible = playerInventory.getOccupiedSlotCount() > 0;
+
+	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_InventoryListBox);
+	const Rect listBoxRect = uiManager.getTransformGlobalRect(listBoxElementInstID);
+	const int listBoxHighlightedItemIndex = uiManager.getListBoxHighlightedItemIndex(listBoxElementInstID);	
+	const Rect listBoxHighlightedItemGlobalRect = uiManager.getListBoxItemGlobalRect(listBoxElementInstID, listBoxHighlightedItemIndex);
+	isListBoxHighlightVisible &= (listBoxHighlightedItemGlobalRect.getTop() >= listBoxRect.getTop()) && (listBoxHighlightedItemGlobalRect.getBottom() <= listBoxRect.getBottom());
+
+	const UiElementInstanceID listBoxHighlightImageElementInstID = uiManager.getElementByName(ElementName_InventoryListBoxHighlight);
+	uiManager.setElementActive(listBoxHighlightImageElementInstID, isListBoxHighlightVisible);
+
+	const Int2 listBoxHighlightPosition = listBoxHighlightedItemGlobalRect.getTopLeft() - Int2(2, 2);
+	uiManager.setTransformPosition(listBoxHighlightImageElementInstID, listBoxHighlightPosition);
 }
 
 void CharacterEquipmentUI::showItemDetail(const char *text, Color textColor)

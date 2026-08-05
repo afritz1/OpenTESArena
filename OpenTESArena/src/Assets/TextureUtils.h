@@ -25,6 +25,7 @@ enum class UiTexturePatternType
 	Parchment,
 	Dark,
 	ShopkeeperTitle,
+	PlayerInventoryHighlight, // Red outline.
 	Custom1 // Light gray with borders.
 };
 

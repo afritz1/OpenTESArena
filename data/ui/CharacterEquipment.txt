@@ -72,6 +72,11 @@ Size=9,9
 Pivot=Middle
 Callback=CharacterEquipmentUI.onInventoryListBoxDownButtonSelected
 
+[CharacterEquipmentInventoryListBoxHighlight]
+Type=Image
+DrawOrder=2
+Texture=PlayerInventoryHighlight,146,12
+
 ##################################
 
 [CharacterEquipmentExitButton]

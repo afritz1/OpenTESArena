@@ -148,6 +148,8 @@ namespace
 	{
 		DEFINE_TEXT_MAPPING(UiTexturePatternType, Parchment),
 		DEFINE_TEXT_MAPPING(UiTexturePatternType, Dark),
+		DEFINE_TEXT_MAPPING(UiTexturePatternType, ShopkeeperTitle),
+		DEFINE_TEXT_MAPPING(UiTexturePatternType, PlayerInventoryHighlight),
 		DEFINE_TEXT_MAPPING(UiTexturePatternType, Custom1)
 	};
 
@@ -1045,7 +1047,7 @@ void UiListBoxDefinition::clear()
 	this->itemPixelSpacing = 0;
 	this->fontName.clear();
 	this->defaultTextColor = Colors::Black;
-	this->highlightedTextColor = Colors::Black;
+	this->highlightedTextColor = std::nullopt;
 	this->buttonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->scrollDeltaScale = 1.0;
 }
