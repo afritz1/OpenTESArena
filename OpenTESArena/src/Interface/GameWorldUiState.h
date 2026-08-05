@@ -56,15 +56,6 @@ enum class ConversationListBoxType
 	TempleCuring
 };
 
-// For keeping loot list box callbacks valid when removing inventory items.
-struct GameWorldLootUiItemMapping
-{
-	int inventoryItemIndex;
-	int listBoxItemIndex;
-
-	GameWorldLootUiItemMapping();
-};
-
 struct GameWorldUiInitInfo
 {
 	std::string textPopUpMessage; // For city arrival.
@@ -111,8 +102,6 @@ struct GameWorldUiState
 	double triggerTextRemainingSeconds, actionTextRemainingSeconds, effectTextRemainingSeconds;
 
 	double playerHurtRemainingSeconds;
-
-	std::vector<GameWorldLootUiItemMapping> lootPopUpItemMappings;
 
 	std::string campManualHoursInputText; // Number of hours to manually rest.
 

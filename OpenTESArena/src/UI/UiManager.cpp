@@ -847,16 +847,14 @@ void UiManager::selectListBoxItem(UiElementInstanceID elementInstID, int index, 
 		return;
 	}
 
-	const int oldItemsCount = static_cast<int>(listBox.items.size());
-
 	DebugAssertIndex(listBox.items, index);
 	const UiListBoxItemCallback &callback = listBox.items[index].callback;
 	callback(mouseButtonType);
 
 	const int newItemsCount = static_cast<int>(listBox.items.size());
-	if (newItemsCount < oldItemsCount)
+	if (listBox.highlightedItemIndex == newItemsCount)
 	{
-		listBox.highlightedItemIndex = std::clamp(listBox.highlightedItemIndex, 0, newItemsCount - 1);
+		listBox.highlightedItemIndex = std::max(listBox.highlightedItemIndex - 1, 0);
 	}
 }
 

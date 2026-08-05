@@ -265,12 +265,6 @@ namespace
 	}
 }
 
-GameWorldLootUiItemMapping::GameWorldLootUiItemMapping()
-{
-	this->inventoryItemIndex = -1;
-	this->listBoxItemIndex = -1;
-}
-
 void GameWorldUiInitInfo::init(const std::string &textPopUpMessage)
 {
 	this->textPopUpMessage = textPopUpMessage;
@@ -635,7 +629,6 @@ void GameWorldUI::destroy()
 	state.currentSpellPoints = 0.0;
 	state.maxSpellPoints = 0.0;
 	state.playerHurtRemainingSeconds = 0.0;
-	state.lootPopUpItemMappings.clear();
 	state.dialogueWhereIsDetailEntries.clear();
 
 	dialogueManager.endDialogue();
@@ -1118,7 +1111,6 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 
 	uiManager.addMouseScrollChangedListener(lootPopUpMouseWheelScrollChangedCallback, ContextName_LootPopUp, inputManager);
 
-	state.lootPopUpItemMappings.clear();
 	for (int i = 0; i < itemInventory.getTotalSlotCount(); i++)
 	{
 		const ItemInstance &itemInst = itemInventory.getSlot(i);
@@ -1127,40 +1119,14 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 			continue;
 		}
 
-		const int listBoxItemIndex = uiManager.getListBoxItemCount(listBoxElementInstID);
-
-		std::vector<GameWorldLootUiItemMapping> &itemMappings = state.lootPopUpItemMappings;
-		GameWorldLootUiItemMapping itemMapping;
-		itemMapping.inventoryItemIndex = i;
-		itemMapping.listBoxItemIndex = listBoxItemIndex;
-		itemMappings.emplace_back(itemMapping);
-
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
 		std::string itemDisplayName = GetLootItemDisplayNameWithQty(itemDef, itemInst.stackAmount);
+		const int lootInventorySlotIndex = i;
 
-		auto listBoxItemCallback = [&game, &itemInventory, &uiManager, &itemLibrary, listBoxElementInstID, lootPopUpBackButtonCallback, listBoxItemIndex, &itemMappings](MouseButtonType)
+		auto listBoxItemCallback = [&game, &itemInventory, &uiManager, &itemLibrary, listBoxElementInstID, lootPopUpBackButtonCallback, lootInventorySlotIndex](MouseButtonType)
 		{
-			// Find which inventory item slot this list box item points to.
-			int itemMappingsIndex = -1;
-			for (int curItemMappingsIndex = 0; curItemMappingsIndex < static_cast<int>(itemMappings.size()); curItemMappingsIndex++)
-			{
-				if (itemMappings[curItemMappingsIndex].listBoxItemIndex == listBoxItemIndex)
-				{
-					itemMappingsIndex = curItemMappingsIndex;
-					break;
-				}
-			}
-
-			DebugAssert(itemMappingsIndex >= 0);
-			const int mappedInventoryItemIndex = itemMappings[itemMappingsIndex].inventoryItemIndex;
-			if (mappedInventoryItemIndex < 0)
-			{
-				// This list box item was emptied previously.
-				return;
-			}
-
-			ItemInstance &selectedItemInst = itemInventory.getSlot(mappedInventoryItemIndex);
+			ItemInstance &selectedItemInst = itemInventory.getSlot(lootInventorySlotIndex);
 			const ItemDefinitionID selectedItemDefID = selectedItemInst.defID;
 			DebugAssert(selectedItemDefID >= 0);
 			const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(selectedItemDefID);
@@ -1183,32 +1149,17 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 				lootPopUpBackButtonCallback(MouseButtonType::Right);
 			}
 
-			// Shift mappings forward by one.
-			for (int curItemMappingsIndex = itemMappingsIndex; curItemMappingsIndex < static_cast<int>(itemMappings.size()); curItemMappingsIndex++)
+			// The list box item index is the # of remaining filled slots in the loot inventory up to this slot index.
+			int listBoxItemIndex = 0;
+			for (int currentItemIndex = 0; currentItemIndex < lootInventorySlotIndex; currentItemIndex++)
 			{
-				GameWorldLootUiItemMapping &curItemMapping = itemMappings[curItemMappingsIndex];
-
-				const int nextItemMappingsIndex = curItemMappingsIndex + 1;
-				if (nextItemMappingsIndex < static_cast<int>(itemMappings.size()))
+				if (itemInventory.getSlot(currentItemIndex).isValid())
 				{
-					GameWorldLootUiItemMapping &nextItemMapping = itemMappings[nextItemMappingsIndex];
-					curItemMapping.inventoryItemIndex = nextItemMapping.inventoryItemIndex;
+					listBoxItemIndex++;
 				}
-				else
-				{
-					curItemMapping.inventoryItemIndex = -1;
-				}
-
-				std::string newListBoxItemText;
-				if (curItemMapping.inventoryItemIndex >= 0)
-				{
-					const ItemInstance &curItemInst = itemInventory.getSlot(curItemMapping.inventoryItemIndex);
-					const ItemDefinition &curItemDef = itemLibrary.getDefinition(curItemInst.defID);
-					newListBoxItemText = GetLootItemDisplayNameWithQty(curItemDef, curItemInst.stackAmount);
-				}
-
-				uiManager.setListBoxItemText(listBoxElementInstID, curItemMapping.listBoxItemIndex, newListBoxItemText.c_str());
 			}
+
+			uiManager.eraseListBoxItem(listBoxElementInstID, listBoxItemIndex);
 		};
 
 		UiListBoxItem listBoxItem;
