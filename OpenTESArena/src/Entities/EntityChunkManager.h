@@ -25,6 +25,7 @@
 class AudioManager;
 class BinaryAssetLibrary;
 class EntityDefinitionLibrary;
+class Game;
 class LevelDefinition;
 class LevelInfoDefinition;
 class Renderer;
@@ -234,12 +235,12 @@ private:
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const LevelDefinition &levelDef,
 		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random,
-		const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
 	void updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
-	void updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Random &random, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager);
+	void updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Game &game);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
@@ -268,8 +269,7 @@ public:
 		const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
 		Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs,
 		const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
-		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
-		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+		double ceilingScale, Game &game);
 
 	void updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem);
 

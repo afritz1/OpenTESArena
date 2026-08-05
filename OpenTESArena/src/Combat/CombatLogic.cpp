@@ -9,6 +9,7 @@
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
+#include "../Interface/GameWorldUiState.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/BoundingBox.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -517,4 +518,105 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 
 		audioManager.playSoundOneShot(ArenaSoundName::Bash, hitEntityMiddlePosition);
 	}
+}
+
+void CombatLogic::onPlayerHitByEntity(EntityInstanceID sourceEntityInstID, Game &game)
+{
+	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	AudioManager &audioManager = game.audioManager;
+	Random &random = game.random;
+	ArenaRandom &arenaRandom = game.arenaRandom;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	const EntityInstance &entityInst = entityChunkManager.entities.get(sourceEntityInstID);
+	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+
+	int entityCombatLevel = 0;
+	if (entityInst.canBeKilledInCombat())
+	{
+		const EntityCombatState &entityCombatState = entityChunkManager.combatStates.get(entityInst.combatStateID);
+		entityCombatLevel = entityCombatState.level;
+	}
+
+	const int entityRaceID = 0; // @todo
+	const int entityHitBonus = 0; // @todo
+	const int entityLuckBonus = 0; // @todo
+
+	Player &player = game.player;
+	const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const int originalPlayerClassIndex = playerCharClassDef.originalClassIndex;
+
+	const DerivedAttributes playerDerivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(game.player.primaryAttributes);
+	int playerDefenseBonus = playerDerivedAttributes.bonusToDefend;
+	int playerLuckBonus = 0; // @todo
+
+	const bool isPlayerHit = ArenaCombatUtils::isMeleeHitSuccessful(entityCombatLevel, entityRaceID, entityHitBonus, entityLuckBonus, player.level, originalPlayerClassIndex, playerDefenseBonus, playerLuckBonus, arenaRandom);
+	if (!isPlayerHit)
+	{
+		audioManager.playSoundOneShot(ArenaSoundName::Clank);
+		return;
+	}
+
+	int damageAmount = 0;
+
+	DebugAssert(entityDef.type == EntityDefinitionType::Enemy);
+	const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+
+	if (enemyDef.type == EnemyEntityDefinitionType::Human)
+	{
+		const ItemInventory &humanEnemyItemInventory = entityChunkManager.itemInventories.get(entityInst.itemInventoryInstID);
+
+		int humanEnemyEquippedWeaponInventorySlotIndex;
+		const bool humanEnemyHasWeaponEquipped = humanEnemyItemInventory.findFirstSlotIf(
+			[](const ItemDefinition &itemDef)
+		{
+			return itemDef.type == ItemType::Weapon;
+		}, &humanEnemyEquippedWeaponInventorySlotIndex);
+
+		if (humanEnemyHasWeaponEquipped)
+		{
+			const ItemDefinitionID humanEnemyEquippedWeaponItemDefID = humanEnemyItemInventory.getSlot(humanEnemyEquippedWeaponInventorySlotIndex).defID;
+			const ItemDefinition &humanEnemyEquippedWeaponItemDef = ItemLibrary::getInstance().getDefinition(humanEnemyEquippedWeaponItemDefID);
+			const WeaponItemDefinition &humanEnemyEquippedWeaponDef = humanEnemyEquippedWeaponItemDef.weapon;
+			damageAmount = humanEnemyEquippedWeaponDef.damageMin + random.next(humanEnemyEquippedWeaponDef.damageMax - humanEnemyEquippedWeaponDef.damageMin + 1);
+		}
+		else
+		{
+			damageAmount = 1 + random.next(5); // Arbitrary fists damage. @todo get original fists damage (also count gauntlets damage, see ExeData /wiki/Combat#damage-modifiers)
+		}
+
+		// @todo: Chance for critical strike
+	}
+	else
+	{
+		const CreatureDefinition &creatureDef = CreatureDefinitionLibrary::getInstance().getDefinition(enemyDef.creatureDefID);
+		damageAmount = creatureDef.minDamage + random.next(creatureDef.maxDamage - creatureDef.minDamage + 1);
+
+		const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
+
+		// @todo: Pass in real values for the saving throw and resistance effect
+		const bool isPlayerPoisonResistEffectActive = false;
+		const int playerPoisonSavingThrow = 90;
+
+		int diseaseID;
+		double diseaseSecondsRemaining;
+		double paralysisSecondsRemaining;
+		ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, originalPlayerClassIndex, isPlayerPoisonResistEffectActive,
+			playerPoisonSavingThrow, arenaRandom, exeData, &diseaseID, &diseaseSecondsRemaining, &paralysisSecondsRemaining);
+
+		if (diseaseID >= 0)
+		{
+			player.effectsState.applyDisease(diseaseID, diseaseSecondsRemaining);
+		}
+
+		if (paralysisSecondsRemaining > 0.0)
+		{
+			player.effectsState.applyParalysis(paralysisSecondsRemaining);
+		}
+	}
+
+	player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
+
+	audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);
+	GameWorldUI::showPlayerHurt();
 }

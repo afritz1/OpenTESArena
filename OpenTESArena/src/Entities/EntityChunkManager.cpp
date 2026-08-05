@@ -16,7 +16,7 @@
 #include "../Audio/AudioManager.h"
 #include "../Collision/PhysicsLayer.h"
 #include "../Combat/CombatLogic.h"
-#include "../Interface/GameWorldUiState.h"
+#include "../Game/Game.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/RandomUtils.h"
@@ -1261,12 +1261,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef,
 	const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
-	TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, Random &random, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = entityChunk.position;
 	const SNInt levelWidth = levelDef.getWidth();
 	const WEInt levelDepth = levelDef.getDepth();
+
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
 	// Populate all or part of the chunk from a level definition depending on the map type.
 	const MapType mapType = mapSubDef.type;
@@ -1481,9 +1482,11 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 	}
 }
 
-void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Random &random,
-	JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager)
+void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Game &game)
 {
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+	Random &random = game.random;
+	JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
 	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
@@ -1645,81 +1648,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 
 				if (isCloseEnoughToAttackPlayer)
 				{
-					const bool isPlayerHit = random.nextBool(); // @todo proper accuracy calculation
-
-					if (isPlayerHit)
-					{
-						double damageAmount = 0.0;
-
-						const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-						if (enemyDef.type == EnemyEntityDefinitionType::Human)
-						{
-							DebugAssert(entityInst.hasInventory());
-							const ItemInventory &humanEnemyItemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
-							
-							int humanEnemyEquippedWeaponInventorySlotIndex;
-							const bool humanEnemyHasWeaponEquipped = humanEnemyItemInventory.findFirstSlotIf(
-								[](const ItemDefinition &itemDef)
-							{
-								return itemDef.type == ItemType::Weapon;
-							}, &humanEnemyEquippedWeaponInventorySlotIndex);
-
-							if (humanEnemyHasWeaponEquipped)
-							{
-								const ItemDefinitionID humanEnemyEquippedWeaponItemDefID = humanEnemyItemInventory.getSlot(humanEnemyEquippedWeaponInventorySlotIndex).defID;
-								const ItemDefinition &humanEnemyEquippedWeaponItemDef = ItemLibrary::getInstance().getDefinition(humanEnemyEquippedWeaponItemDefID);
-								const WeaponItemDefinition &humanEnemyEquippedWeaponDef = humanEnemyEquippedWeaponItemDef.weapon;
-								damageAmount = static_cast<double>(humanEnemyEquippedWeaponDef.damageMin + random.next(humanEnemyEquippedWeaponDef.damageMax - humanEnemyEquippedWeaponDef.damageMin + 1));
-							}
-							else
-							{
-								damageAmount = 1.0 + (random.next() * 5.0); // Arbitrary fists damage. @todo get original fists damage
-							}
-
-							//@todo: Chance for critical strike
-						}
-						else
-						{
-							const CreatureDefinition &creatureDef = CreatureDefinitionLibrary::getInstance().getDefinition(enemyDef.creatureDefID);
-							damageAmount = static_cast<double>(creatureDef.minDamage + random.next(creatureDef.maxDamage - creatureDef.minDamage + 1));
-
-							const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
-							const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
-							const int originalPlayerClassIndex = playerCharClassDef.originalClassIndex;
-
-							//@todo: Pass in real values for the saving throw and resistance effect
-							const bool isPlayerPoisonResistEffectActive = false;
-							const int playerPoisonSavingThrow = 90;
-
-							ArenaRandom arenaRandom(random.next());
-							const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-							int diseaseID;
-							double diseaseSecondsRemaining;
-							double paralysisSecondsRemaining;
-							ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, originalPlayerClassIndex, isPlayerPoisonResistEffectActive,
-								playerPoisonSavingThrow, arenaRandom, exeData, &diseaseID, &diseaseSecondsRemaining, &paralysisSecondsRemaining);
-
-							if (diseaseID >= 0)
-							{
-								player.effectsState.applyDisease(diseaseID, diseaseSecondsRemaining);
-							}
-
-							if (paralysisSecondsRemaining > 0.0)
-							{
-								player.effectsState.applyParalysis(paralysisSecondsRemaining);
-							}
-						}
-
-						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
-
-						audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);
-						GameWorldUI::showPlayerHurt();
-					}
-					else
-					{
-						audioManager.playSoundOneShot(ArenaSoundName::Clank);
-					}
+					CombatLogic::onPlayerHitByEntity(entityInstID, game);
 				}
 			}
 
@@ -2172,10 +2101,14 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	Span<const ChunkInt2> freedChunkPositions, Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs, Span<const int> levelInfoDefIndices,
 	Span<const LevelInfoDefinition> levelInfoDefs, const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem,
-	TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, Game &game)
 {
-	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+	JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	AudioManager &audioManager = game.audioManager;
+	Random &random = game.random;
 
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
@@ -2210,8 +2143,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 			levelInfoDefPtr = &levelInfoDefs[levelInfoDefIndex];
 		}
 
-		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef, entityGenInfo, citizenGenInfo,
-			ceilingScale, random, entityDefLibrary, physicsSystem, textureManager, renderer);
+		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef, entityGenInfo, citizenGenInfo, ceilingScale, random, physicsSystem, textureManager, renderer);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
@@ -2264,7 +2196,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	}
 
 	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
-	this->updateEnemyBehaviors(dt, playerPosition, player, random, physicsSystem, audioManager, voxelChunkManager);
+	this->updateEnemyBehaviors(dt, playerPosition, player, game);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx(playerPosition, ceilingScale, voxelChunkManager);

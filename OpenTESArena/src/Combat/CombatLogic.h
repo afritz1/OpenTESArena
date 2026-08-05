@@ -62,4 +62,5 @@ namespace CombatLogic
 
 	void onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, CombatResultSourceType sourceType, Game &game);
 	void onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID, Game &game);
+	void onPlayerHitByEntity(EntityInstanceID sourceEntityInstID, Game &game);
 }

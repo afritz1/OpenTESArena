@@ -1773,8 +1773,7 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	entityChunkManager.updatePrePhysicsStep(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
 		chunkManager.getFreedChunkPositions(), player, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices,
-		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game.random, voxelChunkManager, game.audioManager,
-		game.physicsSystem, game.textureManager, game.renderer);
+		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game);
 
 	if (this->guardSpawnState.isQueued())
 	{
