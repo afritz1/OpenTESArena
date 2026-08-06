@@ -223,12 +223,12 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 
 	auto graphicsApiOption = std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::GRAPHICS_API_NAME,
-		"Determines the 3D renderer to use. Changes are applied on next\napplication start.\n\nSoftware\nVulkan",
+		"Determines the 3D renderer to use. Changes are applied on next\napplication start.\n\nVulkan\nSoftware",
 		options.getGraphics_GraphicsAPI(),
 		1,
 		Options::MIN_GRAPHICS_API,
 		Options::MAX_GRAPHICS_API,
-		std::vector<std::string> { "Software", "Vulkan" },
+		std::vector<std::string> { "Vulkan", "Software" },
 		[&game](int value)
 	{
 		auto &options = game.options;

@@ -16,7 +16,7 @@ ScreenHeight=720
 WindowMode=0
 
 # Selects the 3D renderer to use.
-# 0: software, 1: Vulkan
+# 0: Vulkan, 1: software
 GraphicsAPI=0
 
 TargetFPS=60
