@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "ArenaPlayerUtils.h"
+#include "../Entities/ArenaEntityUtils.h"
 #include "../Assets/ExeData.h"
 #include "../Math/Random.h"
 #include "../Player/Player.h"
@@ -187,35 +188,68 @@ DerivedAttributes ArenaPlayerUtils::calculateTotalDerivedBonuses(const PrimaryAt
 	return totalDerivedAttributes;
 }
 
-int ArenaPlayerUtils::getThievingChance(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes)
+bool ArenaPlayerUtils::attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, ArenaRandom &random, int *outThievingChance)
 {
 	DebugAssert(thievingDivisor > 0);
 	DebugAssert(difficultyLevel > 0);
 
 	const int attributesModifier = attributes.intelligence.maxValue + attributes.agility.maxValue;
-	const int ability = ((((attributesModifier / thievingDivisor) * (playerLevel + 1)) * 100) / (difficultyLevel * 100));
-	const int clampedAbility = std::clamp(ability, 0, 100);
-	return clampedAbility;
-}
+	const int ability = (((attributesModifier / thievingDivisor) * (playerLevel + 1)) / difficultyLevel);
+	const int thievingChance = std::clamp(ability, 0, 100);
 
-bool ArenaPlayerUtils::attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random)
-{
-	const int thievingChance = ArenaPlayerUtils::getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
+	if (outThievingChance != nullptr)
+	{
+		*outThievingChance = thievingChance;
+	}
+
 	const int roll = random.next(100);
 	return thievingChance >= roll;
 }
 
-int ArenaPlayerUtils::getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData)
+bool ArenaPlayerUtils::attemptPickpocket(ArenaCityType cityType, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, ArenaRandom &random, const ExeData &exeData, int *outTemplateIndex, int *outGoldAmount, bool *outGuardsAppear)
+{
+	constexpr int goldTemplateIndexStart = 1379;
+	constexpr int junkTemplateIndex = 1384;
+	const int difficultyLevel = 4 - static_cast<int>(cityType);
+	int thievingChance;
+	*outGoldAmount = 0;
+	*outGuardsAppear = false;
+
+	const bool result = ArenaPlayerUtils::attemptThieving(difficultyLevel, thievingDivisor, playerLevel, attributes, random, &thievingChance);
+	if (result)
+	{
+		const int randomValue = random.next();
+		if (randomValue < exeData.thieving.thievingPickpocketJunkThreshold)
+		{
+			const int roll = random.next(exeData.thieving.thievingPickpocketMaxGold);
+			*outGoldAmount = roll + 1;
+			*outTemplateIndex = roll + goldTemplateIndexStart;
+		}
+		else
+		{
+			*outTemplateIndex = junkTemplateIndex;
+		}
+	}
+	else
+	{
+		*outGuardsAppear = ArenaEntityUtils::doGuardsAppearForTheft(thievingChance, random);
+	}
+
+	return result;
+}
+
+int ArenaPlayerUtils::getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData, ArenaRandom &random)
 {
 	int index;
-	if (difficultyLevel >= 20)
+	if (difficultyLevel >= exeData.thieving.thievingMagicallyHeldLockDifficultyThreshold)
 	{
-		// Magically-locked door. Use the last message.
+		// Magically-held lock. Use the last message.
 		index = static_cast<int>(std::size(exeData.status.lockDifficultyMessages)) - 1;
 	}
 	else
 	{
-		const int thievingChance = ArenaPlayerUtils::getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
+		int thievingChance;
+		ArenaPlayerUtils::attemptThieving(difficultyLevel, thievingDivisor, playerLevel, attributes, random, &thievingChance);
 		index = (thievingChance / 5) - 6;
 		index = std::clamp(index, 0, static_cast<int>(std::size(exeData.status.lockDifficultyMessages) - 2));
 	}
