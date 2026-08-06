@@ -2,6 +2,7 @@
 #include "CharacterSheetUiMVC.h"
 #include "CharacterUiState.h"
 #include "InventoryUiMVC.h"
+#include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -228,31 +229,7 @@ void CharacterEquipmentUI::create(Game &game)
 	state.itemDetailContextInstID = uiManager.createContext(itemDetailContextInitInfo);
 	uiManager.setContextEnabled(state.itemDetailContextInstID, false);
 
-	const CharacterEquipmentPresentationState equipmentPresentationState = CharacterSheetUiView::getEquipmentPresentationState(game);
-
-	UiElementInitInfo bodyImageElementInitInfo;
-	bodyImageElementInitInfo.name = "CharacterEquipmentBodyImage";
-	bodyImageElementInitInfo.position = equipmentPresentationState.bodyPosition;
-	bodyImageElementInitInfo.drawOrder = 1;
-	uiManager.createImage(bodyImageElementInitInfo, equipmentPresentationState.bodyTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo pantsImageElementInitInfo;
-	pantsImageElementInitInfo.name = "CharacterEquipmentPantsImage";
-	pantsImageElementInitInfo.position = equipmentPresentationState.pantsPosition;
-	pantsImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(pantsImageElementInitInfo, equipmentPresentationState.pantsTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo headImageElementInitInfo;
-	headImageElementInitInfo.name = "CharacterEquipmentHeadImage";
-	headImageElementInitInfo.position = equipmentPresentationState.headPosition;
-	headImageElementInitInfo.drawOrder = 3;
-	uiManager.createImage(headImageElementInitInfo, equipmentPresentationState.headTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo shirtImageElementInitInfo;
-	shirtImageElementInitInfo.name = "CharacterEquipmentShirtImage";
-	shirtImageElementInitInfo.position = equipmentPresentationState.shirtPosition;
-	shirtImageElementInitInfo.drawOrder = 4;
-	uiManager.createImage(shirtImageElementInitInfo, equipmentPresentationState.shirtTextureID, state.contextInstID, renderer);
+	CharacterSheetUiView::createOrUpdateEquipmentUiElements(CharacterEquipmentUI::ContextName, state.contextInstID, game);
 
 	uiManager.addMouseScrollChangedListener(CharacterEquipmentUI::onMouseScrollChanged, CharacterEquipmentUI::ContextName, inputManager);
 
@@ -333,6 +310,8 @@ void CharacterEquipmentUI::update(double dt)
 
 	const Int2 listBoxHighlightPosition = listBoxHighlightedItemGlobalRect.getTopLeft() - Int2(2, 2);
 	uiManager.setTransformPosition(listBoxHighlightImageElementInstID, listBoxHighlightPosition);
+
+	CharacterSheetUiView::createOrUpdateEquipmentUiElements(CharacterEquipmentUI::ContextName, state.contextInstID, game);
 }
 
 void CharacterEquipmentUI::showItemDetail(const char *text, Color textColor)

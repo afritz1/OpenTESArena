@@ -45,31 +45,7 @@ void CharacterUI::create(Game &game)
 	const UiContextDefinition &contextDef = uiLibrary.getDefinition(CharacterUI::ContextName);
 	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
-	const CharacterEquipmentPresentationState equipmentPresentationState = CharacterSheetUiView::getEquipmentPresentationState(game);
-
-	UiElementInitInfo bodyImageElementInitInfo;
-	bodyImageElementInitInfo.name = "CharacterBodyImage";
-	bodyImageElementInitInfo.position = equipmentPresentationState.bodyPosition;
-	bodyImageElementInitInfo.drawOrder = 1;
-	uiManager.createImage(bodyImageElementInitInfo, equipmentPresentationState.bodyTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo pantsImageElementInitInfo;
-	pantsImageElementInitInfo.name = "CharacterPantsImage";
-	pantsImageElementInitInfo.position = equipmentPresentationState.pantsPosition;
-	pantsImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(pantsImageElementInitInfo, equipmentPresentationState.pantsTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo headImageElementInitInfo;
-	headImageElementInitInfo.name = "CharacterHeadImage";
-	headImageElementInitInfo.position = equipmentPresentationState.headPosition;
-	headImageElementInitInfo.drawOrder = 3;
-	uiManager.createImage(headImageElementInitInfo, equipmentPresentationState.headTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo shirtImageElementInitInfo;
-	shirtImageElementInitInfo.name = "CharacterShirtImage";
-	shirtImageElementInitInfo.position = equipmentPresentationState.shirtPosition;
-	shirtImageElementInitInfo.drawOrder = 4;
-	uiManager.createImage(shirtImageElementInitInfo, equipmentPresentationState.shirtTextureID, state.contextInstID, renderer);
+	CharacterSheetUiView::createOrUpdateEquipmentUiElements(CharacterUI::ContextName, state.contextInstID, game);
 
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
 	const UiElementInstanceID playerNameTextBoxElementInstID = uiManager.getElementByName("CharacterNameTextBox");

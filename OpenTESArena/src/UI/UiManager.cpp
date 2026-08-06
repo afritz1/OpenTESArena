@@ -282,6 +282,12 @@ void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
 	element.active = active;
 }
 
+void UiManager::setElementDrawOrder(UiElementInstanceID elementInstID, int drawOrder)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	element.drawOrder = drawOrder;
+}
+
 std::vector<UiElementInstanceID> UiManager::getTopMostActiveElementsOfType(UiElementType elementType) const
 {
 	std::vector<UiElementInstanceID> activeInstIDs;

@@ -89,6 +89,7 @@ public:
 
 	UiElementInstanceID getElementByName(const char *name) const;
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
+	void setElementDrawOrder(UiElementInstanceID elementInstID, int drawOrder);
 	std::vector<UiElementInstanceID> getTopMostActiveElementsOfType(UiElementType elementType) const;
 
 	Rect getTransformGlobalRect(UiElementInstanceID elementInstID) const; // Includes local-to-parent transform.

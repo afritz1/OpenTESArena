@@ -1,5 +1,7 @@
 #include "ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/TextureAsset.h"
+#include "../Items/ArenaItemUtils.h"
 
 #include "components/utilities/String.h"
 
@@ -33,6 +35,42 @@ const std::string &ArenaPortraitUtils::getPants(bool male)
 const std::string &ArenaPortraitUtils::getEquipment(bool male)
 {
 	return male ? ArenaTextureName::MaleEquipment : ArenaTextureName::FemaleEquipment;
+}
+
+TextureAsset ArenaPortraitUtils::getWeapon(ArenaWeaponTypeID weaponID, bool male)
+{
+	const std::string filename = ArenaPortraitUtils::getEquipment(male);
+	return TextureAsset(filename, weaponID);
+}
+
+TextureAsset ArenaPortraitUtils::getArmor(ArenaArmorTypeID armorID, ArenaArmorMaterialType armorMaterialType, bool male)
+{
+	const std::string filename = ArenaPortraitUtils::getEquipment(male);
+	constexpr int baseArmorIndex = ArenaItemUtils::MeleeWeaponCount + ArenaItemUtils::RangedWeaponCount;
+	
+	int armorMaterialOffset = 0;
+
+	const bool isShield = (armorID >= 7) && (armorID <= 11);
+	if (!isShield)
+	{
+		switch (armorMaterialType)
+		{
+		case ArenaArmorMaterialType::None:
+		case ArenaArmorMaterialType::Plate:
+			armorMaterialOffset = 0;
+			break;
+		case ArenaArmorMaterialType::Chain:
+			armorMaterialOffset = 11;
+			break;
+		case ArenaArmorMaterialType::Leather:
+			armorMaterialOffset = 18;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return TextureAsset(filename, baseArmorIndex + armorMaterialOffset + armorID);
 }
 
 Int2 ArenaPortraitUtils::getShirtOffset(bool male, bool magic)

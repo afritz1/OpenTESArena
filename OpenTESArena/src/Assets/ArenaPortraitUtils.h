@@ -2,7 +2,10 @@
 
 #include <string>
 
+#include "ArenaTypes.h"
 #include "../Math/Vector2.h"
+
+struct TextureAsset;
 
 // Gets the filenames for images relevant to character portraits.
 namespace ArenaPortraitUtils
@@ -22,6 +25,8 @@ namespace ArenaPortraitUtils
 
 	// Gets the equipment images filename for a given gender.
 	const std::string &getEquipment(bool male);
+	TextureAsset getWeapon(ArenaWeaponTypeID weaponID, bool male);
+	TextureAsset getArmor(ArenaArmorTypeID armorID, ArenaArmorMaterialType armorMaterialType, bool male);
 
 	// Gets the pixel offset for drawing a shirt texture in the equipment screen.
 	Int2 getShirtOffset(bool male, bool magic);

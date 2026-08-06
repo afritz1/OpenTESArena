@@ -567,7 +567,7 @@ void CombatLogic::onPlayerHitByEntity(EntityInstanceID sourceEntityInstID, Game 
 		const ItemInventory &humanEnemyItemInventory = entityChunkManager.itemInventories.get(entityInst.itemInventoryInstID);
 
 		int humanEnemyEquippedWeaponInventorySlotIndex;
-		const bool humanEnemyHasWeaponEquipped = humanEnemyItemInventory.findFirstSlotIf(
+		const bool humanEnemyHasWeaponEquipped = humanEnemyItemInventory.findFirstValidSlotDefIf(
 			[](const ItemDefinition &itemDef)
 		{
 			return itemDef.type == ItemType::Weapon;
