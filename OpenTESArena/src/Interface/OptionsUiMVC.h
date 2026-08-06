@@ -59,6 +59,7 @@ namespace OptionsUiModel
 
 	// Dev.
 	const std::string GHOST_MODE_NAME = "Ghost Mode";
+	const std::string IMMUNE_TO_DAMAGE_NAME = "Immune To Damage";
 	const std::string PROFILER_LEVEL_NAME = "Profiler Level";
 	const std::string ENABLE_VALIDATION_LAYERS_NAME = "Enable Validation Layers";
 

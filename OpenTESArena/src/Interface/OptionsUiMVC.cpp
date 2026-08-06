@@ -604,6 +604,16 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 		player.setGhostModeActive(value, game.physicsSystem);
 	});
 
+	auto immuneToDamageOption = std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::IMMUNE_TO_DAMAGE_NAME,
+		"Prevents damage to the player.",
+		options.getMisc_ImmuneToDamage(),
+		[&game](bool value)
+	{
+		auto &options = game.options;
+		options.setMisc_ImmuneToDamage(value);
+	});
+
 	auto profilerLevelOption = std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::PROFILER_LEVEL_NAME,
 		"Displays varying levels of profiler information in the game world.",
@@ -629,6 +639,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 
 	OptionGroup group;
 	group.emplace_back(std::move(ghostModeOption));
+	group.emplace_back(std::move(immuneToDamageOption));
 	group.emplace_back(std::move(profilerLevelOption));
 	group.emplace_back(std::move(enableValidationLayersOption));
 	return group;

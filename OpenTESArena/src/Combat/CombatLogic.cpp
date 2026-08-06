@@ -615,8 +615,16 @@ void CombatLogic::onPlayerHitByEntity(EntityInstanceID sourceEntityInstID, Game 
 		}
 	}
 
-	player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
+	if (game.options.getMisc_ImmuneToDamage())
+	{
+		damageAmount = 0;
+	}
+
+	if (damageAmount > 0)
+	{
+		player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
+		GameWorldUI::showPlayerHurt();
+	}
 
 	audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);
-	GameWorldUI::showPlayerHurt();
 }

@@ -187,6 +187,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_STRING(Misc, ArenaPaths)
 	OPTION_STRING(Misc, ArenaSavesPath)
 	OPTION_BOOL(Misc, GhostMode)
+	OPTION_BOOL(Misc, ImmuneToDamage)
 	OPTION_INT(Misc, ProfilerLevel, MIN_PROFILER_LEVEL, MAX_PROFILER_LEVEL)
 	OPTION_BOOL(Misc, ShowIntro)
 	OPTION_BOOL(Misc, ShowCompass)
