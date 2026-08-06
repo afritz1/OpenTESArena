@@ -174,31 +174,7 @@ void LevelUpUI::create(Game &game)
 	LevelUpUI::updateGold();
 	LevelUpUI::updateBonusPoints();
 
-	const CharacterEquipmentPresentationState equipmentPresentationState = CharacterSheetUiView::getEquipmentPresentationState(game);
-
-	UiElementInitInfo playerBackgroundImageElementInitInfo;
-	playerBackgroundImageElementInitInfo.name = "LevelUpPlayerBackground";
-	playerBackgroundImageElementInitInfo.position = equipmentPresentationState.bodyPosition;
-	playerBackgroundImageElementInitInfo.drawOrder = 0;
-	uiManager.createImage(playerBackgroundImageElementInitInfo, equipmentPresentationState.bodyTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo playerHeadImageElementInitInfo;
-	playerHeadImageElementInitInfo.name = "LevelUpPlayerHead";
-	playerHeadImageElementInitInfo.position = equipmentPresentationState.headPosition;
-	playerHeadImageElementInitInfo.drawOrder = 1;
-	uiManager.createImage(playerHeadImageElementInitInfo, equipmentPresentationState.headTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo playerPantsImageElementInitInfo;
-	playerPantsImageElementInitInfo.name = "LevelUpPlayerPants";
-	playerPantsImageElementInitInfo.position = equipmentPresentationState.pantsPosition;
-	playerPantsImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(playerPantsImageElementInitInfo, equipmentPresentationState.pantsTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo playerShirtImageElementInitInfo;
-	playerShirtImageElementInitInfo.name = "LevelUpPlayerShirt";
-	playerShirtImageElementInitInfo.position = equipmentPresentationState.shirtPosition;
-	playerShirtImageElementInitInfo.drawOrder = 3;
-	uiManager.createImage(playerShirtImageElementInitInfo, equipmentPresentationState.shirtTextureID, state.contextInstID, renderer);
+	CharacterSheetUiView::createOrUpdateEquipmentUiElements(LevelUpUI::ContextName, state.contextInstID, game);
 
 	// Remaining points popup.
 	UiContextInitInfo remainingPointsPopUpContextInitInfo;
