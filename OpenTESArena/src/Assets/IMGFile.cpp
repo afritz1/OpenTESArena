@@ -131,8 +131,7 @@ bool IMGFile::init(const char *filename)
 	if (hasBuiltInPalette)
 	{
 		// Read the palette data.
-		this->palette = std::make_unique<Palette>(
-			IMGFile::readPalette(srcPtr + HeaderSize + len));
+		this->palette = std::make_unique<Palette>(IMGFile::readPalette(srcPtr + HeaderSize + len));
 	}
 
 	// Lambda for setting members and constructing the final image.
@@ -209,6 +208,8 @@ bool IMGFile::init(const char *filename)
 		}
 	}
 
+	this->offset = Int2(xOffset, yOffset);
+
 	return true;
 }
 
@@ -275,6 +276,16 @@ int IMGFile::getWidth() const
 int IMGFile::getHeight() const
 {
 	return this->image.getHeight();
+}
+
+int IMGFile::getXOffset() const
+{
+	return this->offset.x;
+}
+
+int IMGFile::getYOffset() const
+{
+	return this->offset.y;
 }
 
 const Palette *IMGFile::getPalette() const

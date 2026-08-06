@@ -252,12 +252,6 @@ Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 
 Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 {
-	const ItemDefinitionID equippedHelmetItemDefID = CharacterSheetUiModel::getEquippedHeadArmorItemDefID(game);
-	if (equippedHelmetItemDefID >= 0)
-	{
-		return CharacterSheetUiView::getHeadArmorOffset(game);
-	}
-
 	const TextureAsset headTextureAsset = CharacterSheetUiView::getHeadTextureAsset(game);
 
 	TextureManager &textureManager = game.textureManager;
@@ -268,7 +262,7 @@ Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-	return textureFileMetadata.getOffset(game.player.portraitID);
+	return textureFileMetadata.getOffset(headTextureAsset.index);
 }
 
 Int2 CharacterSheetUiView::getShirtOffset(Game &game)

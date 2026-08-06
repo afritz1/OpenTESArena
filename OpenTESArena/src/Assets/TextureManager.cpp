@@ -277,7 +277,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outMetadata != nullptr)
 		{
-			outMetadata->init(std::string(filename), makeDimensions(img.getWidth(), img.getHeight()));
+			outMetadata->init(std::string(filename), makeDimensions(img.getWidth(), img.getHeight()), makeOffset(img.getXOffset(), img.getYOffset()));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_LGT))

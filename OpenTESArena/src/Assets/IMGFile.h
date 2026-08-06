@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "../Math/Vector2.h"
 #include "../Utilities/Palette.h"
 
 #include "components/utilities/Buffer2D.h"
@@ -14,6 +15,7 @@ class IMGFile
 {
 private:
 	Buffer2D<uint8_t> image;
+	Int2 offset;
 	std::unique_ptr<Palette> palette;
 
 	// Reads the palette from an .IMG file's palette data.
@@ -29,6 +31,12 @@ public:
 
 	// Gets the height in pixels.
 	int getHeight() const;
+
+	// Gets the X offset from the left screen edge in pixels.
+	int getXOffset() const;
+
+	// Gets the Y offset from the top screen edge in pixels.
+	int getYOffset() const;
 
 	// Gets the image's palette, or null if it doesn't have one.
 	const Palette *getPalette() const;
