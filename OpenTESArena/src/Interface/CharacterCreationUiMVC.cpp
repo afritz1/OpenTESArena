@@ -255,13 +255,23 @@ std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinit
 
 std::string ChooseClassUiModel::getFullTooltipText(const CharacterClassDefinition &charClassDef, Game &game)
 {
-	const char *castsMagicPrefix = charClassDef.castsMagic ? "Can" : "Cannot";
+	std::string magicTooltipText;
+	if (charClassDef.castsMagic)
+	{
+		const char *canRecoverSpellPointsPrefix = charClassDef.canRecoverSpellPoints ? "can" : "cannot";
+		magicTooltipText = String::format("Can cast magic, %s recover spell points", canRecoverSpellPointsPrefix);
+	}
+	else
+	{
+		magicTooltipText = "Cannot cast magic";
+	}
+
 	const std::string armorTooltipText = ChooseClassUiModel::getArmorTooltipText(charClassDef);
 	const std::string shieldTooltipText = ChooseClassUiModel::getShieldTooltipText(charClassDef);
 	const std::string weaponTooltipText = ChooseClassUiModel::getWeaponTooltipText(charClassDef, game);
 
-	const std::string text = String::format("%s (%s class)\n\n%s cast magic\nHealth die: d%d\nArmors: %s\nShields: %s\nWeapons: %s",
-		charClassDef.name, charClassDef.categoryName, castsMagicPrefix, charClassDef.healthDie,
+	const std::string text = String::format("%s (%s class)\n\n%s\nHealth die: d%d\nArmors: %s\nShields: %s\nWeapons: %s",
+		charClassDef.name, charClassDef.categoryName, magicTooltipText.c_str(), charClassDef.healthDie,
 		armorTooltipText.c_str(), shieldTooltipText.c_str(), weaponTooltipText.c_str());
 
 	return text;
