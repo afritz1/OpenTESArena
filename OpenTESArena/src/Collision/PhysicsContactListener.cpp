@@ -112,11 +112,8 @@ namespace
 				static_cast<double>(projectilePhysicsPosition.GetY()),
 				static_cast<WEDouble>(projectilePhysicsPosition.GetZ()));
 
-			const EntityInitInfo explosionEntityInitInfo = CombatLogic::getSpellExplosionEntityInitInfo(projectileWorldPosition, projectileSpellState.spellIndex);
+			const EntityInitInfo explosionEntityInitInfo = CombatLogic::getSpellExplosionEntityInitInfo(projectileSpellState.spellIndex, projectileWorldPosition);
 			gameState.queueEntityInstantiate(explosionEntityInitInfo);
-
-			AudioManager &audioManager = game.audioManager;
-			audioManager.playSoundOneShot(ArenaSoundName::Explode, projectileWorldPosition);
 		}
 
 		entityChunkManager.queueEntityDestroy(projectileEntityInstID, true); // @todo shouldn't need to notify chunk of a projectile dying

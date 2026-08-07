@@ -1199,7 +1199,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::ArrowFire;
 
-			CombatLogic::spawnBowProjectile(player.getEyePosition(), projectileDirection, entityChunkManager, random, game.physicsSystem, renderer);
+			const EntityInitInfo bowProjectileEntityInitInfo = CombatLogic::getBowProjectileEntityInitInfo(player.getEyePosition(), projectileDirection);
+			gameState.queueEntityInstantiate(bowProjectileEntityInitInfo);
 		}
 	}
 

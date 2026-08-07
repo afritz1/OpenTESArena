@@ -67,6 +67,7 @@ struct EntityInitInfo
 	int interiorLevelIndex;
 	int guardType;
 	std::optional<int> spellIndex;
+	std::string spawnSfxName;
 
 	EntityInitInfo();
 };

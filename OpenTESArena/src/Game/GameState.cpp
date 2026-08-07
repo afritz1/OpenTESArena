@@ -1832,6 +1832,12 @@ void GameState::tickEntityInstantiations(Game &game)
 	for (const EntityInitInfo &initInfo : this->queuedEntityInitInfos)
 	{
 		entityChunkManager.createEntity(initInfo, game.random, game.physicsSystem, game.renderer);
+
+		if (!initInfo.spawnSfxName.empty())
+		{
+			AudioManager &audioManager = game.audioManager;
+			audioManager.playSoundOneShot(initInfo.spawnSfxName, initInfo.feetPosition);
+		}
 	}
 
 	this->queuedEntityInitInfos.clear();

@@ -44,21 +44,13 @@ namespace CombatLogic
 		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, CombatHitSearchResult *outHitSearchResult);
 
 	static constexpr int SPELL_PROJECTILE_TYPE_COUNT = 12; // For animation lookups
+	
+	EntityDefID getVfxEntityDefID(VfxEntityAnimationType vfxType, int index);
 
-	EntityDefID getBowProjectileEntityDefID();
-	EntityDefID getSpellProjectileEntityDefID(int spellIndex);
-	EntityDefID getSpellExplosionEntityDefID(int spellIndex);
-
-	EntityInitInfo getSpellExplosionEntityInitInfo(WorldDouble3 position, int spellIndex);
-
-	void spawnBowProjectile(WorldDouble3 position, Double3 direction, EntityChunkManager &entityChunkManager,
-		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
-	void spawnSpellProjectile(int spellIndex, WorldDouble3 position, Double3 direction, EntityChunkManager &entityChunkManager, Random &random,
-		AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
-	void spawnSpellExplosion(int spellIndex, WorldDouble3 position, EntityChunkManager &entityChunkManager, Random &random,
-		AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
-	void spawnHitVfx(const EntityDefinition &hitEntityDef, const WorldDouble3 &position, EntityChunkManager &entityChunkManager,
-		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
+	EntityInitInfo getBowProjectileEntityInitInfo(WorldDouble3 position, Double3 direction);
+	EntityInitInfo getPhysicalHitVfxEntityInitInfo(const EntityDefinition &hitEntityDef, WorldDouble3 position);
+	EntityInitInfo getSpellProjectileEntityInitInfo(int spellIndex, WorldDouble3 position, Double3 direction);
+	EntityInitInfo getSpellExplosionEntityInitInfo(int spellIndex, WorldDouble3 position);
 
 	void onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, CombatResultSourceType sourceType, Game &game);
 	void onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID, Game &game);

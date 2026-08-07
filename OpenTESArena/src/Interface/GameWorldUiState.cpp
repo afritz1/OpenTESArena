@@ -3290,7 +3290,8 @@ void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
 		projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition);
 	}
 
-	CombatLogic::spawnSpellProjectile(spellIndex, spellProjectilePosition, projectileDirection, entityChunkManager, random, game.audioManager, game.physicsSystem, game.renderer);
+	const EntityInitInfo spellProjectileEntityInitInfo = CombatLogic::getSpellProjectileEntityInitInfo(spellIndex, spellProjectilePosition, projectileDirection);
+	gameState.queueEntityInstantiate(spellProjectileEntityInitInfo);
 }
 
 void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)
