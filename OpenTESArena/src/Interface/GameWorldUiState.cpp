@@ -3,6 +3,7 @@
 
 #include "AutomapUiState.h"
 #include "CharacterUiState.h"
+#include "CommonUiMVC.h"
 #include "GameWorldUiMVC.h"
 #include "GameWorldUiState.h"
 #include "LogbookUiState.h"
@@ -77,8 +78,6 @@ namespace
 		"GameWorldScrollUpButton",
 		"GameWorldScrollDownButton",
 	};
-
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	std::string GetKeyImageElementName(int keyIndex)
 	{
@@ -994,7 +993,7 @@ void GameWorldUI::showTextPopUp(const char *str, const std::string &fontName, Te
 	};
 
 	UiButtonInitInfo textPopUpBackButtonInitInfo;
-	textPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	textPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	textPopUpBackButtonInitInfo.callback = popUpButtonCallback;
 	uiManager.createButton(textPopUpBackButtonElementInitInfo, textPopUpBackButtonInitInfo, state.textPopUpContextInstID);
 

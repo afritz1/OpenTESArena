@@ -1,3 +1,4 @@
+#include "CommonUiMVC.h"
 #include "ProvinceMapUiMVC.h"
 #include "ProvinceMapUiState.h"
 #include "WorldMapUiState.h"
@@ -23,8 +24,6 @@ namespace
 
 	constexpr char ElementName_SearchInputTextEntryTextBox[] = "ProvinceMapSearchInputTextEntryTextBox";
 	constexpr char ElementName_SearchResultsListBox[] = "ProvinceMapSearchResultsListBox";
-
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	std::string GetLocationIconImageElementName(const LocationDefinition &locationDef)
 	{
@@ -728,7 +727,7 @@ void ProvinceMapUI::showTextPopUp(const char *str)
 	};
 
 	UiButtonInitInfo textPopUpBackButtonInitInfo;
-	textPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	textPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	textPopUpBackButtonInitInfo.callback = popUpButtonCallback;
 	uiManager.createButton(textPopUpBackButtonElementInitInfo, textPopUpBackButtonInitInfo, state.textPopUpContextInstID);
 

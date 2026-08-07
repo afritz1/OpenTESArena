@@ -1,6 +1,7 @@
 #include "CharacterEquipmentUiState.h"
 #include "CharacterSheetUiMVC.h"
 #include "CharacterUiState.h"
+#include "CommonUiMVC.h"
 #include "InventoryUiMVC.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -19,8 +20,6 @@ namespace
 
 	constexpr char ElementName_InventoryListBox[] = "CharacterEquipmentInventoryListBox";	
 	constexpr char ElementName_InventoryListBoxHighlight[] = "CharacterEquipmentInventoryListBoxHighlight";
-
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	UiListBoxItemCallback MakeInventoryListBoxItemCallback(Game &game, UiElementInstanceID listBoxElementInstID, int listBoxItemIndex)
 	{
@@ -354,7 +353,7 @@ void CharacterEquipmentUI::showItemDetail(const char *text, Color textColor)
 	};
 
 	UiButtonInitInfo backButtonInitInfo;
-	backButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	backButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	backButtonInitInfo.callback = backButtonCallback;
 	uiManager.createButton(backButtonElementInitInfo, backButtonInitInfo, state.itemDetailContextInstID);
 

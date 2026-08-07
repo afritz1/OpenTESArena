@@ -1,4 +1,5 @@
 #include "CharacterSheetUiMVC.h"
+#include "CommonUiMVC.h"
 #include "GameWorldUiState.h"
 #include "LevelUpUiMVC.h"
 #include "LevelUpUiState.h"
@@ -19,8 +20,6 @@ namespace
 	constexpr char PlayerStaminaTextBoxElementName[] = "LevelUpStaminaTextBox";
 	constexpr char PlayerSpellPointsTextBoxElementName[] = "LevelUpSpellPointsTextBox";
 	constexpr char BonusPointsTextBoxElementName[] = "LevelUpBonusPointsTextBox";
-
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	std::string GetPrimaryAttributeTextBoxElementName(const char *attributeName)
 	{
@@ -215,7 +214,7 @@ void LevelUpUI::create(Game &game)
 	remainingPointsPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo remainingPointsPopUpBackButtonInitInfo;
-	remainingPointsPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	remainingPointsPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	remainingPointsPopUpBackButtonInitInfo.callback = LevelUpUI::onRemainingPointsPopUpBackButtonSelected;
 	uiManager.createButton(remainingPointsPopUpBackButtonElementInitInfo, remainingPointsPopUpBackButtonInitInfo, state.remainingPointsPopUpContextInstID);
 

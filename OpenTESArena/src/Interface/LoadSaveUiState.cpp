@@ -1,3 +1,4 @@
+#include "CommonUiMVC.h"
 #include "LoadSaveUiMVC.h"
 #include "LoadSaveUiState.h"
 #include "MainMenuUiState.h"
@@ -11,8 +12,6 @@
 namespace
 {
 	constexpr char ContextName_PopUp[] = "LoadSavePopUp";
-
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	std::string GetEntryTextBoxElementName(int index)
 	{
@@ -174,7 +173,7 @@ void LoadSaveUI::onEntrySelected(int index)
 
 	UiButtonInitInfo popUpBackButtonInitInfo;
 	popUpBackButtonInitInfo.callback = popUpBackButtonCallback;
-	popUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	popUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	uiManager.createButton(popUpBackButtonElementInitInfo, popUpBackButtonInitInfo, state.popUpContextInstID);
 
 	InputActionCallback popUpBackInputActionCallback = [popUpBackButtonCallback](const InputActionCallbackValues &values)
