@@ -9,6 +9,7 @@
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationInstance.h"
 #include "EntityChunk.h"
+#include "EntityDefinitionLibrary.h"
 #include "EntityGeneration.h"
 #include "EntityInstance.h"
 #include "EntityUtils.h"
@@ -24,7 +25,6 @@
 
 class AudioManager;
 class BinaryAssetLibrary;
-class EntityDefinitionLibrary;
 class Game;
 class LevelDefinition;
 class LevelInfoDefinition;
@@ -250,6 +250,7 @@ private:
 	void updateVfx(WorldDouble3 playerPosition, double ceilingScale, const VoxelChunkManager &voxelChunkManager);
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
+	EntityDefID findEntityDefIdIf(const EntityDefinitionPredicate &predicate) const;
 	EntityInstanceID getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const;
 
 	// Gets the entity visibility state necessary for rendering and ray cast selection.

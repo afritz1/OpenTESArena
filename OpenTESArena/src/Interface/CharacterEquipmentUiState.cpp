@@ -11,12 +11,14 @@
 #include "../Items/ItemLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
+#include "../World/MapType.h"
 
 #include "components/utilities/String.h"
 
 namespace
 {
 	constexpr char ContextName_ItemDetail[] = "CharacterEquipmentItemDetail";
+	constexpr char ContextName_DropItemModal[] = "CharacterEquipmentDropItemModal";
 
 	constexpr char ElementName_InventoryListBox[] = "CharacterEquipmentInventoryListBox";	
 	constexpr char ElementName_InventoryListBoxHighlight[] = "CharacterEquipmentInventoryListBoxHighlight";
@@ -202,6 +204,7 @@ CharacterEquipmentUiState::CharacterEquipmentUiState()
 	this->game = nullptr;
 	this->contextInstID = -1;
 	this->itemDetailContextInstID = -1;
+	this->dropItemModalContextInstID = -1;
 }
 
 void CharacterEquipmentUiState::init(Game &game)
@@ -228,6 +231,12 @@ void CharacterEquipmentUI::create(Game &game)
 	itemDetailContextInitInfo.drawOrder = 1;
 	state.itemDetailContextInstID = uiManager.createContext(itemDetailContextInitInfo);
 	uiManager.setContextEnabled(state.itemDetailContextInstID, false);
+
+	UiContextInitInfo dropItemModalContextInitInfo;
+	dropItemModalContextInitInfo.name = ContextName_DropItemModal;
+	dropItemModalContextInitInfo.drawOrder = 2;
+	state.dropItemModalContextInstID = uiManager.createContext(dropItemModalContextInitInfo);
+	uiManager.setContextEnabled(state.dropItemModalContextInstID, false);
 
 	CharacterSheetUiView::createOrUpdateEquipmentUiElements(CharacterEquipmentUI::ContextName, state.contextInstID, game);
 
@@ -293,6 +302,12 @@ void CharacterEquipmentUI::destroy()
 	{
 		uiManager.freeContext(state.itemDetailContextInstID, inputManager, renderer);
 		state.itemDetailContextInstID = -1;
+	}
+
+	if (state.dropItemModalContextInstID >= 0)
+	{
+		uiManager.freeContext(state.dropItemModalContextInstID, inputManager, renderer);
+		state.dropItemModalContextInstID = -1;
 	}
 
 	Player &player = game.player;
@@ -382,6 +397,130 @@ void CharacterEquipmentUI::showItemDetail(const char *text, Color textColor)
 	uiManager.setContextEnabled(state.itemDetailContextInstID, true);
 }
 
+void CharacterEquipmentUI::showDropItemMessageBox(const char *titleText, const std::function<void()> &confirmCallback)
+{
+	CharacterEquipmentUiState &state = CharacterEquipmentUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	InputManager &inputManager = game.inputManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.dropItemModalContextInstID, inputManager, renderer);
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	
+	const char *messageBoxButtonTexts[] =
+	{
+		// @todo get from ExeData
+		"Yes",
+		"No"
+	};
+
+	const UiButtonCallback messageBoxYesButtonCallback = [&uiManager, confirmCallback](MouseButtonType)
+	{
+		uiManager.disableTopMostContext();
+		confirmCallback();
+	};
+
+	const UiButtonCallback messageBoxNoButtonCallback = [&uiManager](MouseButtonType)
+	{
+		uiManager.disableTopMostContext();
+	};
+
+	const UiButtonCallback messageBoxButtonCallbacks[] = { messageBoxYesButtonCallback, messageBoxNoButtonCallback };
+	constexpr int messageBoxButtonCount = static_cast<int>(std::size(messageBoxButtonTexts));
+
+	const int titleImageTextureHeight = 30;
+	const int totalMessageBoxHeight = titleImageTextureHeight * (messageBoxButtonCount + 1);
+	const int titleTextBoxPositionY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (totalMessageBoxHeight / 2) + (titleImageTextureHeight / 2);
+
+	UiElementInitInfo titleTextBoxElementInitInfo;
+	titleTextBoxElementInitInfo.name = "CharacterEquipmentDropItemModalTitleTextBox";
+	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, titleTextBoxPositionY);
+	titleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	titleTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo titleTextBoxInitInfo;
+	titleTextBoxInitInfo.text = titleText;
+	titleTextBoxInitInfo.fontName = ArenaFontName::Arena;
+	titleTextBoxInitInfo.defaultColor = CharacterEquipmentUiView::ItemDetailDefaultTextColor;
+	titleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	const UiElementInstanceID titleTextBoxElementInstID = uiManager.createTextBox(titleTextBoxElementInitInfo, titleTextBoxInitInfo, state.dropItemModalContextInstID, renderer);
+	const Rect titleTextBoxGlobalRect = uiManager.getTransformGlobalRect(titleTextBoxElementInstID);
+
+	int widestButtonTextBoxWidth = titleTextBoxGlobalRect.width;
+	for (int i = 0; i < messageBoxButtonCount; i++)
+	{
+		UiElementInitInfo messageBoxButtonTextBoxElementInitInfo;
+		messageBoxButtonTextBoxElementInitInfo.name = String::format("CharacterEquipmentDropItemModalButton%dTextBox", i);
+		messageBoxButtonTextBoxElementInitInfo.position = titleTextBoxElementInitInfo.position + Int2(0, titleImageTextureHeight * (i + 1));
+		messageBoxButtonTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+		messageBoxButtonTextBoxElementInitInfo.drawOrder = 1;
+
+		UiTextBoxInitInfo messageBoxButtonTextBoxInitInfo;
+		messageBoxButtonTextBoxInitInfo.text = messageBoxButtonTexts[i];
+		messageBoxButtonTextBoxInitInfo.fontName = titleTextBoxInitInfo.fontName;
+		messageBoxButtonTextBoxInitInfo.defaultColor = titleTextBoxInitInfo.defaultColor;
+		messageBoxButtonTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+		const UiElementInstanceID messageBoxButtonTextBoxElementInstID = uiManager.createTextBox(messageBoxButtonTextBoxElementInitInfo, messageBoxButtonTextBoxInitInfo, state.dropItemModalContextInstID, renderer);
+		const Rect messageBoxButtonTextBoxGlobalRect = uiManager.getTransformGlobalRect(messageBoxButtonTextBoxElementInstID);
+		widestButtonTextBoxWidth = std::max(widestButtonTextBoxWidth, messageBoxButtonTextBoxGlobalRect.width);
+	}
+
+	UiElementInitInfo titleImageElementInitInfo;
+	titleImageElementInitInfo.name = "CharacterEquipmentDropItemModalTitleImage";
+	titleImageElementInitInfo.position = titleTextBoxElementInitInfo.position;
+	titleImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	titleImageElementInitInfo.size = Int2(widestButtonTextBoxWidth + 14, titleImageTextureHeight);
+	titleImageElementInitInfo.pivotType = UiPivotType::Middle;
+
+	const UiTextureID titleImageTextureID = uiManager.getOrAddTexture(UiTexturePatternType::Dark, titleImageElementInitInfo.size.x, titleImageElementInitInfo.size.y, textureManager, renderer);
+	uiManager.createImage(titleImageElementInitInfo, titleImageTextureID, state.dropItemModalContextInstID, renderer);
+
+	for (int i = 0; i < messageBoxButtonCount; i++)
+	{
+		UiElementInitInfo messageBoxButtonImageElementInitInfo;
+		messageBoxButtonImageElementInitInfo.name = "CharacterEquipmentDropItemModalButton" + std::to_string(i) + "Image";
+		messageBoxButtonImageElementInitInfo.position = titleTextBoxElementInitInfo.position + Int2(0, titleImageTextureHeight * (i + 1));
+		messageBoxButtonImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
+		messageBoxButtonImageElementInitInfo.size = titleImageElementInitInfo.size;
+		messageBoxButtonImageElementInitInfo.pivotType = UiPivotType::Middle;
+		uiManager.createImage(messageBoxButtonImageElementInitInfo, titleImageTextureID, state.dropItemModalContextInstID, renderer);
+
+		UiElementInitInfo messageBoxButtonElementInitInfo;
+		messageBoxButtonElementInitInfo.name = "CharacterEquipmentDropItemModalButton" + std::to_string(i);
+		messageBoxButtonElementInitInfo.position = messageBoxButtonImageElementInitInfo.position;
+		messageBoxButtonElementInitInfo.pivotType = UiPivotType::Middle;
+
+		UiButtonInitInfo messageBoxButtonInitInfo;
+		messageBoxButtonInitInfo.callback = messageBoxButtonCallbacks[i];
+		messageBoxButtonInitInfo.contentElementName = messageBoxButtonImageElementInitInfo.name;
+		uiManager.createButton(messageBoxButtonElementInitInfo, messageBoxButtonInitInfo, state.dropItemModalContextInstID);
+	}
+
+	UiElementInitInfo backButtonElementInitInfo;
+	backButtonElementInitInfo.name = "CharacterEquipmentDropItemModalBackButton";
+	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+
+	UiButtonInitInfo backButtonInitInfo;
+	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
+	backButtonInitInfo.callback = messageBoxNoButtonCallback;
+	uiManager.createButton(backButtonElementInitInfo, backButtonInitInfo, state.dropItemModalContextInstID);
+
+	auto backInputActionCallback = [messageBoxNoButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			messageBoxNoButtonCallback(MouseButtonType::Right);
+		}
+	};
+
+	uiManager.addInputActionListener(InputActionName::Back, backInputActionCallback, ContextName_DropItemModal, inputManager);
+
+	uiManager.setContextEnabled(state.dropItemModalContextInstID, true);
+}
+
 void CharacterEquipmentUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
 {
 	if (type == MouseWheelScrollType::Down)
@@ -462,25 +601,153 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 	ItemInstance &highlightedItemInst = playerInventory.getSlot(highlightedSlotIndex);
 	DebugAssert(highlightedItemInst.isValid());
 	const bool isHighlightedItemEquipped = highlightedItemInst.isEquipped;
+	const ItemDefinitionID highlightedItemDefID = highlightedItemInst.defID;
+	const ItemDefinition &highlightedItemDef = ItemLibrary::getInstance().getDefinition(highlightedItemDefID);
+	const ItemType highlightedItemType = highlightedItemDef.type;
 
-	const ItemDefinition &highlightedItemDef = ItemLibrary::getInstance().getDefinition(highlightedItemInst.defID);
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	
-	const bool canItemBeDropped = true;
-	// @todo drop item if there's room
-	// @todo false for certain quest items
-
-	// @todo display certain popup depending on space available to drop into
-
-	if (canItemBeDropped)
+	const bool canItemTypeBeDropped = highlightedItemType != ItemType::Misc;
+	if (!canItemTypeBeDropped)
 	{
-		uiManager.eraseListBoxItem(listBoxElementInstID, listBoxHighlightedItemIndex);
-		highlightedItemInst.clear();
-
-		if (isHighlightedItemEquipped && (highlightedItemDef.type == ItemType::Weapon))
-		{
-			player.setWeaponAnimationFromItem(ArenaItemUtils::FistsWeaponID);
-		}
+		CharacterEquipmentUI::showItemDetail(exeData.equipment.dropItemNotDroppable.c_str(), CharacterEquipmentUiView::ItemDetailErrorTextColor);
+		return;
 	}
+
+	const std::string highlightedItemDisplayName = highlightedItemDef.getDisplayNameWithoutQty();
+	const bool isUnequippingWeapon = isHighlightedItemEquipped && (highlightedItemType == ItemType::Weapon);
+
+	auto removeItemFromInventoryCallback = [&uiManager, &player, listBoxElementInstID, listBoxHighlightedItemIndex, &highlightedItemInst, &highlightedItemDef, isUnequippingWeapon]()
+	{
+		if (highlightedItemInst.stackAmount > 1)
+		{
+			highlightedItemInst.stackAmount--;
+
+			const std::string newHighlightedItemDisplayName = highlightedItemDef.getDisplayNameWithQty(highlightedItemInst.stackAmount);
+			uiManager.setListBoxItemText(listBoxElementInstID, listBoxHighlightedItemIndex, newHighlightedItemDisplayName.c_str());
+		}
+		else
+		{
+			highlightedItemInst.clear();
+			uiManager.eraseListBoxItem(listBoxElementInstID, listBoxHighlightedItemIndex);
+
+			if (isUnequippingWeapon)
+			{
+				player.setWeaponAnimationFromItem(ArenaItemUtils::FistsWeaponID);
+			}
+		}
+	};
+
+	const GameState &gameState = game.gameState;
+	const MapType mapType = gameState.getActiveMapType();
+	const bool isPlacingItemInContainerAllowed = mapType == MapType::Interior;
+	if (!isPlacingItemInContainerAllowed)
+	{
+		std::string text = String::replace(exeData.equipment.dropItemPermanent, '\r', '\n');
+		text.pop_back(); // Clean up newline
+		CharacterEquipmentUI::showDropItemMessageBox(text.c_str(), removeItemFromInventoryCallback);
+		return;
+	}
+
+	const double ceilingScale = gameState.getActiveCeilingScale();
+	const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
+	const WorldInt2 playerWorldVoxelXZ = playerWorldVoxel.getXZ();
+	const CoordInt3 playerVoxelCoord = VoxelUtils::worldVoxelToCoord(playerWorldVoxel);
+	const VoxelInt3 playerVoxel = playerVoxelCoord.voxel;
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+	const VoxelChunk &playerVoxelChunk = voxelChunkManager.getChunkAtPosition(playerVoxelCoord.chunk);
+	
+	bool isPlayerVoxelValidForDroppingItem = true;
+	
+	const bool isPlayerVoxelValid = playerVoxelChunk.isValidVoxel(playerVoxel.x, playerVoxel.y, playerVoxel.z);
+	isPlayerVoxelValidForDroppingItem &= isPlayerVoxelValid && (playerVoxel.y == 1);
+
+	if (isPlayerVoxelValidForDroppingItem)
+	{
+		const VoxelShapeDefID playerVoxelShapeDefID = playerVoxelChunk.shapeDefIDs.get(playerVoxel.x, playerVoxel.y, playerVoxel.z);
+		const VoxelShapeDefinition &playerVoxelShapeDef = playerVoxelChunk.shapeDefs[playerVoxelShapeDefID];
+		isPlayerVoxelValidForDroppingItem &= playerVoxelShapeDef.mesh.isEmpty();
+	}
+	
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	EntityInstanceID occupyingEntityInstID = -1;
+
+	if (isPlayerVoxelValidForDroppingItem)
+	{
+		bool isOccupyingEntityValidContainer = false;
+		for (const EntityInstance &entityInst : entityChunkManager.entities.values)
+		{
+			const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);
+			const WorldInt2 entityWorldVoxelXZ = VoxelUtils::pointToVoxel(entityPosition.getXZ());
+			if (entityWorldVoxelXZ != playerWorldVoxelXZ)
+			{
+				continue;
+			}
+
+			occupyingEntityInstID = entityInst.instanceID;
+
+			bool isValidContainer = entityInst.isTransformStatic() && entityInst.hasInventory();
+			if (entityInst.canBeLocked())
+			{
+				const EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
+				isValidContainer &= !lockState.isLocked;
+			}
+
+			isOccupyingEntityValidContainer = isValidContainer;
+			break;
+		}
+
+		if (occupyingEntityInstID < 0)
+		{
+			// @todo this should instead look for an always-defined one in EntityDefinitionLibrary with a specific texture filename in its idle state
+			// - currently its entity def ID moves around depending on the scene which RenderEntityManager doesn't like?
+			const EntityDefID containerEntityDefID = entityChunkManager.findEntityDefIdIf(
+				[](const EntityDefinition &entityDef)
+			{
+				return (entityDef.type == EntityDefinitionType::Container) && (entityDef.container.type == ContainerEntityDefinitionType::Pile);
+			});
+
+			const EntityDefinition &containerEntityDef = entityChunkManager.getEntityDef(containerEntityDefID);
+			const EntityAnimationDefinition &containerAnimDef = containerEntityDef.animDef;
+			const WorldDouble2 containerPositionXZ = VoxelUtils::getVoxelCenter(playerWorldVoxelXZ);
+
+			EntityInitInfo containerEntityInitInfo;
+			containerEntityInitInfo.defID = containerEntityDefID;
+			containerEntityInitInfo.feetPosition = WorldDouble3(containerPositionXZ.x, ceilingScale, containerPositionXZ.y);
+			containerEntityInitInfo.initialAnimStateIndex = *containerAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+			containerEntityInitInfo.isSensorCollider = true;
+			containerEntityInitInfo.hasInventory = true;
+			occupyingEntityInstID = entityChunkManager.createEntity(containerEntityInitInfo, game.random, game.physicsSystem, game.renderer);
+
+			// Clear randomly generated loot that comes with this entity def.
+			const EntityInstance &containerEntityInst = entityChunkManager.entities.get(occupyingEntityInstID);
+			ItemInventory &containerInventory = entityChunkManager.itemInventories.get(containerEntityInst.itemInventoryInstID);
+			containerInventory.clear();
+
+			isOccupyingEntityValidContainer = true;
+		}
+
+		isPlayerVoxelValidForDroppingItem &= isOccupyingEntityValidContainer;
+	}
+	
+	if (!isPlayerVoxelValidForDroppingItem)
+	{
+		CharacterEquipmentUI::showItemDetail(exeData.equipment.dropItemNoRoom.c_str(), CharacterEquipmentUiView::ItemDetailErrorTextColor);
+		return;
+	}
+
+	auto dropItemIntoContainerCallback = [highlightedItemDefID, &entityChunkManager, occupyingEntityInstID, removeItemFromInventoryCallback]()
+	{
+		const EntityInstance &containerEntityInst = entityChunkManager.entities.get(occupyingEntityInstID);
+		ItemInventory &containerInventory = entityChunkManager.itemInventories.get(containerEntityInst.itemInventoryInstID);
+		containerInventory.insert(highlightedItemDefID);
+		removeItemFromInventoryCallback();
+	};
+
+	std::string text = String::replace(exeData.equipment.dropItem, "%s", highlightedItemDisplayName.c_str());
+	text = String::replace(text, '\r', '\n');
+	text.pop_back(); // Clean up newline
+	CharacterEquipmentUI::showDropItemMessageBox(text.c_str(), dropItemIntoContainerCallback);
 }
 
 void CharacterEquipmentUI::onBackInputAction(const InputActionCallbackValues &values)

@@ -6,7 +6,6 @@
 #include "ArenaCitizenUtils.h"
 #include "ArenaEntityUtils.h"
 #include "EntityChunkManager.h"
-#include "EntityDefinitionLibrary.h"
 #include "EntityObservedResult.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -303,16 +302,26 @@ EntityLockState::EntityLockState()
 
 const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID) const
 {
-	const EntityDefinitionLibrary &defLibrary = EntityDefinitionLibrary::getInstance();
 	const auto iter = this->entityDefs.find(defID);
-	if (iter != this->entityDefs.end())
+	if (iter == this->entityDefs.end())
 	{
-		return iter->second;
+		return EntityDefinitionLibrary::getInstance().getDefinition(defID);
 	}
-	else
+
+	return iter->second;
+}
+
+EntityDefID EntityChunkManager::findEntityDefIdIf(const EntityDefinitionPredicate &predicate) const
+{
+	for (const std::pair<EntityDefID, EntityDefinition> &pair : this->entityDefs)
 	{
-		return defLibrary.getDefinition(defID);
+		if (predicate(pair.second))
+		{
+			return pair.first;
+		}
 	}
+
+	return EntityDefinitionLibrary::getInstance().findDefinitionIdIf(predicate);
 }
 
 EntityDefID EntityChunkManager::addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary)
