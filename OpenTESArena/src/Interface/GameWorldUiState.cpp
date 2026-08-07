@@ -1149,15 +1149,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 			}
 
 			// The list box item index is the # of remaining filled slots in the loot inventory up to this slot index.
-			int listBoxItemIndex = 0;
-			for (int currentItemIndex = 0; currentItemIndex < lootInventorySlotIndex; currentItemIndex++)
-			{
-				if (itemInventory.getSlot(currentItemIndex).isValid())
-				{
-					listBoxItemIndex++;
-				}
-			}
-
+			const int listBoxItemIndex = itemInventory.getValidSlotCountBeforeIndex(lootInventorySlotIndex);
 			uiManager.eraseListBoxItem(listBoxElementInstID, listBoxItemIndex);
 		};
 

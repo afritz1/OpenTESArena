@@ -75,6 +75,20 @@ int ItemInventory::getCountOf(ItemDefinitionID defID) const
 	return count;
 }
 
+int ItemInventory::getValidSlotCountBeforeIndex(int index) const
+{
+	int count = 0;
+	for (int i = 0; i < index; i++)
+	{
+		if (this->getSlot(i).isValid())
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
 bool ItemInventory::findFirstEmptySlot(int *outIndex) const
 {
 	for (int i = 0; i < this->getTotalSlotCount(); i++)

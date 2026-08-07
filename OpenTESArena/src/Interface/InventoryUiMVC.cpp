@@ -12,37 +12,13 @@
 
 #include "components/utilities/String.h"
 
-void InventoryItemUiDefinition::init(const std::string &text, const Color &color)
+std::string InventoryUiModel::getItemText(int inventorySlotIndex, const ItemInventory &inventory)
 {
-	this->text = text;
-	this->color = color;
-}
+	const ItemInstance &itemInst = inventory.getSlot(inventorySlotIndex);
+	DebugAssert(itemInst.isValid());
 
-std::vector<InventoryItemUiDefinition> InventoryUiModel::getPlayerInventoryItems(Game &game)
-{
-	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-	const Player &player = game.player;
-	const ItemInventory &playerInventory = player.inventory;
-	
-	std::vector<InventoryItemUiDefinition> itemUiDefs;
-	for (int i = 0; i < playerInventory.getTotalSlotCount(); i++)
-	{
-		const ItemInstance &itemInst = playerInventory.getSlot(i);
-		if (!itemInst.isValid())
-		{
-			continue;
-		}
-
-		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-		std::string itemDisplayName = String::format("%s (%.1fkg)", itemDef.getDisplayNameWithQty(itemInst.stackAmount).c_str(), itemDef.getWeight());
-		const Color itemTextColor = InventoryUiView::getItemDisplayColor(itemInst, player);
-
-		InventoryItemUiDefinition itemUiDef;
-		itemUiDef.init(itemDisplayName, itemTextColor);
-		itemUiDefs.emplace_back(std::move(itemUiDef));
-	}
-
-	return itemUiDefs;
+	const ItemDefinition &itemDef = ItemLibrary::getInstance().getDefinition(itemInst.defID);
+	return String::format("%s (%.1fkg)", itemDef.getDisplayNameWithQty(itemInst.stackAmount).c_str(), itemDef.getWeight());
 }
 
 bool InventoryUiModel::isItemEquippableByClass(const ItemDefinition &itemDef, const CharacterClassDefinition &charClassDef)
@@ -75,8 +51,11 @@ bool InventoryUiModel::isItemEquippableByClass(const ItemDefinition &itemDef, co
 	}
 }
 
-Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const Player &player)
+Color InventoryUiView::getItemDisplayColor(int inventorySlotIndex, const Player &player)
 {
+	const ItemInstance &itemInst = player.inventory.getSlot(inventorySlotIndex);
+	DebugAssert(itemInst.isValid());
+
 	constexpr Color unequippedColor = InventoryUiView::ItemDefaultColor;
 	constexpr Color equippedColor = InventoryUiView::ItemEquippedColor;
 	constexpr Color unequippedMagicColor = InventoryUiView::ItemMagicColor;

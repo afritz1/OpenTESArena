@@ -23,6 +23,7 @@ public:
 	double getWeight() const;
 
 	int getCountOf(ItemDefinitionID defID) const;
+	int getValidSlotCountBeforeIndex(int index) const;
 
 	bool findFirstEmptySlot(int *outIndex) const;
 	bool findFirstSlot(ItemDefinitionID defID, int *outIndex) const;

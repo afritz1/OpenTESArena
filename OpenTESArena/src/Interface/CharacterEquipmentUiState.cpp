@@ -21,9 +21,9 @@ namespace
 	constexpr char ElementName_InventoryListBox[] = "CharacterEquipmentInventoryListBox";	
 	constexpr char ElementName_InventoryListBoxHighlight[] = "CharacterEquipmentInventoryListBoxHighlight";
 
-	UiListBoxItemCallback MakeInventoryListBoxItemCallback(Game &game, UiElementInstanceID listBoxElementInstID, int listBoxItemIndex)
+	UiListBoxItemCallback MakeInventoryListBoxItemCallback(Game &game, UiElementInstanceID listBoxElementInstID, int inventorySlotIndex)
 	{
-		return [&game, listBoxElementInstID, listBoxItemIndex](MouseButtonType mouseButtonType)
+		return [&game, listBoxElementInstID, inventorySlotIndex](MouseButtonType mouseButtonType)
 		{
 			UiManager &uiManager = game.uiManager;
 			const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
@@ -33,7 +33,7 @@ namespace
 			const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
 
 			const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-			ItemInstance &itemInst = playerInventory.getSlot(listBoxItemIndex);
+			ItemInstance &itemInst = playerInventory.getSlot(inventorySlotIndex);
 			const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
 			const ItemType itemType = itemDef.type;
 
@@ -60,7 +60,7 @@ namespace
 				std::string similarItemBaseName;
 				for (int i = 0; i < playerInventory.getTotalSlotCount(); i++)
 				{
-					if (i == listBoxItemIndex)
+					if (i == inventorySlotIndex)
 					{
 						continue;
 					}
@@ -110,9 +110,9 @@ namespace
 
 				auto unequipItemsIf = [listBoxElementInstID, &uiManager, &player, &playerInventory, &itemLibrary](const std::function<bool(const ItemDefinition&)> &predicate)
 				{
-					for (int i = 0; i < playerInventory.getTotalSlotCount(); i++)
+					for (int currentSlotIndex = 0; currentSlotIndex < playerInventory.getTotalSlotCount(); currentSlotIndex++)
 					{
-						ItemInstance &currentItemInst = playerInventory.getSlot(i);
+						ItemInstance &currentItemInst = playerInventory.getSlot(currentSlotIndex);
 						if (currentItemInst.isValid())
 						{
 							const ItemDefinition &currentItemDef = itemLibrary.getDefinition(currentItemInst.defID);
@@ -120,8 +120,8 @@ namespace
 							{
 								currentItemInst.isEquipped = false;
 
-								const int currentListBoxItemIndex = i; // @todo verify index mapping is correct once item dropping works
-								const Color currentDisplayColor = InventoryUiView::getItemDisplayColor(currentItemInst, player);
+								const int currentListBoxItemIndex = playerInventory.getValidSlotCountBeforeIndex(currentSlotIndex);
+								const Color currentDisplayColor = InventoryUiView::getItemDisplayColor(currentSlotIndex, player);
 								uiManager.setListBoxItemColorOverride(listBoxElementInstID, currentListBoxItemIndex, currentDisplayColor);
 							}
 						}
@@ -185,12 +185,13 @@ namespace
 
 				itemInst.isEquipped = !prevIsItemEquipped;
 
-				const Color displayColor = InventoryUiView::getItemDisplayColor(itemInst, player);
+				const int listBoxItemIndex = playerInventory.getValidSlotCountBeforeIndex(inventorySlotIndex);
+				const Color displayColor = InventoryUiView::getItemDisplayColor(inventorySlotIndex, player);
 				uiManager.setListBoxItemColorOverride(listBoxElementInstID, listBoxItemIndex, displayColor);
 			}
 			else if (mouseButtonType == MouseButtonType::Right)
 			{
-				DebugLogFormat("Not implemented: inspect item %d.", listBoxItemIndex);
+				DebugLogFormat("Not implemented: inspect item %d.", inventorySlotIndex);
 			}
 		};
 	}
@@ -248,14 +249,23 @@ void CharacterEquipmentUI::create(Game &game)
 	const UiElementInstanceID levelTextBoxElementInstID = uiManager.getElementByName("CharacterEquipmentLevelTextBox");
 	uiManager.setTextBoxText(levelTextBoxElementInstID, playerLevelText.c_str());
 
-	const UiElementInstanceID inventoryListBoxElementInstID = uiManager.getElementByName("CharacterEquipmentInventoryListBox");
-	const std::vector<InventoryItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
-	for (int i = 0; i < static_cast<int>(itemUiDefs.size()); i++)
+	const UiElementInstanceID inventoryListBoxElementInstID = uiManager.getElementByName(ElementName_InventoryListBox);
+
+	const Player &player = game.player;
+	const ItemInventory &playerInventory = player.inventory;
+	for (int i = 0; i < playerInventory.getTotalSlotCount(); i++)
 	{
-		const InventoryItemUiDefinition &itemUiDef = itemUiDefs[i];
+		const ItemInstance &itemInst = playerInventory.getSlot(i);
+		if (!itemInst.isValid())
+		{
+			continue;
+		}
+
+		const std::string itemText = InventoryUiModel::getItemText(i, playerInventory);
+		const Color itemColor = InventoryUiView::getItemDisplayColor(i, player);
 
 		UiListBoxItem listBoxItem;
-		listBoxItem.init(itemUiDef.text, itemUiDef.color, MakeInventoryListBoxItemCallback(game, inventoryListBoxElementInstID, i));
+		listBoxItem.init(itemText, itemColor, MakeInventoryListBoxItemCallback(game, inventoryListBoxElementInstID, i));
 
 		uiManager.insertBackListBoxItem(inventoryListBoxElementInstID, std::move(listBoxItem));
 	}
@@ -284,6 +294,9 @@ void CharacterEquipmentUI::destroy()
 		uiManager.freeContext(state.itemDetailContextInstID, inputManager, renderer);
 		state.itemDetailContextInstID = -1;
 	}
+
+	Player &player = game.player;
+	player.inventory.compact(); // Avoid keeping invalid slots around so newly-inserted items go at the back.
 
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterEquipment, false);
 }
@@ -418,8 +431,56 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 {
 	CharacterEquipmentUiState &state = CharacterEquipmentUI::state;
 	Game &game = *state.game;
-	DebugLogError("Not implemented: drop item");
+	UiManager &uiManager = game.uiManager;
+
+	Player &player = game.player;
+	ItemInventory &playerInventory = player.inventory;
+	if (playerInventory.getOccupiedSlotCount() == 0)
+	{
+		return;
+	}
+
+	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_InventoryListBox);
+	const int listBoxHighlightedItemIndex = uiManager.getListBoxHighlightedItemIndex(listBoxElementInstID);
+
+	int highlightedSlotIndex = 0;
+	int validSlotCount = 0;
+	for (int i = 0; i < playerInventory.getTotalSlotCount(); i++)
+	{
+		if (playerInventory.getSlot(i).isValid())
+		{
+			if (validSlotCount == listBoxHighlightedItemIndex)
+			{
+				highlightedSlotIndex = i;
+				break;
+			}
+
+			validSlotCount++;
+		}
+	}
+
+	ItemInstance &highlightedItemInst = playerInventory.getSlot(highlightedSlotIndex);
+	DebugAssert(highlightedItemInst.isValid());
+	const bool isHighlightedItemEquipped = highlightedItemInst.isEquipped;
+
+	const ItemDefinition &highlightedItemDef = ItemLibrary::getInstance().getDefinition(highlightedItemInst.defID);
+	
+	const bool canItemBeDropped = true;
 	// @todo drop item if there's room
+	// @todo false for certain quest items
+
+	// @todo display certain popup depending on space available to drop into
+
+	if (canItemBeDropped)
+	{
+		uiManager.eraseListBoxItem(listBoxElementInstID, listBoxHighlightedItemIndex);
+		highlightedItemInst.clear();
+
+		if (isHighlightedItemEquipped && (highlightedItemDef.type == ItemType::Weapon))
+		{
+			player.setWeaponAnimationFromItem(ArenaItemUtils::FistsWeaponID);
+		}
+	}
 }
 
 void CharacterEquipmentUI::onBackInputAction(const InputActionCallbackValues &values)

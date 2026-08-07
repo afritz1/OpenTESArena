@@ -836,6 +836,12 @@ void UiManager::eraseListBoxItem(UiElementInstanceID elementInstID, int index)
 	DebugAssert(index < listBox.items.size());
 	listBox.items.erase(listBox.items.begin() + index);
 	listBox.dirty = true;
+
+	const int newItemsCount = static_cast<int>(listBox.items.size());
+	if (listBox.highlightedItemIndex == newItemsCount)
+	{
+		listBox.highlightedItemIndex = std::max(listBox.highlightedItemIndex - 1, 0);
+	}
 }
 
 void UiManager::clearListBox(UiElementInstanceID elementInstID)
