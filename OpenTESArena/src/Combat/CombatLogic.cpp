@@ -166,7 +166,7 @@ EntityInitInfo CombatLogic::getPhysicalHitVfxEntityInitInfo(const EntityDefiniti
 	}
 
 	bloodIndex -= FirstBloodIndex;
-	key.initVfx(VfxEntityAnimationType::MeleeStrike, bloodIndex);
+	key.initVfx(VfxEntityAnimationType::PhysicalHit, bloodIndex);
 
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 	EntityDefID hitEntityVfxEntityDefID;

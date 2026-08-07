@@ -200,8 +200,8 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		case VfxEntityAnimationType::SpellExplosion:
 			animKey.initSpellExplosion(index);
 			break;
-		case VfxEntityAnimationType::MeleeStrike:
-			animKey.initMeleeStrike(index);
+		case VfxEntityAnimationType::PhysicalHit:
+			animKey.initPhysicalHit(index);
 			break;
 		case VfxEntityAnimationType::BowProjectile:
 			animKey.initBowProjectile();
@@ -246,9 +246,9 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		addCitizenDef(climateType, false);
 	}
 
-	// Iterate all projectiles and melee effects.
+	// Iterate all projectiles and hit effects.
 	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;
-	const int meleeVfxCount = EntityAnimationUtils::MELEE_VFX_COUNT;
+	const int physicalHitVfxCount = EntityAnimationUtils::PHYSICAL_HIT_VFX_COUNT;
 	for (int i = 0; i < spellTypeCount; i++)
 	{
 		addVfxDef(VfxEntityAnimationType::SpellProjectile, i);
@@ -259,9 +259,9 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		addVfxDef(VfxEntityAnimationType::SpellExplosion, i);
 	}
 
-	for (int i = 0; i < meleeVfxCount; i++)
+	for (int i = 0; i < physicalHitVfxCount; i++)
 	{
-		addVfxDef(VfxEntityAnimationType::MeleeStrike, i);
+		addVfxDef(VfxEntityAnimationType::PhysicalHit, i);
 	}
 
 	addVfxDef(VfxEntityAnimationType::BowProjectile, 0);

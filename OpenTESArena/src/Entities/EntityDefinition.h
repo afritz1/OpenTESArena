@@ -198,7 +198,7 @@ enum class VfxEntityAnimationType
 {
 	SpellProjectile,
 	SpellExplosion,
-	MeleeStrike,
+	PhysicalHit,
 	BowProjectile
 };
 

@@ -53,7 +53,7 @@ struct VfxEntityAnimationKey
 
 	void initSpellProjectile(int spellIndex);
 	void initSpellExplosion(int spellIndex);
-	void initMeleeStrike(int bloodIndex);
+	void initPhysicalHit(int bloodIndex);
 	void initBowProjectile();
 };
 

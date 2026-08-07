@@ -62,9 +62,9 @@ void VfxEntityAnimationKey::initSpellExplosion(int spellIndex)
 	this->index = spellIndex;
 }
 
-void VfxEntityAnimationKey::initMeleeStrike(int bloodIndex)
+void VfxEntityAnimationKey::initPhysicalHit(int bloodIndex)
 {
-	this->type = VfxEntityAnimationType::MeleeStrike;
+	this->type = VfxEntityAnimationType::PhysicalHit;
 	this->index = bloodIndex;
 }
 
@@ -162,13 +162,13 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 
 	// VFX
 	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;
-	const int meleeVfxCount = EntityAnimationUtils::MELEE_VFX_COUNT;
+	const int physicalHitVfxCount = EntityAnimationUtils::PHYSICAL_HIT_VFX_COUNT;
 	const int spellProjectileStartIndex = spellTypeCount;
 	const int spellExplosionStartIndex = 0;
-	const int meleeVfxStartIndex = spellProjectileStartIndex + spellTypeCount;
+	const int physicalHitVfxStartIndex = spellProjectileStartIndex + spellTypeCount;
 	const Span<const std::string> spellProjectileAnimFilenames(exeData.entities.effectAnimations + spellProjectileStartIndex, spellTypeCount);
 	const Span<const std::string> spellExplosionAnimFilenames(exeData.entities.effectAnimations + spellExplosionStartIndex, spellTypeCount);
-	const Span<const std::string> meleeVfxAnimFilenames(exeData.entities.effectAnimations + meleeVfxStartIndex, meleeVfxCount); // Blood, demon, undead
+	const Span<const std::string> physicalHitVfxAnimFilenames(exeData.entities.effectAnimations + physicalHitVfxStartIndex, physicalHitVfxCount); // Blood, demon, undead
 	const std::string bowProjectileAnimFilenames[] = { "ARROW02.CFA" };
 	for (int i = 0; i < spellProjectileAnimFilenames.getCount(); i++)
 	{
@@ -206,9 +206,9 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
 	}
 	
-	for (int i = 0; i < meleeVfxAnimFilenames.getCount(); i++)
+	for (int i = 0; i < physicalHitVfxAnimFilenames.getCount(); i++)
 	{
-		const std::string animFilename = String::toUppercase(meleeVfxAnimFilenames[i]);
+		const std::string animFilename = String::toUppercase(physicalHitVfxAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
 		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, false, textureManager, &animDef))
 		{
@@ -220,7 +220,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 		this->defs.emplace_back(std::move(animDef));
 
 		VfxEntityAnimationKey animKey;
-		animKey.initMeleeStrike(i);
+		animKey.initPhysicalHit(i);
 		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
 	}
 
