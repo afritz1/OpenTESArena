@@ -74,10 +74,11 @@ namespace
 	const std::string Keyword_ListBoxItemPixelSpacing = "ItemSpacing";
 	const std::string Keyword_ListBoxFontName = "FontName";
 	const std::string Keyword_ListBoxDefaultTextColor = "TextColor";
+	const std::string Keyword_ListBoxIsHighlightEnabled = "IsHighlightEnabled";
 	const std::string Keyword_ListBoxHighlightedTextColor = "HighlightedTextColor";
 	const std::string Keyword_ListBoxMouseButtons = "MouseButtons";
 	const std::string Keyword_ListBoxScrollDeltaScale = "ScrollDeltaScale";
-	const std::string ValidListBoxKeys[] = { Keyword_ListBoxTextureSize, Keyword_ListBoxItemPixelSpacing, Keyword_ListBoxFontName, Keyword_ListBoxDefaultTextColor, Keyword_ListBoxHighlightedTextColor, Keyword_ListBoxMouseButtons, Keyword_ListBoxScrollDeltaScale };
+	const std::string ValidListBoxKeys[] = { Keyword_ListBoxTextureSize, Keyword_ListBoxItemPixelSpacing, Keyword_ListBoxFontName, Keyword_ListBoxDefaultTextColor, Keyword_ListBoxIsHighlightEnabled, Keyword_ListBoxHighlightedTextColor, Keyword_ListBoxMouseButtons, Keyword_ListBoxScrollDeltaScale };
 
 	const std::string Keyword_ButtonMouseButtons = "MouseButtons";
 	const std::string Keyword_ButtonCallback = "Callback";
@@ -387,6 +388,25 @@ namespace
 	bool IsKeyValidForInputListenerEntry(const std::string &key)
 	{
 		return std::find(std::begin(ValidInputListenerKeys), std::end(ValidInputListenerKeys), key) != std::end(ValidInputListenerKeys);
+	}
+
+	bool TryParseBoolean(const std::string &str, bool *outValue)
+	{
+		if (StringView::caseInsensitiveEquals(str, "true"))
+		{
+			*outValue = true;
+			return true;
+		}
+		else if (StringView::caseInsensitiveEquals(str, "false"))
+		{
+			*outValue = false;
+			return true;
+		}
+		else
+		{
+			DebugLogErrorFormat("Couldn't parse \"%s\" as a boolean.", str.c_str());
+			return false;
+		}
 	}
 
 	bool TryParseInteger(const std::string &str, int *outValue)
@@ -838,6 +858,17 @@ namespace
 
 			outListBoxDef->defaultTextColor = Color(r, g, b, a);
 		}
+		else if (key == Keyword_ListBoxIsHighlightEnabled)
+		{
+			bool isHighlightEnabled;
+			if (!TryParseBoolean(value, &isHighlightEnabled))
+			{
+				DebugLogErrorFormat("Couldn't parse list box is highlight enabled value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outListBoxDef->isHighlightEnabled = isHighlightEnabled;
+		}
 		else if (key == Keyword_ListBoxHighlightedTextColor)
 		{
 			std::string colorTokens[4];
@@ -1035,6 +1066,7 @@ UiListBoxDefinition::UiListBoxDefinition()
 	this->textureWidth = 0;
 	this->textureHeight = 0;
 	this->itemPixelSpacing = 0;
+	this->isHighlightEnabled = true;
 	this->buttonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->scrollDeltaScale = 1.0;
 }
@@ -1047,6 +1079,7 @@ void UiListBoxDefinition::clear()
 	this->itemPixelSpacing = 0;
 	this->fontName.clear();
 	this->defaultTextColor = Colors::Black;
+	this->isHighlightEnabled = true;
 	this->highlightedTextColor = std::nullopt;
 	this->buttonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->scrollDeltaScale = 1.0;

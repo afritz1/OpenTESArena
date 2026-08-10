@@ -126,6 +126,7 @@ DrawOrder=2
 TextureSize=254,96
 FontName=ARENAFNT.DAT
 TextColor=255,255,255,255
+IsHighlightEnabled=false
 MouseButtons=Both
 
 ##################################

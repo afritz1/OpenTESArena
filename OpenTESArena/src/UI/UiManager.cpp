@@ -634,8 +634,8 @@ UiElementInstanceID UiManager::createListBox(const UiElementInitInfo &initInfo, 
 
 	UiListBox &listBox = this->listBoxes.get(listBoxInstID);
 	listBox.init(listBoxTextureID, listBoxInitInfo.textureWidth, listBoxInitInfo.textureHeight, listBoxInitInfo.columnPixelXOffsets,
-		listBoxInitInfo.itemPixelSpacing, fontDefIndex, listBoxInitInfo.defaultTextColor, listBoxInitInfo.highlightedTextColor,
-		listBoxInitInfo.mouseButtonFlags, listBoxInitInfo.scrollDeltaScale);
+		listBoxInitInfo.itemPixelSpacing, fontDefIndex, listBoxInitInfo.defaultTextColor, listBoxInitInfo.isHighlightEnabled,
+		listBoxInitInfo.highlightedTextColor, listBoxInitInfo.mouseButtonFlags, listBoxInitInfo.scrollDeltaScale);
 
 	Int2 contentSize = initInfo.size;
 	if (initInfo.sizeType == UiTransformSizeType::Content)
@@ -862,20 +862,26 @@ void UiManager::selectListBoxItem(UiElementInstanceID elementInstID, int index, 
 	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
 	listBox.dirty = true; // Always set dirty in case callback modifies this list box.
 
-	if (index != listBox.highlightedItemIndex)
+	if (listBox.isHighlightEnabled)
 	{
-		listBox.highlightedItemIndex = index;
-		return;
+		if (index != listBox.highlightedItemIndex)
+		{
+			listBox.highlightedItemIndex = index;
+			return;
+		}
 	}
 
 	DebugAssertIndex(listBox.items, index);
 	const UiListBoxItemCallback &callback = listBox.items[index].callback;
 	callback(mouseButtonType);
 
-	const int newItemsCount = static_cast<int>(listBox.items.size());
-	if (listBox.highlightedItemIndex == newItemsCount)
+	if (listBox.isHighlightEnabled)
 	{
-		listBox.highlightedItemIndex = std::max(listBox.highlightedItemIndex - 1, 0);
+		const int newItemsCount = static_cast<int>(listBox.items.size());
+		if (listBox.highlightedItemIndex == newItemsCount)
+		{
+			listBox.highlightedItemIndex = std::max(listBox.highlightedItemIndex - 1, 0);
+		}
 	}
 }
 
@@ -1156,6 +1162,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		initInfo.itemPixelSpacing = def.itemPixelSpacing;
 		initInfo.fontName = def.fontName;
 		initInfo.defaultTextColor = def.defaultTextColor;
+		initInfo.isHighlightEnabled = def.isHighlightEnabled;
 		initInfo.highlightedTextColor = def.highlightedTextColor;
 		initInfo.mouseButtonFlags = def.buttonFlags;
 		initInfo.scrollDeltaScale = def.scrollDeltaScale;

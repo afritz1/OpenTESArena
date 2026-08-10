@@ -12,6 +12,7 @@ UiListBoxInitInfo::UiListBoxInitInfo()
 	this->textureHeight = 0;
 	this->columnPixelXOffsets = { 0 };
 	this->itemPixelSpacing = 0;
+	this->isHighlightEnabled = true;
 	this->mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->scrollDeltaScale = 1.0;
 }
@@ -44,6 +45,7 @@ UiListBox::UiListBox()
 	this->columnPixelXOffsets = { 0 };
 	this->itemPixelSpacing = 0;
 	this->fontDefIndex = -1;
+	this->isHighlightEnabled = true;
 	this->mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->scrollDeltaScale = 1.0;
 	this->scrollPixelOffset = 0.0;
@@ -52,7 +54,8 @@ UiListBox::UiListBox()
 }
 
 void UiListBox::init(UiTextureID textureID, int textureWidth, int textureHeight, Span<const int> columnPixelXOffsets, int itemPixelSpacing,
-	int fontDefIndex, Color defaultTextColor, std::optional<Color> highlightedTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale)
+	int fontDefIndex, Color defaultTextColor, bool isHighlightEnabled, std::optional<Color> highlightedTextColor, MouseButtonTypeFlags mouseButtonTypeFlags,
+	double scrollDeltaScale)
 {
 	DebugAssert(textureID >= 0);
 	DebugAssert(textureWidth > 0);
@@ -69,6 +72,7 @@ void UiListBox::init(UiTextureID textureID, int textureWidth, int textureHeight,
 	this->itemPixelSpacing = itemPixelSpacing;
 	this->fontDefIndex = fontDefIndex;
 	this->defaultTextColor = defaultTextColor;
+	this->isHighlightEnabled = isHighlightEnabled;
 	this->highlightedTextColor = highlightedTextColor;
 	this->mouseButtonFlags = mouseButtonTypeFlags;
 	this->scrollDeltaScale = scrollDeltaScale;
