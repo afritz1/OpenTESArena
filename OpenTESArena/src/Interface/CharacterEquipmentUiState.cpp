@@ -679,26 +679,22 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 	if (isPlayerVoxelValidForDroppingItem)
 	{
 		bool isOccupyingEntityValidContainer = false;
-		for (const EntityInstance &entityInst : entityChunkManager.entities.values)
+
+		const std::unordered_map<WorldInt2, EntityInstanceID> &occupiedVoxels = entityChunkManager.occupiedVoxels;
+		const auto occupiedVoxelIter = occupiedVoxels.find(playerWorldVoxelXZ);
+		if (occupiedVoxelIter != occupiedVoxels.end())
 		{
-			const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);
-			const WorldInt2 entityWorldVoxelXZ = VoxelUtils::pointToVoxel(entityPosition.getXZ());
-			if (entityWorldVoxelXZ != playerWorldVoxelXZ)
-			{
-				continue;
-			}
+			occupyingEntityInstID = occupiedVoxelIter->second;
 
-			occupyingEntityInstID = entityInst.instanceID;
-
-			bool isValidContainer = entityInst.isTransformStatic() && entityInst.hasInventory();
-			if (entityInst.canBeLocked())
+			const EntityInstance &occupyingEntityInst = entityChunkManager.entities.get(occupyingEntityInstID);
+			bool isValidContainer = occupyingEntityInst.isTransformStatic() && occupyingEntityInst.hasInventory();
+			if (occupyingEntityInst.canBeLocked())
 			{
-				const EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
+				const EntityLockState &lockState = entityChunkManager.lockStates.get(occupyingEntityInst.lockStateID);
 				isValidContainer &= !lockState.isLocked;
 			}
 
 			isOccupyingEntityValidContainer = isValidContainer;
-			break;
 		}
 
 		if (occupyingEntityInstID < 0)

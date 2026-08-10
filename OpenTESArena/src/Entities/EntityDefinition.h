@@ -18,7 +18,7 @@ enum class EntityDefinitionType
 	StaticNPC, // Bartenders, priests, etc..
 	Item, // Keys, tablets, staff pieces, etc..
 	Container, // Chests, loot piles, etc..
-	Vfx, // Spell projectile, explosion, or melee strike
+	Vfx, // Spell projectile, explosion, or physical hit.
 	Transition, // Wilderness den.
 	Decoration // Trees, chairs, streetlights, etc..
 };

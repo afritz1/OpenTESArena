@@ -2203,9 +2203,8 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	}
 
 	this->occupiedVoxels.clear();
-	for (const EntityInstanceID entityInstID : this->entities.keys)
+	for (const EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const bool canOccupyVoxel = entityDef.type != EntityDefinitionType::Vfx;
 		if (!canOccupyVoxel)
@@ -2215,8 +2214,8 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 
 		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		const WorldInt2 entityWorldVoxel = VoxelUtils::pointToVoxel(entityPositionXZ);
-		this->occupiedVoxels.emplace(entityWorldVoxel, entityInstID);
+		const WorldInt2 entityWorldVoxelXZ = VoxelUtils::pointToVoxel(entityPositionXZ);
+		this->occupiedVoxels.emplace(entityWorldVoxelXZ, entityInst.instanceID);
 	}
 
 	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
