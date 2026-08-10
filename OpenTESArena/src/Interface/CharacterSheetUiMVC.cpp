@@ -157,44 +157,37 @@ ItemDefinitionID CharacterSheetUiModel::getEquippedArmorItemDefID(ArenaArmorType
 
 ItemDefinitionID CharacterSheetUiModel::getEquippedHeadArmorItemDefID(Game &game)
 {
-	constexpr ArenaArmorTypeID headArmorTypeID = 5;
-	return CharacterSheetUiModel::getEquippedArmorItemDefID(headArmorTypeID, game);
+	return CharacterSheetUiModel::getEquippedArmorItemDefID(ArenaItemUtils::HeadArmorTypeID, game);
 }
 
 ItemDefinitionID CharacterSheetUiModel::getEquippedChestArmorItemDefID(Game &game)
 {
-	constexpr ArenaArmorTypeID chestArmorTypeID = 0;
-	return CharacterSheetUiModel::getEquippedArmorItemDefID(chestArmorTypeID, game);
+	return CharacterSheetUiModel::getEquippedArmorItemDefID(ArenaItemUtils::ChestArmorTypeID, game);
 }
 
 ItemDefinitionID CharacterSheetUiModel::getEquippedHandsArmorItemDefID(Game &game)
 {
-	constexpr ArenaArmorTypeID handsArmorTypeID = 1;
-	return CharacterSheetUiModel::getEquippedArmorItemDefID(handsArmorTypeID, game);
+	return CharacterSheetUiModel::getEquippedArmorItemDefID(ArenaItemUtils::HandsArmorTypeID, game);
 }
 
 ItemDefinitionID CharacterSheetUiModel::getEquippedLeftShoulderArmorItemDefID(Game &game)
 {
-	constexpr ArenaArmorTypeID leftShoulderArmorTypeID = 3;
-	return CharacterSheetUiModel::getEquippedArmorItemDefID(leftShoulderArmorTypeID, game);
+	return CharacterSheetUiModel::getEquippedArmorItemDefID(ArenaItemUtils::LeftShoulderArmorTypeID, game);
 }
 
 ItemDefinitionID CharacterSheetUiModel::getEquippedRightShoulderArmorItemDefID(Game &game)
 {
-	constexpr ArenaArmorTypeID rightShoulderArmorTypeID = 4;
-	return CharacterSheetUiModel::getEquippedArmorItemDefID(rightShoulderArmorTypeID, game);
+	return CharacterSheetUiModel::getEquippedArmorItemDefID(ArenaItemUtils::RightShoulderArmorTypeID, game);
 }
 
 ItemDefinitionID CharacterSheetUiModel::getEquippedLegsArmorItemDefID(Game &game)
 {
-	constexpr ArenaArmorTypeID legsArmorTypeID = 2;
-	return CharacterSheetUiModel::getEquippedArmorItemDefID(legsArmorTypeID, game);
+	return CharacterSheetUiModel::getEquippedArmorItemDefID(ArenaItemUtils::LegsArmorTypeID, game);
 }
 
 ItemDefinitionID CharacterSheetUiModel::getEquippedFeetArmorItemDefID(Game &game)
 {
-	constexpr ArenaArmorTypeID feetArmorTypeID = 6;
-	return CharacterSheetUiModel::getEquippedArmorItemDefID(feetArmorTypeID, game);
+	return CharacterSheetUiModel::getEquippedArmorItemDefID(ArenaItemUtils::FeetArmorTypeID, game);
 }
 
 ItemDefinitionID CharacterSheetUiModel::getEquippedShieldItemDefID(Game &game)
@@ -218,7 +211,8 @@ ItemDefinitionID CharacterSheetUiModel::getEquippedShieldItemDefID(Game &game)
 		}
 
 		const ArenaArmorTypeID armorTypeID = itemDef.shield.armorTypeID;
-		return (armorTypeID >= 7) && (armorTypeID <= 11);
+		const Span<const ArenaArmorTypeID> shieldArmorTypeIDs = ArenaItemUtils::ShieldArmorTypeIDs;
+		return std::find(shieldArmorTypeIDs.begin(), shieldArmorTypeIDs.end(), armorTypeID) != shieldArmorTypeIDs.end();
 	}, &inventorySlotIndex);
 
 	if (!success)

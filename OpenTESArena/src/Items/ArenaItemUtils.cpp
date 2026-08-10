@@ -6,19 +6,19 @@
 #include "../Assets/ExeData.h"
 #include "../Math/Random.h"
 
-bool ArenaItemUtils::isFistsWeapon(int weaponID)
+bool ArenaItemUtils::isFistsWeapon(ArenaWeaponTypeID weaponID)
 {
 	return weaponID == ArenaItemUtils::FistsWeaponID;
 }
 
-bool ArenaItemUtils::isMeleeWeapon(int weaponID)
+bool ArenaItemUtils::isMeleeWeapon(ArenaWeaponTypeID weaponID)
 {
 	const auto meleeWeaponsBegin = std::begin(ArenaItemUtils::MeleeWeaponIDs);
 	const auto meleeWeaponsEnd = std::end(ArenaItemUtils::MeleeWeaponIDs);
 	return std::find(meleeWeaponsBegin, meleeWeaponsEnd, weaponID) != meleeWeaponsEnd;
 }
 
-bool ArenaItemUtils::isRangedWeapon(int weaponID)
+bool ArenaItemUtils::isRangedWeapon(ArenaWeaponTypeID weaponID)
 {
 	const auto rangedWeaponsBegin = std::begin(ArenaItemUtils::RangedWeaponIDs);
 	const auto rangedWeaponsEnd = std::end(ArenaItemUtils::RangedWeaponIDs);
