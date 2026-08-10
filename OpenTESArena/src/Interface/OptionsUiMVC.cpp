@@ -693,8 +693,10 @@ UiTextureID OptionsUiView::allocBackgroundTexture(Renderer &renderer)
 
 UiTextureID OptionsUiView::allocHighlightTexture(Renderer &renderer)
 {
-	const int width = 254;
-	const int height = 9;
+	// @todo can't provide this the list box item dimensions during UI create() because the transform size hasn't updated yet :/
+	constexpr int width = 240;
+	constexpr int height = 9;
+
 	const UiTextureID textureID = renderer.createUiTexture(width, height);
 	if (textureID < 0)
 	{

@@ -102,13 +102,11 @@ void OptionsUI::create(Game &game)
 	UiElementInitInfo highlightImageElementInitInfo;
 	highlightImageElementInitInfo.name = ElementName_HighlightImage;
 	highlightImageElementInitInfo.drawOrder = 1;
-	uiManager.createImage(highlightImageElementInitInfo, state.highlightTextureID, state.contextInstID, renderer);
+	const UiElementInstanceID highlightImageElementInstID = uiManager.createImage(highlightImageElementInitInfo, state.highlightTextureID, state.contextInstID, renderer);
+	uiManager.setElementActive(highlightImageElementInstID, false);
 
 	uiManager.addMouseMotionListener(OptionsUI::onMouseMotion, OptionsUI::ContextName, inputManager);
 	uiManager.addMouseScrollChangedListener(OptionsUI::onMouseScrollChanged, OptionsUI::ContextName, inputManager);
-
-	const UiElementInstanceID highlightElementInstID = uiManager.getElementByName(ElementName_HighlightImage);
-	uiManager.setElementActive(highlightElementInstID, false);
 
 	game.setCursorOverride(std::nullopt);
 
@@ -137,7 +135,18 @@ void OptionsUI::destroy()
 
 void OptionsUI::update(double dt)
 {
-	// Do nothing.
+	OptionsUiState &state = OptionsUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_OptionsListBox);
+	const int itemIndex = uiManager.getListBoxHoveredItemIndex(listBoxElementInstID, game.inputManager, game.window);
+	if (itemIndex >= 0)
+	{
+		const UiElementInstanceID highlightElementInstID = uiManager.getElementByName(ElementName_HighlightImage);
+		const Rect hoveredItemGlobalRect = uiManager.getListBoxItemGlobalRect(listBoxElementInstID, itemIndex);
+		uiManager.setTransformPosition(highlightElementInstID, hoveredItemGlobalRect.getTopLeft());
+	}
 }
 
 void OptionsUI::onMouseMotion(Game &game, int dx, int dy)
@@ -212,6 +221,7 @@ void OptionsUI::onTabButtonSelected(OptionsUiModel::Tab tab)
 	UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_OptionsListBox);
 	uiManager.clearListBox(listBoxElementInstID);
+	uiManager.scrollListBoxUp(listBoxElementInstID);
 
 	const OptionsUiModel::OptionGroup &optionGroup = GetOptionGroupForTab(tab);
 	for (int i = 0; i < static_cast<int>(optionGroup.size()); i++)
@@ -257,7 +267,7 @@ void OptionsUI::onInputButtonSelected(MouseButtonType mouseButtonType)
 
 void OptionsUI::onMiscButtonSelected(MouseButtonType mouseButtonType)
 {
-	OptionsUI::onTabButtonSelected(OptionsUiModel::Tab::Misc); 
+	OptionsUI::onTabButtonSelected(OptionsUiModel::Tab::Misc);
 }
 
 void OptionsUI::onDevButtonSelected(MouseButtonType mouseButtonType)
@@ -270,6 +280,24 @@ void OptionsUI::onBackButtonSelected(MouseButtonType mouseButtonType)
 	OptionsUiState &state = OptionsUI::state;
 	Game &game = *state.game;
 	game.setNextContext(PauseMenuUI::ContextName);
+}
+
+void OptionsUI::onListBoxScrollUpButtonSelected(MouseButtonType mouseButtonType)
+{
+	OptionsUiState &state = OptionsUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_OptionsListBox);
+	uiManager.scrollListBoxUp(listBoxElementInstID);
+}
+
+void OptionsUI::onListBoxScrollDownButtonSelected(MouseButtonType mouseButtonType)
+{
+	OptionsUiState &state = OptionsUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_OptionsListBox);
+	uiManager.scrollListBoxDown(listBoxElementInstID);
 }
 
 void OptionsUI::onBackInputAction(const InputActionCallbackValues &values)

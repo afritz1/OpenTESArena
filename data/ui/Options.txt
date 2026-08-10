@@ -123,11 +123,30 @@ ContentElementName=OptionsDevButtonImage
 Type=ListBox
 Position=62,6
 DrawOrder=2
-TextureSize=254,96
+TextureSize=240,90
 FontName=ARENAFNT.DAT
 TextColor=255,255,255,255
 IsHighlightEnabled=false
 MouseButtons=Both
+
+[OptionsListBoxUpDownArrowImage]
+Type=Image
+Position=308,6
+DrawOrder=3
+Texture=UPDOWN.IMG
+Palette=CHARSHT.COL
+
+[OptionsListBoxUpArrowButton]
+Type=Button
+Position=308,6
+Size=8,8
+Callback=OptionsUI.onListBoxScrollUpButtonSelected
+
+[OptionsListBoxDownArrowButton]
+Type=Button
+Position=308,14
+Size=8,8
+Callback=OptionsUI.onListBoxScrollDownButtonSelected
 
 ##################################
 
