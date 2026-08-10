@@ -2096,11 +2096,12 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			const double armorWeightKgs = sourceItemDef.getWeight();
 			const int armorPrice = sourceItemDef.getGoldValue();
 
-			const std::string armorProtectedSlotString = "TODO";
+			DebugAssertIndex(exeData.equipment.bodyPartNames, sourceArmorDef.typeID);
+			const std::string armorProtectedBodyPartString = exeData.equipment.bodyPartNames[sourceArmorDef.typeID];
 			const std::string armorWeightString = String::format("%-.1f", armorWeightKgs);
 			const std::string armorPriceString = String::format("%10d", armorPrice);
 			const std::string armorPriceUnitString = "gp";
-			std::vector<std::string> armorTextColumns = { armorDisplayName, armorProtectedSlotString, armorWeightString, armorPriceString, armorPriceUnitString };
+			std::vector<std::string> armorTextColumns = { armorDisplayName, armorProtectedBodyPartString, armorWeightString, armorPriceString, armorPriceUnitString };
 			listBoxItemTextColumns.emplace_back(std::move(armorTextColumns));
 
 			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemPurchaseCallback(sourceItemDefID, armorPrice, ConversationMessageBoxType::Equipment));
