@@ -680,7 +680,7 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 	{
 		bool isOccupyingEntityValidContainer = false;
 
-		const std::unordered_map<WorldInt2, EntityInstanceID> &occupiedVoxels = entityChunkManager.occupiedVoxels;
+		std::unordered_map<WorldInt2, EntityInstanceID> &occupiedVoxels = entityChunkManager.occupiedVoxels;
 		const auto occupiedVoxelIter = occupiedVoxels.find(playerWorldVoxelXZ);
 		if (occupiedVoxelIter != occupiedVoxels.end())
 		{
@@ -723,6 +723,10 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 			containerEntityInitInfo.isSensorCollider = true;
 			containerEntityInitInfo.hasInventory = true;
 			occupyingEntityInstID = entityChunkManager.createEntity(containerEntityInitInfo, game.random, game.physicsSystem, game.renderer);
+
+			// Have to manually update occupied voxels while in the UI in case player drops multiple items at once, otherwise we get N piles.
+			DebugAssert(occupiedVoxelIter == occupiedVoxels.end());
+			occupiedVoxels.emplace(playerWorldVoxelXZ, occupyingEntityInstID);
 
 			isOccupyingEntityValidContainer = true;
 		}
