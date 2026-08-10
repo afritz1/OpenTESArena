@@ -333,7 +333,27 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 		}
 		else
 		{
-			sourceDamage = 1 + random.next(2); // Fists @todo get gauntlets damage from ExeData (/wiki/Combat#damage-modifiers)
+			const ItemInstancePredicate equippedGauntletsPredicate = [](const ItemInstance &itemInst)
+			{
+				if (!itemInst.isEquipped)
+				{
+					return false;
+				}
+
+				const ItemDefinition &itemDef = ItemLibrary::getInstance().getDefinition(itemInst.defID);
+				return (itemDef.type == ItemType::Armor) && (itemDef.armor.typeID == ArenaItemUtils::HandsArmorTypeID);
+			};
+
+			int extraGauntletsDamage = 0;
+			int playerEquippedGauntletsInventorySlotIndex;
+			if (player.inventory.findFirstValidSlotIf(equippedGauntletsPredicate, &playerEquippedGauntletsInventorySlotIndex))
+			{
+				const ItemInstance &playerEquippedGauntletsItemInst = player.inventory.getSlot(playerEquippedGauntletsInventorySlotIndex);
+				const ItemDefinition &playerEquippedGauntletsItemDef = ItemLibrary::getInstance().getDefinition(playerEquippedGauntletsItemInst.defID);
+				extraGauntletsDamage = playerEquippedGauntletsItemDef.armor.armorClass;
+			}
+
+			sourceDamage = (1 + random.next(2)) + extraGauntletsDamage;
 		}
 
 		sourceDamage += playerDerivedAttributes.bonusDamage;
