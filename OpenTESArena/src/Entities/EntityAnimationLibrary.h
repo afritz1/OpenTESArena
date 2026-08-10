@@ -44,6 +44,15 @@ struct CitizenEntityAnimationKey
 	void init(bool male, ArenaClimateType climateType);
 };
 
+struct ContainerEntityAnimationKey
+{
+	bool isPlayerItemDropPile;
+
+	ContainerEntityAnimationKey();
+
+	void init(bool isPlayerItemDropPile);
+};
+
 struct VfxEntityAnimationKey
 {
 	VfxEntityAnimationType type;
@@ -66,6 +75,7 @@ private:
 	std::vector<std::pair<CreatureEntityAnimationKey, EntityAnimationDefinitionID>> creatureDefIDs;
 	std::vector<std::pair<HumanEnemyEntityAnimationKey, EntityAnimationDefinitionID>> humanEnemyDefIDs;
 	std::vector<std::pair<CitizenEntityAnimationKey, EntityAnimationDefinitionID>> citizenDefIDs;
+	std::vector<std::pair<ContainerEntityAnimationKey, EntityAnimationDefinitionID>> containerDefIDs;
 	std::vector<std::pair<VfxEntityAnimationKey, EntityAnimationDefinitionID>> vfxDefIDs;
 public:
 	void init(const BinaryAssetLibrary &binaryAssetLibrary, const CharacterClassLibrary &charClassLibrary, TextureManager &textureManager);
@@ -74,6 +84,7 @@ public:
 	EntityAnimationDefinitionID getCreatureAnimDefID(const CreatureEntityAnimationKey &key) const;
 	EntityAnimationDefinitionID getHumanEnemyAnimDefID(const HumanEnemyEntityAnimationKey &key) const;
 	EntityAnimationDefinitionID getCitizenAnimDefID(const CitizenEntityAnimationKey &key) const;
+	EntityAnimationDefinitionID getContainerAnimDefID(const ContainerEntityAnimationKey &key) const;
 	EntityAnimationDefinitionID getVfxAnimDefID(const VfxEntityAnimationKey &key) const;
 	const EntityAnimationDefinition &getDefinition(EntityAnimationDefinitionID id) const;
 };

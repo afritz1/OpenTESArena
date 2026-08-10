@@ -623,6 +623,15 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
+		bool allowsLootGeneration = true;
+		if (entityDef.type == EntityDefinitionType::Container)
+		{
+			if (entityDef.container.type == ContainerEntityDefinitionType::Pile)
+			{
+				allowsLootGeneration = entityDef.container.pile.allowsLootGeneration; // Disable loot generation for player item drop container.
+			}
+		}
+
 		if (entityDef.type == EntityDefinitionType::Enemy)
 		{
 			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
@@ -870,7 +879,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				DebugNotImplementedMsg(std::to_string(static_cast<int>(enemyDef.type)));
 			}
 		}
-		else
+		else if (allowsLootGeneration)
 		{
 			const ArenaInteriorType interiorType = initInfo.interiorType;
 			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(interiorType);

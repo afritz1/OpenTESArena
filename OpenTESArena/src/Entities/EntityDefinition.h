@@ -154,7 +154,7 @@ struct ItemEntityDefinition
 enum class ContainerEntityDefinitionType
 {
 	Holder, // Can be opened/closed.
-	Pile // Loose on the ground.
+	Pile // Loose on the ground. Also used with player item drops.
 };
 
 struct ContainerEntityDefinition
@@ -162,7 +162,6 @@ struct ContainerEntityDefinition
 	struct HolderDefinition
 	{
 		bool locked;
-		// @todo: loot table ID?
 
 		HolderDefinition();
 
@@ -173,7 +172,11 @@ struct ContainerEntityDefinition
 
 	struct PileDefinition
 	{
-		// @todo: loot table ID?
+		bool allowsLootGeneration;
+
+		PileDefinition();
+
+		void init(bool allowsLootGeneration);
 
 		bool operator==(const PileDefinition &other) const;
 	};
@@ -189,7 +192,7 @@ struct ContainerEntityDefinition
 	ContainerEntityDefinition();
 
 	void initHolder(bool locked);
-	void initPile();
+	void initPile(bool allowsLootGeneration);
 
 	bool operator==(const ContainerEntityDefinition &other) const;
 };
@@ -285,7 +288,7 @@ struct EntityDefinition
 	void initItemQuestItem(int yOffset, EntityAnimationDefinition &&animDef);
 
 	void initContainerHolder(bool locked, EntityAnimationDefinition &&animDef);
-	void initContainerPile(EntityAnimationDefinition &&animDef);
+	void initContainerPile(bool allowsLootGeneration, EntityAnimationDefinition &&animDef);
 	
 	void initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef);
 

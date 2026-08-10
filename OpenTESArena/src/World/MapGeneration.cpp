@@ -321,7 +321,8 @@ namespace MapGeneration
 		}
 		else if (isPileContainer)
 		{
-			outDef->initContainerPile(std::move(entityAnimDef));
+			constexpr bool allowsLootGeneration = true;
+			outDef->initContainerPile(allowsLootGeneration, std::move(entityAnimDef));
 		}
 		else if (isLockedHolderContainer || isUnlockedHolderContainer)
 		{

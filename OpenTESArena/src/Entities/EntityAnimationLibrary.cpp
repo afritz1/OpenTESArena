@@ -44,6 +44,16 @@ void CitizenEntityAnimationKey::init(bool male, ArenaClimateType climateType)
 	this->climateType = climateType;
 }
 
+ContainerEntityAnimationKey::ContainerEntityAnimationKey()
+{
+	this->isPlayerItemDropPile = false;
+}
+
+void ContainerEntityAnimationKey::init(bool isPlayerItemDropPile)
+{
+	this->isPlayerItemDropPile = isPlayerItemDropPile;
+}
+
 VfxEntityAnimationKey::VfxEntityAnimationKey()
 {
 	this->type = static_cast<VfxEntityAnimationType>(-1);
@@ -159,6 +169,21 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 		this->citizenDefIDs.emplace_back(std::move(maleAnimKey), maleAnimDefID);
 		this->citizenDefIDs.emplace_back(std::move(femaleAnimKey), femaleAnimDefID);
 	}
+
+	// Player item drop container
+	const std::string &playerItemDropContainerAnimFilename = ArenaAnimUtils::PlayerItemDropContainerFilename;
+	EntityAnimationDefinition playerItemDropContainerAnimDef;
+	if (!ArenaAnimUtils::tryMakePlayerItemDropContainerAnim(playerItemDropContainerAnimFilename, textureManager, &playerItemDropContainerAnimDef))
+	{
+		DebugLogErrorFormat("Couldn't create animation definition for player item drop container \"%s\".", playerItemDropContainerAnimFilename.c_str());
+	}
+
+	const EntityAnimationDefinitionID playerItemDropContainerAnimDefID = static_cast<EntityAnimationDefinitionID>(this->defs.size());
+	this->defs.emplace_back(std::move(playerItemDropContainerAnimDef));
+
+	ContainerEntityAnimationKey playerItemDropContainerAnimKey;
+	playerItemDropContainerAnimKey.init(true);
+	this->containerDefIDs.emplace_back(std::move(playerItemDropContainerAnimKey), playerItemDropContainerAnimDefID);
 
 	// VFX
 	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;
@@ -284,6 +309,19 @@ EntityAnimationDefinitionID EntityAnimationLibrary::getCitizenAnimDefID(const Ci
 	});
 
 	DebugAssert(iter != this->citizenDefIDs.end());
+	return iter->second;
+}
+
+EntityAnimationDefinitionID EntityAnimationLibrary::getContainerAnimDefID(const ContainerEntityAnimationKey &key) const
+{
+	const auto iter = std::find_if(this->containerDefIDs.begin(), this->containerDefIDs.end(),
+		[&key](const auto &pair)
+	{
+		const ContainerEntityAnimationKey &animKey = pair.first;
+		return animKey.isPlayerItemDropPile == key.isPlayerItemDropPile;
+	});
+
+	DebugAssert(iter != this->containerDefIDs.end());
 	return iter->second;
 }
 

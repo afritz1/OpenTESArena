@@ -41,6 +41,16 @@ void CitizenEntityDefinitionKey::init(bool male, ArenaClimateType climateType)
 	this->climateType = climateType;
 }
 
+bool ContainerEntityDefinitionKey::operator==(const ContainerEntityDefinitionKey &other) const
+{
+	return this->isPlayerItemDropPile == other.isPlayerItemDropPile;
+}
+
+void ContainerEntityDefinitionKey::init(bool isPlayerItemDropPile)
+{
+	this->isPlayerItemDropPile = isPlayerItemDropPile;
+}
+
 bool VfxEntityDefinitionKey::operator==(const VfxEntityDefinitionKey &other) const
 {
 	return (this->type == other.type) && (this->index == other.index);
@@ -76,6 +86,10 @@ bool EntityDefinitionKey::operator==(const EntityDefinitionKey &other) const
 	{
 		return this->citizen == other.citizen;
 	}
+	else if (this->type == EntityDefinitionKeyType::Container)
+	{
+		return this->container == other.container;
+	}
 	else if (this->type == EntityDefinitionKeyType::Vfx)
 	{
 		return this->vfx == other.vfx;
@@ -107,6 +121,12 @@ void EntityDefinitionKey::initCitizen(bool male, ArenaClimateType climateType)
 {
 	this->init(EntityDefinitionKeyType::Citizen);
 	this->citizen.init(male, climateType);
+}
+
+void EntityDefinitionKey::initContainer(bool isPlayerItemDropPile)
+{
+	this->init(EntityDefinitionKeyType::Container);
+	this->container.init(isPlayerItemDropPile);
 }
 
 void EntityDefinitionKey::initVfx(VfxEntityAnimationType type, int index)
@@ -189,6 +209,24 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
+	auto addContainerDef = [this, &entityAnimLibrary](bool isPlayerItemDropPile)
+	{
+		ContainerEntityAnimationKey animKey;
+		animKey.init(isPlayerItemDropPile);
+
+		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getContainerAnimDefID(animKey);
+		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
+
+		EntityDefinitionKey key;
+		key.initContainer(isPlayerItemDropPile);
+
+		EntityDefinition entityDef;
+		const bool allowsLootGeneration = !isPlayerItemDropPile;
+		entityDef.initContainerPile(allowsLootGeneration, std::move(animDef));
+
+		this->addDefinition(std::move(key), std::move(entityDef));
+	};
+
 	auto addVfxDef = [this, &entityAnimLibrary](VfxEntityAnimationType type, int index)
 	{
 		VfxEntityAnimationKey animKey;
@@ -245,6 +283,9 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		addCitizenDef(climateType, true);
 		addCitizenDef(climateType, false);
 	}
+
+	// Add player item drop container.
+	addContainerDef(true);
 
 	// Iterate all projectiles and hit effects.
 	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;

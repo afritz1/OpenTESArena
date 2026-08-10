@@ -1319,6 +1319,30 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaClimateType climateType, bool isMa
 	return true;
 }
 
+bool ArenaAnimUtils::tryMakePlayerItemDropContainerAnim(const std::string &animFilename, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
+{
+	DebugAssert(outAnimDef->stateCount == 0);
+	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
+
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogWarningFormat("Couldn't get player item drop container anim texture file metadata for \"%s\".", animFilename.c_str());
+		return false;
+	}
+
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	TextureAsset textureAsset(textureFileMetadata.getFilename());
+	const double width = MakeDefaultKeyframeDimension(textureFileMetadata.getWidth(0));
+	const double height = MakeDefaultKeyframeDimension(textureFileMetadata.getHeight(0));
+	outAnimDef->addState(EntityAnimationUtils::STATE_IDLE.c_str(), 0.0, false);
+	outAnimDef->addKeyframeList(0, false);
+	outAnimDef->addKeyframe(0, std::move(textureAsset), width, height);
+	outAnimDef->populateLinearizedIndices();
+
+	return true;
+}
+
 bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLooping, bool isAspectCorrected, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	DebugAssert(outAnimDef->stateCount == 0);

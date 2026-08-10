@@ -234,6 +234,11 @@ ContainerEntityDefinition::HolderDefinition::HolderDefinition()
 	this->locked = false;
 }
 
+ContainerEntityDefinition::PileDefinition::PileDefinition()
+{
+	this->allowsLootGeneration = false;
+}
+
 void ContainerEntityDefinition::HolderDefinition::init(bool locked)
 {
 	this->locked = locked;
@@ -247,6 +252,11 @@ bool ContainerEntityDefinition::HolderDefinition::operator==(const HolderDefinit
 	}
 
 	return this->locked == other.locked;
+}
+
+void ContainerEntityDefinition::PileDefinition::init(bool allowsLootGeneration)
+{
+	this->allowsLootGeneration = allowsLootGeneration;
 }
 
 bool ContainerEntityDefinition::PileDefinition::operator==(const PileDefinition &other) const
@@ -270,9 +280,10 @@ void ContainerEntityDefinition::initHolder(bool locked)
 	this->holder.init(locked);
 }
 
-void ContainerEntityDefinition::initPile()
+void ContainerEntityDefinition::initPile(bool allowsLootGeneration)
 {
 	this->type = ContainerEntityDefinitionType::Pile;
+	this->pile.init(allowsLootGeneration);
 }
 
 bool ContainerEntityDefinition::operator==(const ContainerEntityDefinition &other) const
@@ -523,10 +534,10 @@ void EntityDefinition::initContainerHolder(bool locked, EntityAnimationDefinitio
 	this->container.initHolder(locked);
 }
 
-void EntityDefinition::initContainerPile(EntityAnimationDefinition &&animDef)
+void EntityDefinition::initContainerPile(bool allowsLootGeneration, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Container, std::move(animDef));
-	this->container.initPile();
+	this->container.initPile(allowsLootGeneration);
 }
 
 void EntityDefinition::initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef)

@@ -699,13 +699,18 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 
 		if (occupyingEntityInstID < 0)
 		{
-			// @todo this should instead look for an always-defined one in EntityDefinitionLibrary with a specific texture filename in its idle state
-			// - currently its entity def ID moves around depending on the scene which RenderEntityManager doesn't like?
-			const EntityDefID containerEntityDefID = entityChunkManager.findEntityDefIdIf(
-				[](const EntityDefinition &entityDef)
+			EntityDefinitionKey containerEntityDefKey;
+			containerEntityDefKey.initContainer(true);
+
+			EntityDefID containerEntityDefID;
+			if (!EntityDefinitionLibrary::getInstance().tryGetDefinitionID(containerEntityDefKey, &containerEntityDefID))
 			{
-				return (entityDef.type == EntityDefinitionType::Container) && (entityDef.container.type == ContainerEntityDefinitionType::Pile);
-			});
+				DebugLogError("Couldn't find entity def ID for player item drop container.");
+				return;
+			}
+
+			RenderEntityManager &renderEntityManager = game.sceneManager.renderEntityManager;
+			renderEntityManager.loadMaterialsForEntity(containerEntityDefID, game.textureManager, game.renderer);
 
 			const EntityDefinition &containerEntityDef = entityChunkManager.getEntityDef(containerEntityDefID);
 			const EntityAnimationDefinition &containerAnimDef = containerEntityDef.animDef;
@@ -718,11 +723,6 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 			containerEntityInitInfo.isSensorCollider = true;
 			containerEntityInitInfo.hasInventory = true;
 			occupyingEntityInstID = entityChunkManager.createEntity(containerEntityInitInfo, game.random, game.physicsSystem, game.renderer);
-
-			// Clear randomly generated loot that comes with this entity def.
-			const EntityInstance &containerEntityInst = entityChunkManager.entities.get(occupyingEntityInstID);
-			ItemInventory &containerInventory = entityChunkManager.itemInventories.get(containerEntityInst.itemInventoryInstID);
-			containerInventory.clear();
 
 			isOccupyingEntityValidContainer = true;
 		}

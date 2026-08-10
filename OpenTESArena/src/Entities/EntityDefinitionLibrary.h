@@ -19,6 +19,7 @@ enum class EntityDefinitionKeyType
 	Creature,
 	HumanEnemy,
 	Citizen,
+	Container,
 	Vfx
 };
 
@@ -51,6 +52,15 @@ struct CitizenEntityDefinitionKey
 	void init(bool male, ArenaClimateType climateType);
 };
 
+struct ContainerEntityDefinitionKey
+{
+	bool isPlayerItemDropPile;
+
+	bool operator==(const ContainerEntityDefinitionKey &other) const;
+
+	void init(bool isPlayerItemDropPile);
+};
+
 struct VfxEntityDefinitionKey
 {
 	VfxEntityAnimationType type;
@@ -70,6 +80,7 @@ struct EntityDefinitionKey
 		CreatureEntityDefinitionKey creature;
 		HumanEnemyEntityDefinitionKey humanEnemy;
 		CitizenEntityDefinitionKey citizen;
+		ContainerEntityDefinitionKey container;
 		VfxEntityDefinitionKey vfx;
 	};
 
@@ -82,6 +93,7 @@ struct EntityDefinitionKey
 	void initCreature(CreatureDefinitionID creatureDefID);
 	void initHumanEnemy(bool male, int charClassID);
 	void initCitizen(bool male, ArenaClimateType climateType);
+	void initContainer(bool isPlayerItemDropPile);
 	void initVfx(VfxEntityAnimationType type, int index);
 };
 
