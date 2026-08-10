@@ -667,6 +667,10 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 		const VoxelShapeDefID playerVoxelShapeDefID = playerVoxelChunk.shapeDefIDs.get(playerVoxel.x, playerVoxel.y, playerVoxel.z);
 		const VoxelShapeDefinition &playerVoxelShapeDef = playerVoxelChunk.shapeDefs[playerVoxelShapeDefID];
 		isPlayerVoxelValidForDroppingItem &= playerVoxelShapeDef.mesh.isEmpty();
+
+		const VoxelTraitsDefID floorVoxelTraitsDefID = playerVoxelChunk.traitsDefIDs.get(playerVoxel.x, 0, playerVoxel.z);
+		const VoxelTraitsDefinition &floorVoxelTraitsDef = playerVoxelChunk.traitsDefs[floorVoxelTraitsDefID];
+		isPlayerVoxelValidForDroppingItem &= floorVoxelTraitsDef.type == ArenaVoxelType::Floor;
 	}
 	
 	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
