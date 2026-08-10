@@ -1452,12 +1452,14 @@ void GameWorldUiController::onEnemyAliveInspected(Game &game, EntityInstanceID e
 
 void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory, bool destroyEntityIfEmpty)
 {
-	// @todo: need to queue entity destroy if container is empty
-	// @todo: if closing and container is not empty, then inventory.compact(). Don't compact while removing items since that would invalidate mappings
-
 	auto callback = [&game, entityInstID, &itemInventory, destroyEntityIfEmpty]()
 	{
-		if (destroyEntityIfEmpty && (itemInventory.getOccupiedSlotCount() == 0))
+		const bool hasRemainingItems = itemInventory.getOccupiedSlotCount() > 0;
+		if (hasRemainingItems)
+		{
+			itemInventory.compact();
+		}
+		else if (destroyEntityIfEmpty)
 		{
 			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 			entityChunkManager.queueEntityDestroy(entityInstID, true);
