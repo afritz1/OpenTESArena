@@ -342,7 +342,7 @@ struct ExeDataEquipment
 	uint8_t spellcastingItemMiscSpellSpells[8];
 	uint16_t spellcastingItemMiscSpellPricesPerCharge[8];
 	std::string enhancementItemNames[4];
-	std::string enhancementItemAttributeNames[8];
+	std::string enhancementItemAttributeNames[8]; // of Strength, etc.
 	uint8_t enhancementItemCumulativeChances[4];
 	uint16_t enhancementItemBasePrices[4];
 	uint16_t enhancementItemAttributePrices[8];
@@ -368,6 +368,15 @@ struct ExeDataEquipment
 	std::string alreadyEquippedItem;
 	std::string unequippableItem;
 	std::string classForbiddenItem;
+	std::string itemDetailWeight;
+	std::string itemDetailCondition;
+	std::string itemDetailWeapon;
+	std::string itemDetailArmor;
+	std::string itemDetailArmorNoWeight;
+	std::string itemDetailChargesLeft;
+	std::string itemDetailStatBonus;
+	std::string itemDetailUsesLeft;
+	std::string itemDetailPotion;
 	std::string staffPieceCount;
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);

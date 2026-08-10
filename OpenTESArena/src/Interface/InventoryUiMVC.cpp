@@ -18,7 +18,7 @@ std::string InventoryUiModel::getItemText(int inventorySlotIndex, const ItemInve
 	DebugAssert(itemInst.isValid());
 
 	const ItemDefinition &itemDef = ItemLibrary::getInstance().getDefinition(itemInst.defID);
-	return String::format("%s (%.1fkg)", itemDef.getDisplayNameWithQty(itemInst.stackAmount).c_str(), itemDef.getWeight());
+	return String::format("%s", itemDef.getDisplayNameWithQty(itemInst.stackAmount).c_str());
 }
 
 bool InventoryUiModel::isItemEquippableByClass(const ItemDefinition &itemDef, const CharacterClassDefinition &charClassDef)

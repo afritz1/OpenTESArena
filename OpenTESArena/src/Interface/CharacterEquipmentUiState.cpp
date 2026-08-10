@@ -193,7 +193,101 @@ namespace
 			}
 			else if (mouseButtonType == MouseButtonType::Right)
 			{
-				DebugLogFormat("Not implemented: inspect item %d.", inventorySlotIndex);
+				const std::string itemDisplayName = itemDef.getDisplayNameWithoutQty();
+				const int itemConditionNameIndex = 7; // @todo condition value logic
+
+				std::string itemDetailText;
+				switch (itemType)
+				{
+				case ItemType::Accessory:
+				{
+					const AccessoryItemDefinition &accessoryItemDef = itemDef.accessory;
+					if (accessoryItemDef.isAttributeEnhancing())
+					{
+						const int accessoryStatBonusAmount = 0; // @todo stat bonuses
+						const Span<const std::string> attributeNames = exeData.entities.attributeNames;
+						const std::string accessoryStatName = attributeNames[accessoryItemDef.attributeID];
+						const std::string accessoryStatBonusString = String::format(exeData.equipment.itemDetailStatBonus.c_str(), accessoryStatBonusAmount, accessoryStatName.c_str());
+						itemDetailText = String::format("%s\n%s", itemDisplayName.c_str(), accessoryStatBonusString.c_str());
+					}
+					else
+					{
+						const int accessoryArmorValue = 0; // @todo armor value
+						const std::string accessoryArmorValueString = String::format(exeData.equipment.itemDetailArmorNoWeight.c_str(), accessoryArmorValue);
+						itemDetailText = String::format("%s\n%s", itemDisplayName.c_str(), accessoryArmorValueString.c_str());
+					}
+					
+					break;
+				}
+				case ItemType::Armor:
+				{
+					const ArmorItemDefinition &armorItemDef = itemDef.armor;
+					const double armorWeightKgs = armorItemDef.weight;
+					const int armorRating = 0; // @todo armor rating
+					
+					std::string armorRatingAndWeightString;					
+					if (armorWeightKgs > 0.0)
+					{
+						const std::string armorRatingString = String::format(exeData.equipment.itemDetailArmor.c_str(), armorRating);
+						const std::string armorWeightString = String::format("%.1f kgs", armorWeightKgs);
+						armorRatingAndWeightString = String::format("%s%s", armorRatingString.c_str(), armorWeightString.c_str());
+					}
+					else
+					{
+						armorRatingAndWeightString = String::format(exeData.equipment.itemDetailArmorNoWeight.c_str(), armorRating);
+					}
+
+					const std::string armorConditionName = exeData.equipment.itemConditionNames[itemConditionNameIndex];
+					const std::string armorConditionString = String::format(exeData.equipment.itemDetailCondition.c_str(), armorConditionName.c_str());
+					itemDetailText = String::format("%s\n%s\n%s", itemDisplayName.c_str(), armorRatingAndWeightString.c_str(), armorConditionString.c_str());
+					break;
+				}
+				case ItemType::Consumable:
+				{
+					std::string potionDetailString = String::replace(exeData.equipment.itemDetailPotion, '\r', '\n');
+					potionDetailString.pop_back(); // Clean up newline.
+					itemDetailText = String::format("%s\n%s", itemDisplayName.c_str(), potionDetailString.c_str());
+					break;
+				}
+				case ItemType::Misc:
+					itemDetailText = String::format("%s", itemDisplayName.c_str());
+					break;
+				case ItemType::Shield:
+				{
+					const ShieldItemDefinition &shieldItemDef = itemDef.shield;
+					const double shieldWeightKgs = shieldItemDef.weight;
+					const int shieldArmorRating = 0; // @todo armor rating
+					const std::string shieldArmorRatingString = String::format(exeData.equipment.itemDetailArmor.c_str(), shieldArmorRating);
+					const std::string shieldWeightString = String::format("%.1f kgs", shieldWeightKgs);
+					const std::string shieldConditionName = exeData.equipment.itemConditionNames[itemConditionNameIndex];
+					const std::string shieldConditionString = String::format(exeData.equipment.itemDetailCondition.c_str(), shieldConditionName.c_str());
+					itemDetailText = String::format("%s\n%s%s\n%s", itemDisplayName.c_str(), shieldArmorRatingString.c_str(), shieldWeightString.c_str(), shieldConditionString.c_str());
+					break;
+				}
+				case ItemType::Trinket:
+				{
+					const int trinketChargesLeft = 0; // @todo charges
+					const std::string chargesLeftString = String::format(exeData.equipment.itemDetailChargesLeft.c_str(), trinketChargesLeft);
+					itemDetailText = String::format("%s\n%s", itemDisplayName.c_str(), chargesLeftString.c_str());
+					break;
+				}
+				case ItemType::Weapon:
+				{
+					const WeaponItemDefinition &weaponItemDef = itemDef.weapon;
+					const double weaponWeightKgs = weaponItemDef.weight;
+					const std::string weaponDamageString = String::format(exeData.equipment.itemDetailWeapon.c_str(), weaponItemDef.damageMin, weaponItemDef.damageMax);
+					const std::string weaponWeightString = String::format("%.1f kgs", weaponWeightKgs);
+					const std::string weaponConditionName = exeData.equipment.itemConditionNames[itemConditionNameIndex];
+					const std::string weaponConditionString = String::format(exeData.equipment.itemDetailCondition.c_str(), weaponConditionName.c_str());
+					itemDetailText = String::format("%s\n%s%s\n%s", itemDisplayName.c_str(), weaponDamageString.c_str(), weaponWeightString.c_str(), weaponConditionString.c_str());
+					break;
+				}
+				default:
+					DebugNotImplementedMsg(std::to_string(static_cast<int>(itemType)));
+					break;
+				}
+
+				CharacterEquipmentUI::showItemDetail(itemDetailText.c_str(), CharacterEquipmentUiView::ItemDetailDefaultTextColor);
 			}
 		};
 	}

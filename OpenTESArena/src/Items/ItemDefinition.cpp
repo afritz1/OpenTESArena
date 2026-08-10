@@ -101,6 +101,11 @@ void AccessoryItemDefinition::init(const char *name, ArenaAccessoryTypeID typeID
 	this->basePrice = basePrice;
 }
 
+bool AccessoryItemDefinition::isAttributeEnhancing() const
+{
+	return this->attributeID >= 0;
+}
+
 void ArmorItemDefinition::initLeather(const char *name, ArenaArmorTypeID typeID, double weight, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);

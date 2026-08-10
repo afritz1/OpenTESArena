@@ -681,6 +681,15 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int alreadyEquippedItemOffset = GetExeAddress(*section, "AlreadyEquippedItem");
 	const int unequippableItemOffset = GetExeAddress(*section, "UnequippableItem");
 	const int classForbiddenItemOffset = GetExeAddress(*section, "ClassForbiddenItem");
+	const int itemDetailWeightOffset = GetExeAddress(*section, "ItemDetailWeight");
+	const int itemDetailConditionOffset = GetExeAddress(*section, "ItemDetailCondition");
+	const int itemDetailWeaponOffset = GetExeAddress(*section, "ItemDetailWeapon");
+	const int itemDetailArmorOffset = GetExeAddress(*section, "ItemDetailArmor");
+	const int itemDetailArmorNoWeightOffset = GetExeAddress(*section, "ItemDetailArmorNoWeight");
+	const int itemDetailChargesLeftOffset = GetExeAddress(*section, "ItemDetailChargesLeft");
+	const int itemDetailStatBonusOffset = GetExeAddress(*section, "ItemDetailStatBonus");
+	const int itemDetailUsesLeftOffset = GetExeAddress(*section, "ItemDetailUsesLeft");
+	const int itemDetailPotionOffset = GetExeAddress(*section, "ItemDetailPotion");
 	const int staffPieceCountOffset = GetExeAddress(*section, "StaffPieceCount");
 
 	initInt8Array(this->enchantmentChances, exeBytes, enchantmentChancesOffset);
@@ -757,6 +766,15 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	this->alreadyEquippedItem = GetExeStringNullTerminated(exeBytes, alreadyEquippedItemOffset);
 	this->unequippableItem = GetExeStringNullTerminated(exeBytes, unequippableItemOffset);
 	this->classForbiddenItem = GetExeStringNullTerminated(exeBytes, classForbiddenItemOffset);
+	this->itemDetailWeight = GetExeStringNullTerminated(exeBytes, itemDetailWeightOffset);
+	this->itemDetailCondition = GetExeStringNullTerminated(exeBytes, itemDetailConditionOffset);
+	this->itemDetailWeapon = GetExeStringNullTerminated(exeBytes, itemDetailWeaponOffset);
+	this->itemDetailArmor = GetExeStringNullTerminated(exeBytes, itemDetailArmorOffset);
+	this->itemDetailArmorNoWeight = GetExeStringNullTerminated(exeBytes, itemDetailArmorNoWeightOffset);
+	this->itemDetailChargesLeft = GetExeStringNullTerminated(exeBytes, itemDetailChargesLeftOffset);
+	this->itemDetailStatBonus = GetExeStringNullTerminated(exeBytes, itemDetailStatBonusOffset);
+	this->itemDetailUsesLeft = GetExeStringNullTerminated(exeBytes, itemDetailUsesLeftOffset);
+	this->itemDetailPotion = GetExeStringNullTerminated(exeBytes, itemDetailPotionOffset); 
 	this->staffPieceCount = GetExeStringNullTerminated(exeBytes, staffPieceCountOffset);
 
 	return true;

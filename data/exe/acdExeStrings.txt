@@ -213,6 +213,15 @@ DropItemRequiredByQuest=0x38253
 AlreadyEquippedItem=0x381D4
 UnequippableItem=0x381F0
 ClassForbiddenItem=0x3634B
+ItemDetailWeight=0x39423
+ItemDetailCondition=0x3942B
+ItemDetailWeapon=0x3943A
+ItemDetailArmor=0x39454
+ItemDetailArmorNoWeight=0x39487
+ItemDetailChargesLeft=0x39469
+ItemDetailStatBonus=0x3947C
+ItemDetailUsesLeft=0x394A0
+ItemDetailPotion=0x394B3
 StaffPieceCount=0x38296
 
 [Items]
