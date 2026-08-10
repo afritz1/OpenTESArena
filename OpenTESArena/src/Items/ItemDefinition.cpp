@@ -91,14 +91,26 @@ void ItemMaterialDefinition::init(const char *name, int ratingMultiplier, int co
 	this->weightMultiplier = weightMultiplier;
 }
 
-void AccessoryItemDefinition::init(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice)
+void AccessoryItemDefinition::initAttribute(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, int basePrice, PrimaryAttributeID attributeID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 	this->materialDefID = materialDefID;
-	this->attributeID = attributeID;
 	this->basePrice = basePrice;
+	this->attributeID = attributeID;
+	this->armorClass = -1;
+}
+
+void AccessoryItemDefinition::initArmor(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, int basePrice, int armorClass)
+{
+	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
+	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
+	this->materialDefID = materialDefID;
+	this->basePrice = basePrice;
+	this->attributeID = -1;
+	this->armorClass = armorClass;
 }
 
 bool AccessoryItemDefinition::isAttributeEnhancing() const
@@ -106,32 +118,35 @@ bool AccessoryItemDefinition::isAttributeEnhancing() const
 	return this->attributeID >= 0;
 }
 
-void ArmorItemDefinition::initLeather(const char *name, ArenaArmorTypeID typeID, double weight, int basePrice)
+void ArmorItemDefinition::initLeather(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
 	this->weight = weight;
 	this->materialType = ArenaArmorMaterialType::Leather;
+	this->armorClass = armorClass;
 	this->basePrice = basePrice;
 	this->plateMaterialDefID = -1;
 }
 
-void ArmorItemDefinition::initChain(const char *name, ArenaArmorTypeID typeID, double weight, int basePrice)
+void ArmorItemDefinition::initChain(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
 	this->weight = weight;
 	this->materialType = ArenaArmorMaterialType::Chain;
+	this->armorClass = armorClass;
 	this->basePrice = basePrice;
 	this->plateMaterialDefID = -1;
 }
 
-void ArmorItemDefinition::initPlate(const char *name, ArenaArmorTypeID typeID, double weight, int basePrice, ItemMaterialDefinitionID materialDefID)
+void ArmorItemDefinition::initPlate(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice, ItemMaterialDefinitionID materialDefID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
 	this->weight = weight;
 	this->materialType = ArenaArmorMaterialType::Plate;
+	this->armorClass = armorClass;
 	this->basePrice = basePrice;
 	this->plateMaterialDefID = materialDefID;
 }
@@ -156,11 +171,12 @@ void MiscItemDefinition::init(const char *name, ArenaMiscTypeID typeID)
 	this->typeID = typeID;
 }
 
-void ShieldItemDefinition::init(const char *name, ArenaArmorTypeID armorTypeID, double weight, int basePrice)
+void ShieldItemDefinition::init(const char *name, ArenaArmorTypeID armorTypeID, double weight, int armorClass, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->armorTypeID = armorTypeID;
 	this->weight = weight;
+	this->armorClass = armorClass;
 	this->basePrice = basePrice;
 }
 

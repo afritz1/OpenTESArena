@@ -44,8 +44,10 @@ struct AccessoryItemDefinition
 	ItemMaterialDefinitionID materialDefID;
 	int basePrice;
 	PrimaryAttributeID attributeID;
+	int armorClass;
 
-	void init(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice);
+	void initAttribute(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, int basePrice, PrimaryAttributeID attributeID);
+	void initArmor(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, int basePrice, int armorClass);
 
 	bool isAttributeEnhancing() const;
 };
@@ -58,12 +60,13 @@ struct ArmorItemDefinition
 	ArenaArmorTypeID typeID;
 	double weight;
 	ArenaArmorMaterialType materialType;
+	int armorClass;
 	int basePrice;
 	ItemMaterialDefinitionID plateMaterialDefID;
 
-	void initLeather(const char *name, ArenaArmorTypeID typeID, double weight, int basePrice);
-	void initChain(const char *name, ArenaArmorTypeID typeID, double weight, int basePrice);
-	void initPlate(const char *name, ArenaArmorTypeID typeID, double weight, int basePrice, ItemMaterialDefinitionID materialDefID);
+	void initLeather(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice);
+	void initChain(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice);
+	void initPlate(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice, ItemMaterialDefinitionID materialDefID);
 };
 
 struct ConsumableItemDefinition
@@ -98,9 +101,10 @@ struct ShieldItemDefinition
 	char name[64]; // Buckler, kite, etc.
 	ArenaArmorTypeID armorTypeID; // Shield type ID + 7. The original game treats shields as armor.
 	double weight;
+	int armorClass;
 	int basePrice;
 
-	void init(const char *name, ArenaArmorTypeID armorTypeID, double weight, int basePrice);
+	void init(const char *name, ArenaArmorTypeID armorTypeID, double weight, int armorClass, int basePrice);
 };
 
 struct TrinketItemDefinition

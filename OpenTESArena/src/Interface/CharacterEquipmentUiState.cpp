@@ -212,7 +212,7 @@ namespace
 					}
 					else
 					{
-						const int accessoryArmorValue = 0; // @todo armor value
+						const int accessoryArmorValue = accessoryItemDef.armorClass;
 						const std::string accessoryArmorValueString = String::format(exeData.equipment.itemDetailArmorNoWeight.c_str(), accessoryArmorValue);
 						itemDetailText = String::format("%s\n%s", itemDisplayName.c_str(), accessoryArmorValueString.c_str());
 					}
@@ -223,7 +223,7 @@ namespace
 				{
 					const ArmorItemDefinition &armorItemDef = itemDef.armor;
 					const double armorWeightKgs = armorItemDef.weight;
-					const int armorRating = 0; // @todo armor rating
+					const int armorRating = armorItemDef.armorClass;
 					
 					std::string armorRatingAndWeightString;					
 					if (armorWeightKgs > 0.0)
@@ -256,7 +256,7 @@ namespace
 				{
 					const ShieldItemDefinition &shieldItemDef = itemDef.shield;
 					const double shieldWeightKgs = shieldItemDef.weight;
-					const int shieldArmorRating = 0; // @todo armor rating
+					const int shieldArmorRating = shieldItemDef.armorClass;
 					const std::string shieldArmorRatingString = String::format(exeData.equipment.itemDetailArmor.c_str(), shieldArmorRating);
 					const std::string shieldWeightString = String::format("%.1f kgs", shieldWeightKgs);
 					const std::string shieldConditionName = exeData.equipment.itemConditionNames[itemConditionNameIndex];
