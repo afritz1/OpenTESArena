@@ -40,8 +40,6 @@ struct MapDefinitionInterior
 
 	void init(ArenaInteriorType interiorType, const std::string &displayName);
 
-	const std::optional<uint16_t> &getDoorVoxelOffset() const;
-
 	void clear();
 };
 

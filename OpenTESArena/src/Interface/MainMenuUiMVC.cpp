@@ -682,9 +682,10 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}();
 
 			const std::string interiorDisplayName = "Test Interior";
+			constexpr std::optional<uint16_t> doorVoxelOffset; // Not needed.
 
 			MapGenerationInteriorInfo interiorGenInfo;
-			interiorGenInfo.initPrefab(mifName, interiorType, rulerIsMale, interiorDisplayName, std::nullopt);
+			interiorGenInfo.initPrefab(mifName, interiorType, rulerIsMale, interiorDisplayName, doorVoxelOffset);
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
 

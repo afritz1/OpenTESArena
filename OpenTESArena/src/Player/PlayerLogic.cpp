@@ -749,16 +749,20 @@ namespace PlayerLogic
 				if (passesLootDistanceTest && canPlayerMoveAndTurn)
 				{
 					bool isContainerInventoryAccessible = true;
+					int lockLevel = 0;
 					if (entityInst.canBeLocked())
 					{
-						const EntityLockState& lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
+						const EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
 						isContainerInventoryAccessible = !lockState.isLocked;
-					}
 
-					int lockLevel = 0;
-					if (!isContainerInventoryAccessible)
-					{
-						lockLevel = ArenaLevelUtils::getChestVoxelLockLevel(entityPosition.x * MIFUtils::ARENA_UNITS, entityPosition.z * MIFUtils::ARENA_UNITS, arenaRandom, exeData);
+						if (lockState.isLocked)
+						{
+							const OriginalDouble2 entityOriginalPosition = VoxelUtils::worldPointToOriginalPoint(entityPosition.getXZ());
+							const OriginalInt2 entityOriginalPositionArenaUnits(
+								static_cast<WEInt>(entityOriginalPosition.x * MIFUtils::ARENA_UNITS),
+								static_cast<SNInt>(entityOriginalPosition.y * MIFUtils::ARENA_UNITS));
+							lockLevel = ArenaLevelUtils::getChestVoxelLockLevel(entityOriginalPositionArenaUnits.x, entityOriginalPositionArenaUnits.y, arenaRandom, exeData);
+						}
 					}
 
 					if (interactionType == GameWorldInteractionType::Default)

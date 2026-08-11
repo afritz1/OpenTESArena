@@ -35,11 +35,6 @@ void MapDefinitionInterior::init(ArenaInteriorType interiorType, const std::stri
 	this->displayName = displayName;
 }
 
-const std::optional<uint16_t> &MapDefinitionInterior::getDoorVoxelOffset() const
-{
-	return this->doorVoxelOffset;
-}
-
 void MapDefinitionInterior::clear()
 {
 	this->interiorType = static_cast<ArenaInteriorType>(-1);

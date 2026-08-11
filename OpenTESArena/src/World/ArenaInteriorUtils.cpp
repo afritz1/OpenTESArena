@@ -112,7 +112,7 @@ int ArenaInteriorUtils::getServiceQuality(uint16_t doorVoxelOffset, ArenaCityTyp
 	const Span<const std::pair<uint8_t, uint8_t>> villageServiceQualities = exeData.services.villageServiceQualities;
 	const uint32_t savedSeed = random.getSeed();
 
-	uint32_t seed = (doorVoxelOffset & 0xFF00) | ((doorVoxelOffset & 0x00FF) >> 1);
+	const uint32_t seed = (doorVoxelOffset & 0xFF00) | ((doorVoxelOffset & 0x00FF) >> 1);
 	random.srand(seed);
 	const int roll = random.next(101);
 
@@ -123,26 +123,24 @@ int ArenaInteriorUtils::getServiceQuality(uint16_t doorVoxelOffset, ArenaCityTyp
 		DebugAssertIndex(serviceQualityChances, serviceQualityIndex);
 	}
 
-	int min;
-	int max;
-
+	Span<const std::pair<uint8_t, uint8_t>> selectedServiceQualities;
 	if (cityType == ArenaCityType::CityState)
 	{
-		min = cityStateServiceQualities[serviceQualityIndex].first;
-		max = cityStateServiceQualities[serviceQualityIndex].second;
+		selectedServiceQualities = cityStateServiceQualities;
 	}
 	else if (cityType == ArenaCityType::Town)
 	{
-		min = townServiceQualities[serviceQualityIndex].first;
-		max = townServiceQualities[serviceQualityIndex].second;
+		selectedServiceQualities = townServiceQualities;
 	}
 	else
 	{
-		min = villageServiceQualities[serviceQualityIndex].first;
-		max = villageServiceQualities[serviceQualityIndex].second;
+		selectedServiceQualities = villageServiceQualities;
 	}
 
-	const int result = min + random.next(max - min);
+	const std::pair<uint8_t, uint8_t> &selectedServiceQualityPair = selectedServiceQualities[serviceQualityIndex];
+	const int qualityMin = selectedServiceQualityPair.first;
+	const int qualityMax = selectedServiceQualityPair.second;
+	const int result = qualityMin + random.next(qualityMax - qualityMin);
 	random.srand(savedSeed);
 
 	return result;

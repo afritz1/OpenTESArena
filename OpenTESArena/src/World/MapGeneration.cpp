@@ -167,9 +167,7 @@ namespace MapGeneration
 		uint32_t rulerSeed, const std::optional<bool> &rulerIsMale, bool palaceIsMainQuestDungeon, ArenaCityType cityType,
 		MapType mapType, const ExeData &exeData)
 	{
-		const OriginalInt2 originalPos = VoxelUtils::worldVoxelToOriginalVoxel(WorldInt2(position.x, position.z));
-
-		const uint16_t doorVoxelOffset = ArenaLevelUtils::getDoorVoxelOffset(originalPos.x, originalPos.y);
+		const OriginalInt2 originalPos = VoxelUtils::worldVoxelToOriginalVoxel(position.getXZ());
 
 		std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(originalPos.x, originalPos.y, menuID,
 			rulerSeed, palaceIsMainQuestDungeon, cityType, mapType, exeData);
@@ -181,14 +179,14 @@ namespace MapGeneration
 		}
 
 		const std::string interiorDisplayName; // Provided later in generation due to circular dependency between transitions and building names :/
+		const uint16_t doorVoxelOffset = ArenaLevelUtils::getDoorVoxelOffset(originalPos.x, originalPos.y);
 
 		MapGenerationInteriorInfo interiorGenInfo;
 		interiorGenInfo.initPrefab(mifName, revisedInteriorType, rulerIsMale, interiorDisplayName, doorVoxelOffset);
 		return interiorGenInfo;
 	}
 
-	MapGenerationInteriorInfo makeProceduralInteriorGenInfo(
-		const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
+	MapGenerationInteriorInfo makeProceduralInteriorGenInfo(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
 	{
 		MapGenerationInteriorInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);

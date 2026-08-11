@@ -285,6 +285,10 @@ Box4=0x48674
 
 [Services]
 TavernRoomHealModifiers=0x3DC9D
+ServiceQualityChances=0x40572
+CityStateServiceQualities=0x40576
+TownServiceQualities=0x4057E
+VillageServiceQualities=0x40586
 PalaceClosedAtNight=0x442D0
 EquipmentModalTitle=0x44474
 EquipmentModalBuy=0x44497
@@ -354,10 +358,6 @@ CitizenRumorsModalWorkAskInTown=0x43EB0
 CitizenWhereIsOptionsCity=0x43FD3
 CitizenWhereIsOptionsWilderness=0x44035
 PlayerGoldRemaining=0x4050E
-ServiceQualityChances=0x40572
-CityStateServiceQualities=0x40576
-TownServiceQualities=0x4057E
-VillageServiceQualities=0x40586
 
 [Status]
 PopUp=0x4157B

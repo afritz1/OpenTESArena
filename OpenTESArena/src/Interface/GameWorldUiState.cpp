@@ -2511,8 +2511,9 @@ void GameWorldUI::showShopkeeperBackground(const char *titleText)
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, true);
 }
 
-int GameWorldUI::getCurrentServiceQuality(const ExeData &exeData , ArenaRandom &arenaRandom)
+int GameWorldUI::getCurrentServiceQuality(ArenaRandom &arenaRandom)
 {
+	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
 	GameState &gameState = game.gameState;
 
@@ -2521,7 +2522,7 @@ int GameWorldUI::getCurrentServiceQuality(const ExeData &exeData , ArenaRandom &
 	const ArenaCityType cityType = cityDef.type;
 
 	const MapDefinitionInterior &mapDefinitionInterior = gameState.getActiveMapDef().getSubDefinition().interior;
-	const std::optional<uint16_t> &doorVoxelOffset = mapDefinitionInterior.getDoorVoxelOffset();
+	const std::optional<uint16_t> &doorVoxelOffset = mapDefinitionInterior.doorVoxelOffset;
 
 	uint16_t doorVoxelOffsetForServiceQuality = 0;
 	if (doorVoxelOffset.has_value())
@@ -2533,6 +2534,7 @@ int GameWorldUI::getCurrentServiceQuality(const ExeData &exeData , ArenaRandom &
 		DebugLog("No door voxel offset; using default of 0 to get service quality.");
 	}
 
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return ArenaInteriorUtils::getServiceQuality(doorVoxelOffsetForServiceQuality, cityType, exeData, arenaRandom);
 }
 
@@ -3617,8 +3619,7 @@ void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonT
 	uiManager.disableTopMostContext();
 
 	ArenaRandom &arenaRandom = game.arenaRandom;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const int serviceQuality = getCurrentServiceQuality(exeData, arenaRandom);
+	const int serviceQuality = GameWorldUI::getCurrentServiceQuality(arenaRandom);
 
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
@@ -3760,8 +3761,7 @@ void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mous
 	uiManager.disableTopMostContext();
 
 	ArenaRandom &arenaRandom = game.arenaRandom;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const int serviceQuality = getCurrentServiceQuality(exeData, arenaRandom);
+	const int serviceQuality = GameWorldUI::getCurrentServiceQuality(arenaRandom);
 
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
@@ -3789,8 +3789,7 @@ void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType m
 	uiManager.disableTopMostContext();
 
 	ArenaRandom &arenaRandom = game.arenaRandom;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const int serviceQuality = getCurrentServiceQuality(exeData, arenaRandom);
+	const int serviceQuality = GameWorldUI::getCurrentServiceQuality(arenaRandom);
 
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
@@ -3838,12 +3837,13 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 	GameState &gameState = game.gameState;
 	Random &random = game.random;
 	ArenaRandom &arenaRandom = game.arenaRandom;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const int serviceQuality = getCurrentServiceQuality(exeData, arenaRandom);
+	const int serviceQuality = GameWorldUI::getCurrentServiceQuality(arenaRandom);
 
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
 	const bool isSneakingSuccessful = ArenaPlayerUtils::attemptThieving(serviceQuality, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
+	
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 	std::string text;
 	std::string fontName;
