@@ -12,6 +12,8 @@ bool PhysicsObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer object1, JPH::
 		return (object2 == PhysicsLayers::NON_MOVING) || (object2 == PhysicsLayers::MOVING) || (object2 == PhysicsLayers::SENSOR);
 	case PhysicsLayers::SENSOR:
 		return (object2 == PhysicsLayers::NON_MOVING) || (object2 == PhysicsLayers::MOVING) || (object2 == PhysicsLayers::SENSOR);
+	case PhysicsLayers::DEBUG_GHOST_MODE:
+		return object2 == PhysicsLayers::SENSOR;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(object1));
 	}
@@ -22,6 +24,7 @@ PhysicsBroadPhaseLayerInterface::PhysicsBroadPhaseLayerInterface()
 	this->objectToBroadPhase[PhysicsLayers::NON_MOVING] = PhysicsBroadPhaseLayers::NON_MOVING;
 	this->objectToBroadPhase[PhysicsLayers::MOVING] = PhysicsBroadPhaseLayers::MOVING;
 	this->objectToBroadPhase[PhysicsLayers::SENSOR] = PhysicsBroadPhaseLayers::SENSOR;
+	this->objectToBroadPhase[PhysicsLayers::DEBUG_GHOST_MODE] = PhysicsBroadPhaseLayers::DEBUG_GHOST_MODE;
 }
 
 uint32_t PhysicsBroadPhaseLayerInterface::GetNumBroadPhaseLayers() const
@@ -48,6 +51,8 @@ const char *PhysicsBroadPhaseLayerInterface::GetBroadPhaseLayerName(JPH::BroadPh
 		return "MOVING";
 	case static_cast<JPH::BroadPhaseLayer::Type>(PhysicsBroadPhaseLayers::SENSOR):
 		return "SENSOR";
+	case static_cast<JPH::BroadPhaseLayer::Type>(PhysicsBroadPhaseLayers::DEBUG_GHOST_MODE):
+		return "DEBUG_GHOST_MODE";
 	default:
 		DebugNotImplementedMsg(std::to_string(layerType));
 		return nullptr;
@@ -65,6 +70,8 @@ bool PhysicsObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer layer1
 		return (layer2 == PhysicsBroadPhaseLayers::NON_MOVING) || (layer2 == PhysicsBroadPhaseLayers::MOVING) || (layer2 == PhysicsBroadPhaseLayers::SENSOR);
 	case PhysicsLayers::SENSOR:
 		return (layer2 == PhysicsBroadPhaseLayers::NON_MOVING) || (layer2 == PhysicsBroadPhaseLayers::MOVING) || (layer2 == PhysicsBroadPhaseLayers::SENSOR);
+	case PhysicsLayers::DEBUG_GHOST_MODE:
+		return layer2 == PhysicsBroadPhaseLayers::SENSOR;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(layer1));
 	}

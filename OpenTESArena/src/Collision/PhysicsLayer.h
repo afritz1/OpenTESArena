@@ -11,7 +11,8 @@ namespace PhysicsLayers
 	static constexpr JPH::ObjectLayer NON_MOVING = 0;
 	static constexpr JPH::ObjectLayer MOVING = 1;
 	static constexpr JPH::ObjectLayer SENSOR = 2;
-	static constexpr JPH::ObjectLayer NUM_LAYERS = 3;
+	static constexpr JPH::ObjectLayer DEBUG_GHOST_MODE = 3;
+	static constexpr JPH::ObjectLayer NUM_LAYERS = DEBUG_GHOST_MODE + 1;
 };
 
 namespace PhysicsBroadPhaseLayers
@@ -19,7 +20,8 @@ namespace PhysicsBroadPhaseLayers
 	static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
 	static constexpr JPH::BroadPhaseLayer MOVING(1);
 	static constexpr JPH::BroadPhaseLayer SENSOR(2);
-	static constexpr uint32_t NUM_LAYERS = 3;
+	static constexpr JPH::BroadPhaseLayer DEBUG_GHOST_MODE(3);
+	static const uint32_t NUM_LAYERS = static_cast<uint32_t>(DEBUG_GHOST_MODE.GetValue()) + 1;
 };
 
 class PhysicsObjectLayerPairFilter : public JPH::ObjectLayerPairFilter

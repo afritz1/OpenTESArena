@@ -39,7 +39,7 @@
 namespace
 {
 	static constexpr JPH::ObjectLayer DEFAULT_PLAYER_LAYER = PhysicsLayers::MOVING;
-	static constexpr JPH::ObjectLayer GHOST_MODE_LAYER = PhysicsLayers::SENSOR; // Hacky but mostly works
+	static constexpr JPH::ObjectLayer GHOST_MODE_LAYER = PhysicsLayers::DEBUG_GHOST_MODE; // Hacky but mostly works. Can't create player in ghost mode or their default collision won't work upon switching back.
 
 	bool TryCreatePhysicsCharacters(JPH::PhysicsSystem &physicsSystem, bool isGhostModeActive, JPH::Character **outCharacter,
 		JPH::CharacterVirtual **outCharacterVirtual, JPH::CharacterVsCharacterCollisionSimple *outCharVsCharCollision)
