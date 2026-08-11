@@ -65,9 +65,9 @@ Plate item materials (Dwarven, etc.), potions/on-use items, quests, spells, and 
 
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip)
-1. Extract the `.zip`
-1. Copy the extracted `eawpats` folder inside the OpenTESArena `data` folder
-   - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
+1. Extract the `.zip` which creates an uncompressed eawpats folder
+1. Copy and paste the uncompressed `eawpats` folder into the OpenTESArena `data` folder
+   - You're encouraged to find higher-quality sound patches / soundfonts (.sf2) to use with `MidiConfig` in `options/options-default.txt`
   
 #### Run `otesa.exe`
 
@@ -124,9 +124,9 @@ rar x Arena106.exe
 
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
-1. Extract the `.tar.gz`
-1. Copy the extracted `eawpats` folder inside the OpenTESArena `data` folder
-   - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
+1. Extract the `.tar.gz` which creates an uncompressed eawpats folder
+1. Copy and paste the uncompressed `eawpats` folder into the OpenTESArena `data` folder
+   - You're encouraged to find higher-quality sound patches / soundfonts (.sf2) to use with `MidiConfig` in `options/options-default.txt`
 
 #### Run OpenTESArena
 ```bash
@@ -172,9 +172,9 @@ cd ..
 
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
-1. Extract the `.tar.gz`
-1. Copy the extracted `eawpats` folder inside the `Contents/Resources/data` folder in `otesa.app`
-   - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
+1. Extract the `.tar.gz` which creates an uncompressed eawpats folder
+1. Copy and paste the uncompressed `eawpats` folder into the `Contents/Resources/data` folder in `otesa.app`
+   - You're encouraged to find higher-quality sound patches / soundfonts (.sf2) to use with `MidiConfig` in `options/options-default.txt`
 
 #### Run OpenTESArena
 1. Return to the `Applications` folder or wherever you have the app installed and open `otesa.app`. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
