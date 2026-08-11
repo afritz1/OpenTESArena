@@ -3589,8 +3589,11 @@ void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonT
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	Random &random = game.random;
-	const bool isStealSuccessful = random.nextBool();
+	ArenaRandom &arenaRandom = game.arenaRandom;
+
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(5, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
@@ -3727,8 +3730,11 @@ void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mous
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	Random &random = game.random;
-	const bool isStealSuccessful = random.nextBool();
+	ArenaRandom &arenaRandom = game.arenaRandom;
+
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(3, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
@@ -3751,8 +3757,11 @@ void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType m
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	Random &random = game.random;
-	const bool isStealSuccessful = random.nextBool();
+	ArenaRandom &arenaRandom = game.arenaRandom;
+
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(6, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
