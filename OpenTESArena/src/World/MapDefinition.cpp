@@ -446,6 +446,7 @@ bool MapDefinition::initInterior(const MapGenerationInteriorInfo &generationInfo
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 		this->initStartPoints(mif);
 		this->startLevelIndex = mif.getStartingLevelIndex();
+		this->subDefinition.interior.doorVoxelOffset = generationInfo.prefab.doorVoxelOffset;
 	}
 	else if (interiorType == MapGenerationInteriorType::Dungeon)
 	{

@@ -556,8 +556,16 @@ struct ExeDataRaisedPlatforms
 
 struct ExeDataServices
 {
-	// Modifiers for the amount healed when resting
+	// Modifiers for the amount healed when resting.
 	int8_t tavernRoomHealModifiers[7];
+
+	// Chances for the quality range of a service.
+	uint8_t serviceQualityChances[4];
+
+	// Min/max format.
+	std::pair<uint8_t, uint8_t> cityStateServiceQualities[4]; 
+	std::pair<uint8_t, uint8_t> townServiceQualities[4];
+	std::pair<uint8_t, uint8_t> villageServiceQualities[4];
 
 	std::string palaceClosedAtNight;
 
@@ -693,6 +701,9 @@ struct ExeDataThieving
 
 	// Locks with difficulty levels of this value or higher show the "magically-held lock" message when examined.
 	uint8_t thievingMagicallyHeldLockDifficultyThreshold;
+
+	// Maximum lock difficulty a chest can have.
+	uint8_t thievingChestMaxLockLevel;
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };

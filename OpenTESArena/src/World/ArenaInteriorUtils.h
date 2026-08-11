@@ -5,6 +5,7 @@
 #include <string>
 
 #include "../Assets/ArenaTypes.h"
+#include "../Assets/ExeData.h"
 #include "../Voxels/VoxelUtils.h"
 
 class ArenaRandom;
@@ -42,4 +43,6 @@ namespace ArenaInteriorUtils
 	bool isProceduralInterior(ArenaInteriorType interiorType);
 
 	bool isPlayerTrespassing(ArenaBuildingType buildingType, bool isNight);
+
+	int getServiceQuality(uint16_t doorVoxelOffset, ArenaCityType cityType, const ExeData &exeData, ArenaRandom &random);
 }

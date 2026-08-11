@@ -1045,6 +1045,10 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	}
 
 	const int tavernRoomHealModifiersOffset = GetExeAddress(*section, "TavernRoomHealModifiers");
+	const int serviceQualityChancesOffset = GetExeAddress(*section, "ServiceQualityChances");
+	const int cityStateServiceQualitiesOffset = GetExeAddress(*section, "CityStateServiceQualities");
+	const int townServiceQualitiesOffset = GetExeAddress(*section, "TownServiceQualities");
+	const int villageServiceQualitiesOffset = GetExeAddress(*section, "VillageServiceQualities");
 	const int palaceClosedAtNightOffset = GetExeAddress(*section, "PalaceClosedAtNight");
 	const int equipmentModalTitleOffset = GetExeAddress(*section, "EquipmentModalTitle");
 	const int equipmentModalBuyOffset = GetExeAddress(*section, "EquipmentModalBuy");
@@ -1116,6 +1120,10 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int playerGoldRemainingOffset = GetExeAddress(*section, "PlayerGoldRemaining");
 
 	initInt8Array(this->tavernRoomHealModifiers, exeBytes, tavernRoomHealModifiersOffset);
+	initInt8Array(this->serviceQualityChances, exeBytes, serviceQualityChancesOffset);
+	initInt8PairArray(this->cityStateServiceQualities, exeBytes, cityStateServiceQualitiesOffset);
+	initInt8PairArray(this->townServiceQualities, exeBytes, townServiceQualitiesOffset);
+	initInt8PairArray(this->villageServiceQualities, exeBytes, villageServiceQualitiesOffset);
 	this->palaceClosedAtNight = GetExeStringNullTerminated(exeBytes, palaceClosedAtNightOffset);
 	this->equipmentModalTitle = GetExeStringNullTerminated(exeBytes, equipmentModalTitleOffset);
 	this->equipmentModalBuy = GetExeStringNullTerminated(exeBytes, equipmentModalBuyOffset);
@@ -1263,6 +1271,7 @@ bool ExeDataThieving::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int thievingPickpocketJunkThresholdOffset = GetExeAddress(*section, "ThievingPickpocketJunkThreshold");
 	const int thievingPickpocketMaxGoldOffset = GetExeAddress(*section, "ThievingPickpocketMaxGold");
 	const int thievingMagicallyHeldLockDifficultyThresholdOffset = GetExeAddress(*section, "ThievingMagicallyHeldLockDifficultyThreshold");
+	const int thievingChestMaxLockLevelOffset = GetExeAddress(*section, "ThievingChestMaxLockLevel");
 
 	this->thievingInteractionType = GetExeStringNullTerminated(exeBytes, thievingInteractionTypeOffset);
 	this->thievingSuccess = GetExeStringNullTerminated(exeBytes, thievingSuccessOffset);
@@ -1273,6 +1282,7 @@ bool ExeDataThieving::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->thievingPickpocketJunkThreshold = Bytes::getLE16(reinterpret_cast<const uint8_t*>(exeBytes.begin() + thievingPickpocketJunkThresholdOffset));
 	this->thievingPickpocketMaxGold = static_cast<uint8_t>(exeBytes[thievingPickpocketMaxGoldOffset]);
 	this->thievingMagicallyHeldLockDifficultyThreshold = static_cast<uint8_t>(exeBytes[thievingMagicallyHeldLockDifficultyThresholdOffset]);
+	this->thievingChestMaxLockLevel = static_cast<uint8_t>(exeBytes[thievingChestMaxLockLevelOffset]);
 
 	return true;
 }

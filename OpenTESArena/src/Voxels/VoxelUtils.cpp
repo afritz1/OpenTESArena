@@ -8,6 +8,16 @@
 
 #include "components/debug/Debug.h"
 
+WorldDouble2 VoxelUtils::originalPointToWorldPoint(OriginalDouble2 point)
+{
+	return WorldDouble2(point.y, point.x);
+}
+
+OriginalDouble2 VoxelUtils::worldPointToOriginalPoint(WorldDouble2 point)
+{
+	return OriginalDouble2(point.y, point.x);
+}
+
 WorldInt2 VoxelUtils::originalVoxelToWorldVoxel(const OriginalInt2 &voxel)
 {
 	return WorldInt2(voxel.y, voxel.x);
@@ -15,7 +25,7 @@ WorldInt2 VoxelUtils::originalVoxelToWorldVoxel(const OriginalInt2 &voxel)
 
 OriginalInt2 VoxelUtils::worldVoxelToOriginalVoxel(const WorldInt2 &voxel)
 {
-	return VoxelUtils::originalVoxelToWorldVoxel(voxel);
+	return OriginalInt2(voxel.y, voxel.x);
 }
 
 OriginalInt2 VoxelUtils::worldVoxelToOriginalVoxelMapTypeAware(WorldInt2 worldVoxel, MapType mapType)

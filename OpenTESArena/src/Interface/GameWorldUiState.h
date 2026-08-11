@@ -140,6 +140,7 @@ namespace GameWorldUI
 	void showConversationMessageBox(ConversationMessageBoxType messageBoxType);
 	void showConversationListBox(ConversationListBoxType listBoxType);
 	void showShopkeeperBackground(const char *titleText);
+	int getCurrentServiceQuality(ArenaRandom &arenaRandom);
 	GameWorldPopUpClosedCallback makeReturnToMessageBoxCallback(ConversationMessageBoxType messageBoxType);
 	void setShopkeeperPlayerGoldVisible(bool visible);
 	UiButtonCallback makeDirectionsEntryCallback(const DialogueDirectionsEntry &entry);

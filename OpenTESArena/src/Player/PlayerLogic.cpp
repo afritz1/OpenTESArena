@@ -748,23 +748,36 @@ namespace PlayerLogic
 			{
 				if (passesLootDistanceTest && canPlayerMoveAndTurn)
 				{
-					const ContainerEntityDefinition &containerDef = entityDef.container;
-					const ContainerEntityDefinitionType containerDefType = containerDef.type;
+					bool isContainerInventoryAccessible = true;
+					int lockLevel = 0;
+					if (entityInst.canBeLocked())
+					{
+						const EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
+						isContainerInventoryAccessible = !lockState.isLocked;
+
+						if (lockState.isLocked)
+						{
+							const OriginalDouble2 entityOriginalPosition = VoxelUtils::worldPointToOriginalPoint(entityPosition.getXZ());
+							const OriginalInt2 entityOriginalPositionArenaUnits(
+								static_cast<WEInt>(entityOriginalPosition.x * MIFUtils::ARENA_UNITS),
+								static_cast<SNInt>(entityOriginalPosition.y * MIFUtils::ARENA_UNITS));
+							lockLevel = ArenaLevelUtils::getChestVoxelLockLevel(entityOriginalPositionArenaUnits.x, entityOriginalPositionArenaUnits.y, arenaRandom, exeData);
+						}
+					}
 
 					if (interactionType == GameWorldInteractionType::Default)
 					{
-						bool isContainerInventoryAccessible = true;
-						if (entityInst.canBeLocked())
-						{
-							const EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
-							isContainerInventoryAccessible = !lockState.isLocked;
-						}
-
 						if (isContainerInventoryAccessible)
 						{
 							ItemInventory &containerItemInventory = entityChunkManager.itemInventories.get(entityInst.itemInventoryInstID);
 							constexpr bool destroyEntityIfEmpty = true; // Always for piles/chests.
 							GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory, destroyEntityIfEmpty);
+						}
+						else
+						{
+							const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData, arenaRandom);
+							const std::string lockDifficultyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
+							GameWorldUI::setActionText(lockDifficultyMsg.c_str());
 						}
 					}
 					else if (interactionType == GameWorldInteractionType::Thieving)
@@ -777,7 +790,6 @@ namespace PlayerLogic
 							const bool canAttemptLockpicking = lockState.isLocked;
 							if (canAttemptLockpicking)
 							{
-								const int lockLevel = 5; // @todo get original chest lock level
 								const bool isLockpickingSuccessful = ArenaPlayerUtils::attemptThieving(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 								if (isLockpickingSuccessful)
 								{

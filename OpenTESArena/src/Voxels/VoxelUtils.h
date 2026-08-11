@@ -25,6 +25,8 @@ namespace VoxelUtils
 	// Transformation methods for converting voxel coordinates between the original game's format
 	// (+X west, +Z south) and the new format (+X south, +Z west). This is a bi-directional
 	// conversion (i.e., it works both ways).
+	WorldDouble2 originalPointToWorldPoint(OriginalDouble2 point);
+	OriginalDouble2 worldPointToOriginalPoint(WorldDouble2 point);
 	WorldInt2 originalVoxelToWorldVoxel(const OriginalInt2 &voxel);
 	OriginalInt2 worldVoxelToOriginalVoxel(const WorldInt2 &voxel);
 	OriginalInt2 worldVoxelToOriginalVoxelMapTypeAware(WorldInt2 worldVoxel, MapType mapType);

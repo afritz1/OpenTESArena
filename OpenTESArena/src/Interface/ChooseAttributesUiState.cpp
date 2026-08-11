@@ -827,9 +827,10 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 
 			constexpr std::optional<bool> rulerIsMale; // Not needed.
 			const std::string interiorDisplayName; // Unused.
+			constexpr std::optional<uint16_t> doorVoxelOffset; // Not needed.
 
 			MapGenerationInteriorInfo interiorGenInfo;
-			interiorGenInfo.initPrefab(mifName, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName);
+			interiorGenInfo.initPrefab(mifName, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName, doorVoxelOffset);
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 

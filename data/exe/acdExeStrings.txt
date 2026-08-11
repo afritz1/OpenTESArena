@@ -285,6 +285,10 @@ Box4=0x48674
 
 [Services]
 TavernRoomHealModifiers=0x3DC9D
+ServiceQualityChances=0x40572
+CityStateServiceQualities=0x40576
+TownServiceQualities=0x4057E
+VillageServiceQualities=0x40586
 PalaceClosedAtNight=0x442D0
 EquipmentModalTitle=0x44474
 EquipmentModalBuy=0x44497
@@ -387,6 +391,7 @@ ThievingEntranceNoGuardsChance=0x40B0
 ThievingPickpocketJunkThreshold=0x200CF
 ThievingPickpocketMaxGold=0x200DE
 ThievingMagicallyHeldLockDifficultyThreshold=0x237AB
+ThievingChestMaxLockLevel=0x299FE
 
 [Travel]
 LocationFormatTexts=0x376AD
