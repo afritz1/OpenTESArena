@@ -140,6 +140,22 @@ struct ExeDataCityGeneration
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
+struct ExeDataDialogue
+{
+	// Whether two provinces are at war/peace with each other.
+	std::string neighborWarPeace[2];
+
+	std::string subjectPronouns[3]; // Male/female/neutral
+	std::string objectPronouns[3]; // Male/female/neutral
+	std::string possessivePronouns[3]; // Male/female/neutral
+
+	std::string cardinalDirections[8]; // North, ..., northwest. For NPCs giving directions.
+
+	std::string directionIsCityOnly; // When a wilderness NPC says a building is only in the city.
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataEntities
 {
 	std::string attributeNames[8]; // Strength, ... Luck.
@@ -326,7 +342,7 @@ struct ExeDataEquipment
 	uint8_t spellcastingItemMiscSpellSpells[8];
 	uint16_t spellcastingItemMiscSpellPricesPerCharge[8];
 	std::string enhancementItemNames[4];
-	std::string enhancementItemAttributeNames[8];
+	std::string enhancementItemAttributeNames[8]; // of Strength, etc.
 	uint8_t enhancementItemCumulativeChances[4];
 	uint16_t enhancementItemBasePrices[4];
 	uint16_t enhancementItemAttributePrices[8];
@@ -335,6 +351,7 @@ struct ExeDataEquipment
 
 	// Consumables.
 	std::string potionNames[15]; // "Potion of <effect>"...
+	uint16_t potionGoldPrices[15];
 	std::string unidentifiedPotionName;
 
 	// @todo: artifacts.
@@ -351,6 +368,15 @@ struct ExeDataEquipment
 	std::string alreadyEquippedItem;
 	std::string unequippableItem;
 	std::string classForbiddenItem;
+	std::string itemDetailWeight;
+	std::string itemDetailCondition;
+	std::string itemDetailWeapon;
+	std::string itemDetailArmor;
+	std::string itemDetailArmorNoWeight;
+	std::string itemDetailChargesLeft;
+	std::string itemDetailStatBonus;
+	std::string itemDetailUsesLeft;
+	std::string itemDetailPotion;
 	std::string staffPieceCount;
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
@@ -391,6 +417,7 @@ struct ExeDataLocations
 
 	// City-state, town, village (stored twice), dungeon.
 	std::string locationTypes[5];
+	std::string locationTypesLowercase[5];
 
 	// Palace, bs, noble, ..., vilpal, tower. Used with *MENU voxel .MIF filenames.
 	std::string menuMifPrefixes[11];
@@ -421,6 +448,9 @@ struct ExeDataLocations
 
 	// Ruler titles for cities.
 	std::string rulerTitles[14];
+
+	// Ruler name for the center province, replaces the randomly generated one in dialogue.
+	std::string centerProvinceRulerName;
 
 	// Filenames for mountains drawn on the horizon.
 	std::string distantMountainFilenames[3];
@@ -565,6 +595,7 @@ struct ExeDataServices
 	std::string tavernModalRumors;
 	std::string tavernModalExit;
 	std::string tavernDrinks[21];
+	uint8_t tavernDrinkGoldPrices[21];
 	std::string tavernRoomTypes[5];
 	std::string tavernRoomsAvailable;
 	std::string tavernSneakIntoRoomUnsuccessful;
@@ -601,6 +632,8 @@ struct ExeDataServices
 	std::string citizenRumorsModalWorkAskInTown;
 	std::string citizenWhereIsOptionsCity[9];
 	std::string citizenWhereIsOptionsWilderness[9];
+
+	std::string playerGoldRemaining; // Shown in shopkeeper UI.
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
@@ -784,6 +817,7 @@ struct ExeData
 	ExeDataCharacterClasses charClasses;
 	ExeDataCharacterCreation charCreation;
 	ExeDataCityGeneration cityGen;
+	ExeDataDialogue dialogue;
 	ExeDataEntities entities;
 	ExeDataEquipment equipment;
 	ExeDataItems items;

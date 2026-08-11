@@ -1,3 +1,4 @@
+#include "CommonUiMVC.h"
 #include "ProvinceMapUiMVC.h"
 #include "ProvinceMapUiState.h"
 #include "WorldMapUiState.h"
@@ -24,20 +25,14 @@ namespace
 	constexpr char ElementName_SearchInputTextEntryTextBox[] = "ProvinceMapSearchInputTextEntryTextBox";
 	constexpr char ElementName_SearchResultsListBox[] = "ProvinceMapSearchResultsListBox";
 
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
-
 	std::string GetLocationIconImageElementName(const LocationDefinition &locationDef)
 	{
-		char elementName[96];
-		std::snprintf(elementName, sizeof(elementName), "ProvinceMapLocationIconImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
-		return elementName;
+		return String::format("ProvinceMapLocationIconImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
 	}
 
 	std::string GetLocationIconHighlightImageElementName(const LocationDefinition &locationDef)
 	{
-		char elementName[96];
-		std::snprintf(elementName, sizeof(elementName), "ProvinceMapLocationIconHighlightImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
-		return elementName;
+		return String::format("ProvinceMapLocationIconHighlightImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
 	}
 }
 
@@ -732,7 +727,7 @@ void ProvinceMapUI::showTextPopUp(const char *str)
 	};
 
 	UiButtonInitInfo textPopUpBackButtonInitInfo;
-	textPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	textPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	textPopUpBackButtonInitInfo.callback = popUpButtonCallback;
 	uiManager.createButton(textPopUpBackButtonElementInitInfo, textPopUpBackButtonInitInfo, state.textPopUpContextInstID);
 
@@ -1076,12 +1071,13 @@ void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValu
 			const int locationDefIndex = locationInst.getLocationDefIndex();
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 
-			UiListBoxItem listBoxItem;
-			listBoxItem.text = locationInst.getName(locationDef);
-			listBoxItem.callback = [locationIndex](MouseButtonType)
+			UiListBoxItemCallback listBoxItemCallback = [locationIndex](MouseButtonType)
 			{
 				ProvinceMapUI::onSearchResultsListLocationSelected(locationIndex);
 			};
+
+			UiListBoxItem listBoxItem;
+			listBoxItem.init(locationInst.getName(locationDef), std::nullopt, listBoxItemCallback);
 
 			uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 		}

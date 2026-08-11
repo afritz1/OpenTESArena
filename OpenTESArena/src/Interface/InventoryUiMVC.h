@@ -8,6 +8,7 @@
 #include "components/utilities/Buffer.h"
 
 class Game;
+class ItemInventory;
 
 struct CharacterClassDefinition;
 struct ItemDefinition;
@@ -16,17 +17,7 @@ struct Player;
 
 namespace InventoryUiModel
 {
-	// @todo: not sure if this is final -- I think I want the text (data) and color (presentation) to be separate.
-	// - maybe it could be more like "getItemText(int)" and "getItemColor(int)".
-	struct ItemUiDefinition
-	{
-		std::string text;
-		Color color;
-
-		void init(const std::string &text, const Color &color);
-	};
-
-	Buffer<ItemUiDefinition> getPlayerInventoryItems(Game &game);
+	std::string getItemText(int inventorySlotIndex, const ItemInventory &inventory);
 
 	bool isItemEquippableByClass(const ItemDefinition &itemDef, const CharacterClassDefinition &charClassDef);
 }
@@ -39,5 +30,5 @@ namespace InventoryUiView
 	constexpr Color ItemMagicEquippedColor(138, 255, 255);
 	constexpr Color ItemUnequippableColor(199, 32, 0);
 
-	Color getItemDisplayColor(const ItemInstance &itemInst, const Player &player);
+	Color getItemDisplayColor(int inventorySlotIndex, const Player &player);
 }

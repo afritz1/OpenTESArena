@@ -16,8 +16,8 @@ class CFAFile;
 class CharacterClassLibrary;
 class TextureManager;
 
+enum class ArenaNpcPersonalityType;
 enum class MapType;
-enum class StaticNpcPersonalityType;
 
 struct ExeData;
 
@@ -76,6 +76,9 @@ namespace ArenaAnimUtils
 	constexpr int CitizenIdleIndices[] = { 6, 7, 8 };
 	constexpr int CitizenWalkIndices[] = { 0, 1, 2, 3, 4, 5 };
 
+	// Animation values for containers.
+	const std::string PlayerItemDropContainerFilename = "EQUIPMEN.IMG";
+
 	// Animation values for VFX like spells and melee strikes.
 	constexpr double VfxIdleSecondsPerFrame = 1.0 / 12.0;
 
@@ -95,6 +98,7 @@ namespace ArenaAnimUtils
 	bool isNpcBeggar(ArenaItemIndex itemIndex);
 	bool isNpcFirebreather(ArenaItemIndex itemIndex);
 	bool isNpcProstitute(ArenaItemIndex itemIndex);
+	bool isNpcProstitute2(ArenaItemIndex itemIndex);
 	bool isNpcJester(ArenaItemIndex itemIndex);
 	bool isNpcStreetVendor(ArenaItemIndex itemIndex);
 	bool isNpcMusician(ArenaItemIndex itemIndex);
@@ -103,11 +107,16 @@ namespace ArenaAnimUtils
 	bool isNpcSnakeCharmer(ArenaItemIndex itemIndex);
 	bool isNpcStreetVendorAlchemist(ArenaItemIndex itemIndex);
 	bool isNpcWizard(ArenaItemIndex itemIndex);
+
 	bool isNpcTavernPatron(ArenaItemIndex itemIndex);
 
 	bool isWildernessDen(ArenaItemIndex itemIndex, MapType mapType);
 
-	std::optional<StaticNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex, MapType mapType);
+	// For NPCs that can talk about themselves/directions/rumors.
+	std::optional<ArenaNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex);
+
+	// For NPCs that provide services.
+	std::optional<ArenaShopkeeperType> tryGetShopkeeperType(ArenaItemIndex itemIndex, ArenaInteriorType interiorType);
 
 	constexpr ArenaItemIndex LockedChestItemIndex = 7;
 	constexpr ArenaItemIndex UnlockedChestItemIndex = 8;
@@ -202,8 +211,11 @@ namespace ArenaAnimUtils
 	bool tryMakeCitizenAnims(ArenaClimateType climateType, bool isMale, const ExeData &exeData,
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
+	// Writes out animation for player item drop pile.
+	bool tryMakePlayerItemDropContainerAnim(const std::string &animFilename, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
+
 	// Writes out animation for spell projectile, explosion, or melee VFX.
-	bool tryMakeVfxAnim(const std::string &animFilename, bool isLooping, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
+	bool tryMakeVfxAnim(const std::string &animFilename, bool isLooping, bool isAspectCorrected, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Transforms the palette indices used for a citizen's clothes and skin. The given seed value is
 	// "pure random" and can essentially be anything.

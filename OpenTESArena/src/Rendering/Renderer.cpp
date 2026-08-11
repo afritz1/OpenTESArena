@@ -162,9 +162,6 @@ bool Renderer::init(const Window *window, RenderBackendType backendType, const R
 
 	switch (backendType)
 	{
-	case RenderBackendType::Sdl2DSoft3D:
-		this->backend = std::make_unique<Sdl2DSoft3DRenderBackend>();
-		break;
 	case RenderBackendType::Vulkan:
 #ifdef HAVE_VULKAN
 		this->backend = std::make_unique<VulkanRenderBackend>();
@@ -173,6 +170,9 @@ bool Renderer::init(const Window *window, RenderBackendType backendType, const R
 		DebugLogError("Engine was not compiled with Vulkan support.");
 		return false;
 #endif
+	case RenderBackendType::Sdl2DSoft3D:
+		this->backend = std::make_unique<Sdl2DSoft3DRenderBackend>();
+		break;
 	default:
 		DebugLogErrorFormat("Unrecognized render backend %d.", backendType);
 		return false;

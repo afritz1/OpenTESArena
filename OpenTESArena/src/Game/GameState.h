@@ -9,6 +9,7 @@
 #include "Jolt/Physics/PhysicsSystem.h"
 
 #include "../Entities/EntityDefinitionLibrary.h"
+#include "../Interface/DialogueManager.h"
 #include "../Interface/ProvinceMapUiMVC.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
@@ -26,6 +27,7 @@ class ProvinceDefinition;
 
 enum class MapType;
 
+struct EntityInitInfo;
 struct MusicDefinition;
 struct RenderCamera;
 
@@ -59,26 +61,34 @@ struct EntityEncounterSpawnInfo
 	bool isCityGuards() const;
 };
 
+enum class CombatResultSourceType
+{
+	PlayerMeleeAttack,
+	PlayerBowProjectile,
+	PlayerSpellProjectile
+};
+
 // A voxel was hit/affected by something in combat.
 struct CombatVoxelResult
 {
 	WorldInt3 voxel;
-	bool isFromWeapon; // If hit by a weapon, or by fists.
+	CombatResultSourceType sourceType;
 
 	CombatVoxelResult();
 
-	void init(WorldInt3 voxel, bool isFromWeapon);
+	void init(WorldInt3 voxel, CombatResultSourceType sourceType);
 };
 
 // An entity was hit/affected by something in combat.
 struct CombatEntityResult
 {
 	EntityInstanceID entityInstID;
-	bool isFromMeleeWeapon; // From melee, or from ranged.
+	CombatResultSourceType sourceType;
+	EntityInstanceID sourceEntityInstID; // Set if the source of this result was an entity (i.e. projectile).
 
 	CombatEntityResult();
 
-	void init(EntityInstanceID entityInstID, bool isFromMeleeWeapon);
+	void init(EntityInstanceID entityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID);
 };
 
 struct CombatResults
@@ -104,6 +114,22 @@ struct CampingState
 
 	void setManualHours(int hours);
 	void setUntilHealed();
+
+	void clear();
+};
+
+struct TavernRentedRoomState
+{
+	//std::string interiorName; // @todo a better way to uniquely identify this tavern, like LocationDefinitionID + MapType + WorldInt2
+	int roomType; // Affects quality of rest.
+	double remainingSeconds;
+
+	TavernRentedRoomState();
+
+	bool hasTimeRemaining() const;
+
+	void setRentedRoom(int roomType, int hours);
+	void update(double dt);
 
 	void clear();
 };
@@ -162,10 +188,15 @@ private:
 	WeatherInstance weatherInst;
 
 	CampingState campingState;
+	TavernRentedRoomState tavernRentedRoomState;
 
 	CombatResults combatResults;
 
+	std::vector<EntityInitInfo> queuedEntityInitInfos; // For creating VFX after physics simulation completes each frame.
+
 	GuardSpawnState guardSpawnState;
+
+	std::vector<DialogueDirectionsDetailEntry> automapDirectionsDetailEntries; // Stored directions from NPCs that appear on the automap.
 
 	void clearMaps();
 public:
@@ -208,11 +239,13 @@ public:
 	ArenaBuildingType getBuildingType() const; // For enemy encounters.
 	const ProvinceDefinition &getProvinceDefinition() const;
 	const LocationDefinition &getLocationDefinition() const;
+	int getLocationIndex() const;
 	WorldMapInstance &getWorldMapInstance();
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();
 	const ProvinceMapUiModel::TravelData *getTravelData() const;
 	Span<const ArenaWeatherType> getWorldMapWeathers() const;
+	int getLocationGlobalQuarter(int provinceIndex, int locationIndex) const;
 	ArenaWeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
 	Date &getDate();
 	Clock &getClock();
@@ -241,11 +274,21 @@ public:
 	void setCampingUntilHealed();
 	void clearCampingState();
 
-	void addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon);
-	void addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon);
+	bool canUseTavernRentedRoomForCamping() const;
+	void setTavernRentedRoom(int roomType, int hours);
+	void clearTavernRentedRoomState();
 
-	void spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
+	void addCombatVoxelResult(WorldInt3 voxel, CombatResultSourceType sourceType);
+	void addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID);
+
+	void queueEntityInstantiate(const EntityInitInfo &initInfo);
+
+	int spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
 	void queueCityGuardEncounter(Game &game, bool isViolence);
+
+	Span<const DialogueDirectionsDetailEntry> getAutomapDirectionsDetailEntries() const;
+	void addAutomapDirectionsDetailEntry(const std::string &buildingName, WorldInt3 worldVoxel);
+	void clearAutomapDirectionsDetailEntries();
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
 	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);
@@ -266,6 +309,7 @@ public:
 	void tickEntitiesPostPhysicsStep(Game &game);
 	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
 	void tickCombatResults(Game &game);
+	void tickEntityInstantiations(Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(double dt, const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game);
 };

@@ -1,4 +1,5 @@
 #include "CharacterSheetUiMVC.h"
+#include "CommonUiMVC.h"
 #include "GameWorldUiState.h"
 #include "LevelUpUiMVC.h"
 #include "LevelUpUiState.h"
@@ -9,6 +10,8 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/UiPivotType.h"
 
+#include "components/utilities/String.h"
+
 namespace
 {
 	constexpr char ContextName_RemainingPointsPopUp[] = "LevelUpRemainingPointsPopUp";
@@ -18,13 +21,9 @@ namespace
 	constexpr char PlayerSpellPointsTextBoxElementName[] = "LevelUpSpellPointsTextBox";
 	constexpr char BonusPointsTextBoxElementName[] = "LevelUpBonusPointsTextBox";
 
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
-
 	std::string GetPrimaryAttributeTextBoxElementName(const char *attributeName)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "LevelUp%sTextBox", attributeName);
-		return std::string(elementName);
+		return String::format("LevelUp%sTextBox", attributeName);
 	}
 
 	std::string GetDerivedAttributeTextBoxElementName(const char *attributeName)
@@ -34,9 +33,7 @@ namespace
 
 	std::string GetPrimaryAttributeUpDownButtonElementName(const char *attributeName, bool up)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "LevelUp%s%sButton", attributeName, up ? "Up" : "Down");
-		return std::string(elementName);
+		return String::format("LevelUp%s%sButton", attributeName, up ? "Up" : "Down");
 	}
 
 	void OnPrimaryAttributeButtonSelected(int attributeIndex)
@@ -176,31 +173,7 @@ void LevelUpUI::create(Game &game)
 	LevelUpUI::updateGold();
 	LevelUpUI::updateBonusPoints();
 
-	const CharacterEquipmentPresentationState equipmentPresentationState = CharacterSheetUiView::getEquipmentPresentationState(game);
-
-	UiElementInitInfo playerBackgroundImageElementInitInfo;
-	playerBackgroundImageElementInitInfo.name = "LevelUpPlayerBackground";
-	playerBackgroundImageElementInitInfo.position = equipmentPresentationState.bodyPosition;
-	playerBackgroundImageElementInitInfo.drawOrder = 0;
-	uiManager.createImage(playerBackgroundImageElementInitInfo, equipmentPresentationState.bodyTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo playerHeadImageElementInitInfo;
-	playerHeadImageElementInitInfo.name = "LevelUpPlayerHead";
-	playerHeadImageElementInitInfo.position = equipmentPresentationState.headPosition;
-	playerHeadImageElementInitInfo.drawOrder = 1;
-	uiManager.createImage(playerHeadImageElementInitInfo, equipmentPresentationState.headTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo playerPantsImageElementInitInfo;
-	playerPantsImageElementInitInfo.name = "LevelUpPlayerPants";
-	playerPantsImageElementInitInfo.position = equipmentPresentationState.pantsPosition;
-	playerPantsImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(playerPantsImageElementInitInfo, equipmentPresentationState.pantsTextureID, state.contextInstID, renderer);
-
-	UiElementInitInfo playerShirtImageElementInitInfo;
-	playerShirtImageElementInitInfo.name = "LevelUpPlayerShirt";
-	playerShirtImageElementInitInfo.position = equipmentPresentationState.shirtPosition;
-	playerShirtImageElementInitInfo.drawOrder = 3;
-	uiManager.createImage(playerShirtImageElementInitInfo, equipmentPresentationState.shirtTextureID, state.contextInstID, renderer);
+	CharacterSheetUiView::createOrUpdateEquipmentUiElements(LevelUpUI::ContextName, state.contextInstID, game);
 
 	// Remaining points popup.
 	UiContextInitInfo remainingPointsPopUpContextInitInfo;
@@ -241,7 +214,7 @@ void LevelUpUI::create(Game &game)
 	remainingPointsPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo remainingPointsPopUpBackButtonInitInfo;
-	remainingPointsPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	remainingPointsPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	remainingPointsPopUpBackButtonInitInfo.callback = LevelUpUI::onRemainingPointsPopUpBackButtonSelected;
 	uiManager.createButton(remainingPointsPopUpBackButtonElementInitInfo, remainingPointsPopUpBackButtonInitInfo, state.remainingPointsPopUpContextInstID);
 

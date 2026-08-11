@@ -10,9 +10,19 @@ namespace InputActionMapName
 	constexpr const char *CharacterCreation = "CharacterCreation"; // Save/reroll attributes.
 	constexpr const char *CharacterEquipment = "CharacterEquipment";
 	constexpr const char *CharacterSheet = "CharacterSheet";
+	constexpr const char *EquipmentStore = "EquipmentStore";
+	constexpr const char *EquipmentStoreBuy = "EquipmentStoreBuy";
 	constexpr const char *GameWorld = "GameWorld";
 	constexpr const char *Logbook = "Logbook";
+	constexpr const char *MagesGuild = "MagesGuild";
+	constexpr const char *MagesGuildBuy = "MagesGuildBuy";
+	constexpr const char *MagesGuildSteal = "MagesGuildSteal";
 	constexpr const char *MainMenu = "MainMenu"; // Load, new game, exit, test.
+	constexpr const char *NpcGeneral = "NpcGeneral";
+	constexpr const char *NpcRumors = "NpcRumors";
+	constexpr const char *Tavern = "Tavern";
+	constexpr const char *TavernRumors = "TavernRumors";
+	constexpr const char *Temple = "Temple";
 	constexpr const char *WorldMap = "WorldMap";
 
 	constexpr const char *Names[] =
@@ -24,9 +34,19 @@ namespace InputActionMapName
 		CharacterCreation,
 		CharacterEquipment,
 		CharacterSheet,
+		EquipmentStore,
+		EquipmentStoreBuy,
 		GameWorld,
 		Logbook,
-		MainMenu,
+		MagesGuild,
+		MagesGuildBuy,
+		MagesGuildSteal,
+		MainMenu,		
+		NpcGeneral,
+		NpcRumors,
+		Tavern,
+		TavernRumors,
+		Temple,
 		WorldMap
 	};
 }

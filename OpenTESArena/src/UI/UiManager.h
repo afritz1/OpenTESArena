@@ -89,6 +89,7 @@ public:
 
 	UiElementInstanceID getElementByName(const char *name) const;
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
+	void setElementDrawOrder(UiElementInstanceID elementInstID, int drawOrder);
 	std::vector<UiElementInstanceID> getTopMostActiveElementsOfType(UiElementType elementType) const;
 
 	Rect getTransformGlobalRect(UiElementInstanceID elementInstID) const; // Includes local-to-parent transform.
@@ -111,8 +112,12 @@ public:
 
 	UiElementInstanceID createListBox(const UiElementInitInfo &initInfo, const UiListBoxInitInfo &listBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);
 	int getListBoxItemCount(UiElementInstanceID elementInstID) const;
+	int getListBoxColumnCount(UiElementInstanceID elementInstID) const;
+	int getListBoxColumnPixelXOffset(UiElementInstanceID elementInstID, int column) const;
 	Rect getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const;
 	const UiListBoxItemCallback &getListBoxItemCallback(UiElementInstanceID elementInstID, int itemIndex) const;
+	int getListBoxHighlightedItemIndex(UiElementInstanceID elementInstID) const;
+	void setListBoxItemTextAtColumn(UiElementInstanceID elementInstID, int index, int column, const char *text);
 	void setListBoxItemText(UiElementInstanceID elementInstID, int index, const char *text);
 	void setListBoxItemColorOverride(UiElementInstanceID elementInstID, int index, const std::optional<Color> &color);
 	int getListBoxHoveredItemIndex(UiElementInstanceID elementInstID, const InputManager &inputManager, const Window &window) const;
@@ -121,6 +126,7 @@ public:
 	void insertBackListBoxItem(UiElementInstanceID elementInstID, UiListBoxItem &&item);
 	void eraseListBoxItem(UiElementInstanceID elementInstID, int index);
 	void clearListBox(UiElementInstanceID elementInstID);
+	void selectListBoxItem(UiElementInstanceID elementInstID, int index, MouseButtonType mouseButtonType);
 	void scrollListBoxDown(UiElementInstanceID elementInstID);
 	void scrollListBoxUp(UiElementInstanceID elementInstID);
 	void freeListBox(UiElementInstanceID elementInstID, Renderer &renderer);

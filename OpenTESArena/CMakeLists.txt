@@ -138,6 +138,8 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/RayCastTypes.h")
 
 SET(TES_COMBAT
+    "${SRC_ROOT}/Combat/ArenaCombatUtils.cpp"
+    "${SRC_ROOT}/Combat/ArenaCombatUtils.h"
     "${SRC_ROOT}/Combat/CombatLogic.cpp"
     "${SRC_ROOT}/Combat/CombatLogic.h")
 
@@ -236,6 +238,10 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/CinematicUiState.h"
     "${SRC_ROOT}/Interface/CommonUiMVC.cpp"
     "${SRC_ROOT}/Interface/CommonUiMVC.h"
+    "${SRC_ROOT}/Interface/DialogueFunctions.cpp"
+    "${SRC_ROOT}/Interface/DialogueFunctions.h"
+    "${SRC_ROOT}/Interface/DialogueManager.cpp"
+    "${SRC_ROOT}/Interface/DialogueManager.h"
     "${SRC_ROOT}/Interface/GameWorldUiMVC.cpp"
     "${SRC_ROOT}/Interface/GameWorldUiMVC.h"
     "${SRC_ROOT}/Interface/GameWorldUiState.cpp"

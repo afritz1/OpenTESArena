@@ -90,8 +90,8 @@ namespace
 	constexpr int MaxTransformUniformBufferDynamicDescriptors = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
 	constexpr int MaxTransformPoolDescriptorSets = MaxTransformUniformBufferDynamicDescriptors;
 
-	constexpr int MaxMaterialImageDescriptors = 65536; // Lots of unique materials for entities. @todo texture atlasing
-	constexpr int MaxMaterialUniformBufferDescriptors = 32768; // Need per-pixel/per-mesh lighting mode descriptor per material :/ @todo texture atlasing
+	constexpr int MaxMaterialImageDescriptors = 1 << 20; // Lots of unique materials for entities/citizens. @todo texture atlasing
+	constexpr int MaxMaterialUniformBufferDescriptors = 1 << 20; // Need per-pixel/per-mesh lighting mode descriptor per material :/ @todo texture atlasing
 	constexpr int MaxMaterialPoolDescriptorSets = MaxMaterialImageDescriptors + MaxMaterialUniformBufferDescriptors;
 
 	// Scene descriptor set layout indices.

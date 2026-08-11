@@ -13,6 +13,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Input/InputManager.h"
+#include "../Interface/DialogueManager.h"
 #include "../Interface/GameWorldUiMVC.h"
 #include "../Player/CharacterCreationState.h"
 #include "../Player/CharacterLevelUpState.h"
@@ -53,6 +54,7 @@ public:
 
 	SceneManager sceneManager;
 	UiManager uiManager;
+	DialogueManager dialogueManager;
 	UiContextInstanceID globalUiContextInstID; // For global UI elements/listeners like cursor and screenshots.
 	UiElementInstanceID cursorImageElementInstID;
 	UiTextureID defaultCursorTextureID; // Sword cursor used by most UI.

@@ -4,6 +4,8 @@
 #include "Vector4.h"
 #include "../Utilities/Endian.h"
 
+#include "components/utilities/String.h"
+
 // -- Vector4i --
 
 template<typename T>
@@ -71,9 +73,7 @@ Vector4i<T> Vector4i<T>::operator/(const Vector4i<T> &v) const
 template<typename T>
 std::string Vector4i<T>::toString() const
 {
-	char buffer[128];
-	std::snprintf(buffer, std::size(buffer), "%d, %d, %d, %d", this->x, this->y, this->z, this->w);
-	return std::string(buffer);
+	return String::format("%d, %d, %d, %d", this->x, this->y, this->z, this->w);
 }
 
 // -- Vector4f --
@@ -161,9 +161,7 @@ Vector4f<T> Vector4f<T>::operator/(const Vector4f<T> &v) const
 template<typename T>
 std::string Vector4f<T>::toString() const
 {
-	char buffer[128];
-	std::snprintf(buffer, std::size(buffer), "%.2f, %.2f, %.2f, %.2f", this->x, this->y, this->z, this->w);
-	return std::string(buffer);
+	return String::format("%.2f, %.2f, %.2f, %.2f", this->x, this->y, this->z, this->w);
 }
 
 template<typename T>

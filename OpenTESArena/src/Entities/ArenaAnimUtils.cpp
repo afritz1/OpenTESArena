@@ -8,6 +8,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Entities/ArenaEntityUtils.h"
 #include "../Entities/EntityDefinition.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Stats/CharacterClassDefinition.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../World/MapType.h"
@@ -78,9 +79,14 @@ namespace ArenaAnimUtils
 		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
 	}
 
-	void MakeVfxKeyframeDimensions(int width, int height, double *outWidth, double *outHeight)
+	void MakeVfxKeyframeDimensions(int width, int height, bool isAspectCorrected, double *outWidth, double *outHeight)
 	{
 		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
+		
+		if (isAspectCorrected)
+		{
+			*outHeight *= ArenaRenderUtils::TALL_PIXEL_RATIO; // Makes spell projectiles/explosions look better
+		}
 	}
 
 	int GetCitizenAnimationFilenameIndex(bool isMale, ArenaClimateType climateType)
@@ -647,12 +653,7 @@ bool ArenaAnimUtils::isHumanEnemyIndex(ArenaItemIndex itemIndex)
 
 bool ArenaAnimUtils::isNpcShopkeeper(ArenaItemIndex itemIndex, MapType mapType)
 {
-	if (mapType == MapType::Wilderness)
-	{
-		return false; // Avoid wilderness den.
-	}
-
-	return itemIndex == 15;
+	return (itemIndex == 15) && (mapType == MapType::Interior);
 }
 
 bool ArenaAnimUtils::isNpcBeggar(ArenaItemIndex itemIndex)
@@ -667,7 +668,12 @@ bool ArenaAnimUtils::isNpcFirebreather(ArenaItemIndex itemIndex)
 
 bool ArenaAnimUtils::isNpcProstitute(ArenaItemIndex itemIndex)
 {
-	return (itemIndex >= 18) && (itemIndex <= 20);
+	return itemIndex == 18;
+}
+
+bool ArenaAnimUtils::isNpcProstitute2(ArenaItemIndex itemIndex)
+{
+	return (itemIndex == 19) || (itemIndex == 20);
 }
 
 bool ArenaAnimUtils::isNpcJester(ArenaItemIndex itemIndex)
@@ -722,63 +728,87 @@ bool ArenaAnimUtils::isWildernessDen(ArenaItemIndex itemIndex, MapType mapType)
 	return (itemIndex == 15) && (mapType == MapType::Wilderness);
 }
 
-std::optional<StaticNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex, MapType mapType)
+std::optional<ArenaNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex)
 {
-	if (ArenaAnimUtils::isNpcShopkeeper(itemIndex, mapType))
+	if (ArenaAnimUtils::isNpcBeggar(itemIndex))
 	{
-		return StaticNpcPersonalityType::Shopkeeper;
-	}
-	else if (ArenaAnimUtils::isNpcBeggar(itemIndex))
-	{
-		return StaticNpcPersonalityType::Beggar;
+		return ArenaNpcPersonalityType::Beggar;
 	}
 	else if (ArenaAnimUtils::isNpcFirebreather(itemIndex))
 	{
-		return StaticNpcPersonalityType::Firebreather;
+		return ArenaNpcPersonalityType::Firebreather;
 	}
 	else if (ArenaAnimUtils::isNpcProstitute(itemIndex))
 	{
-		return StaticNpcPersonalityType::Prostitute;
+		return ArenaNpcPersonalityType::Prostitute;
+	}
+	else if (ArenaAnimUtils::isNpcProstitute2(itemIndex))
+	{
+		return ArenaNpcPersonalityType::Prostitute2;
 	}
 	else if (ArenaAnimUtils::isNpcJester(itemIndex))
 	{
-		return StaticNpcPersonalityType::Jester;
+		return ArenaNpcPersonalityType::Jester;
 	}
 	else if (ArenaAnimUtils::isNpcStreetVendor(itemIndex))
 	{
-		return StaticNpcPersonalityType::StreetVendor;
+		return ArenaNpcPersonalityType::StreetVendor;
 	}
 	else if (ArenaAnimUtils::isNpcMusician(itemIndex))
 	{
-		return StaticNpcPersonalityType::Musician;
+		return ArenaNpcPersonalityType::Musician;
 	}
 	else if (ArenaAnimUtils::isNpcPriest(itemIndex))
 	{
-		return StaticNpcPersonalityType::Priest;
+		return ArenaNpcPersonalityType::Priest;
 	}
 	else if (ArenaAnimUtils::isNpcThief(itemIndex))
 	{
-		return StaticNpcPersonalityType::Thief;
+		return ArenaNpcPersonalityType::Thief;
 	}
 	else if (ArenaAnimUtils::isNpcSnakeCharmer(itemIndex))
 	{
-		return StaticNpcPersonalityType::SnakeCharmer;
+		return ArenaNpcPersonalityType::SnakeCharmer;
 	}
 	else if (ArenaAnimUtils::isNpcStreetVendorAlchemist(itemIndex))
 	{
-		return StaticNpcPersonalityType::StreetVendorAlchemist;
+		return ArenaNpcPersonalityType::StreetVendor2;
 	}
 	else if (ArenaAnimUtils::isNpcWizard(itemIndex))
 	{
-		return StaticNpcPersonalityType::Wizard;
-	}
-	else if (ArenaAnimUtils::isNpcTavernPatron(itemIndex))
-	{
-		return StaticNpcPersonalityType::TavernPatron;
+		return ArenaNpcPersonalityType::Wizard;
 	}
 	else
 	{
 		return std::nullopt;
+	}
+}
+
+std::optional<ArenaShopkeeperType> ArenaAnimUtils::tryGetShopkeeperType(ArenaItemIndex itemIndex, ArenaInteriorType interiorType)
+{
+	if (!ArenaAnimUtils::isNpcShopkeeper(itemIndex, MapType::Interior))
+	{
+		return std::nullopt;
+	}
+
+	switch (interiorType)
+	{
+		case ArenaInteriorType::Equipment:
+			return ArenaShopkeeperType::Equipment;
+		case ArenaInteriorType::MagesGuild:
+			return ArenaShopkeeperType::MagesGuild;
+		case ArenaInteriorType::Tavern:
+			return ArenaShopkeeperType::Tavern;
+		case ArenaInteriorType::Temple:
+			return ArenaShopkeeperType::Temple;
+		case ArenaInteriorType::Crypt:
+		case ArenaInteriorType::Dungeon:
+		case ArenaInteriorType::House:
+		case ArenaInteriorType::Noble:
+		case ArenaInteriorType::Palace:
+		case ArenaInteriorType::Tower:
+		default:
+			return std::nullopt;
 	}
 }
 
@@ -1289,7 +1319,31 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaClimateType climateType, bool isMa
 	return true;
 }
 
-bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLooping, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
+bool ArenaAnimUtils::tryMakePlayerItemDropContainerAnim(const std::string &animFilename, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
+{
+	DebugAssert(outAnimDef->stateCount == 0);
+	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
+
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogWarningFormat("Couldn't get player item drop container anim texture file metadata for \"%s\".", animFilename.c_str());
+		return false;
+	}
+
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	TextureAsset textureAsset(textureFileMetadata.getFilename());
+	const double width = MakeDefaultKeyframeDimension(textureFileMetadata.getWidth(0));
+	const double height = MakeDefaultKeyframeDimension(textureFileMetadata.getHeight(0));
+	outAnimDef->addState(EntityAnimationUtils::STATE_IDLE.c_str(), 0.0, false);
+	outAnimDef->addKeyframeList(0, false);
+	outAnimDef->addKeyframe(0, std::move(textureAsset), width, height);
+	outAnimDef->populateLinearizedIndices();
+
+	return true;
+}
+
+bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLooping, bool isAspectCorrected, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	DebugAssert(outAnimDef->stateCount == 0);
 	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
@@ -1311,7 +1365,7 @@ bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLoop
 	for (int i = 0; i < keyframeCount; i++)
 	{
 		double width, height;
-		MakeVfxKeyframeDimensions(textureFileMetadata.getWidth(i), textureFileMetadata.getHeight(i), &width, &height);
+		MakeVfxKeyframeDimensions(textureFileMetadata.getWidth(i), textureFileMetadata.getHeight(i), isAspectCorrected, &width, &height);
 
 		TextureAsset textureAsset(textureFileMetadata.getFilename(), i);
 		outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);

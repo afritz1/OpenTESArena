@@ -462,6 +462,33 @@ bool ExeDataCityGeneration::init(Span<const std::byte> exeBytes, const KeyValueF
 	return true;
 }
 
+bool ExeDataDialogue::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Dialogue";
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
+		return false;
+	}
+
+	const int neighborWarPeaceOffset = GetExeAddress(*section, "NeighborWarPeace");
+	const int subjectPronounsOffset = GetExeAddress(*section, "SubjectPronouns");
+	const int objectPronounsOffset = GetExeAddress(*section, "ObjectPronouns");
+	const int possessivePronounsOffset = GetExeAddress(*section, "PossessivePronouns");
+	const int cardinalDirectionsOffset = GetExeAddress(*section, "CardinalDirections");
+	const int directionIsCityOnlyOffset = GetExeAddress(*section, "DirectionIsCityOnly");
+
+	initStringArrayNullTerminated(this->neighborWarPeace, exeBytes, neighborWarPeaceOffset);
+	initStringArrayNullTerminated(this->subjectPronouns, exeBytes, subjectPronounsOffset);
+	initStringArrayNullTerminated(this->objectPronouns, exeBytes, objectPronounsOffset);
+	initStringArrayNullTerminated(this->possessivePronouns, exeBytes, possessivePronounsOffset);
+	initStringArrayNullTerminated(this->cardinalDirections, exeBytes, cardinalDirectionsOffset);
+	this->directionIsCityOnly = GetExeStringNullTerminated(exeBytes, directionIsCityOnlyOffset);
+
+	return true;
+}
+
 bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Entities";
@@ -642,6 +669,7 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int armorClassItemMaterialChancesOffset = GetExeAddress(*section, "ArmorClassItemMaterialChances");
 	const int armorClassItemMaterialPriceMultipliersOffset = GetExeAddress(*section, "ArmorClassItemMaterialPriceMultipliers");
 	const int potionNamesOffset = GetExeAddress(*section, "PotionNames");
+	const int potionGoldPricesOffset = GetExeAddress(*section, "PotionGoldPrices");
 	const int unidentifiedPotionNameOffset = GetExeAddress(*section, "UnidentifiedPotionName");
 	const int bodyPartNamesOffset = GetExeAddress(*section, "BodyPartNames");
 	const int weaponAnimFilenamesOffset = GetExeAddress(*section, "WeaponAnimationFilenames");
@@ -653,6 +681,15 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int alreadyEquippedItemOffset = GetExeAddress(*section, "AlreadyEquippedItem");
 	const int unequippableItemOffset = GetExeAddress(*section, "UnequippableItem");
 	const int classForbiddenItemOffset = GetExeAddress(*section, "ClassForbiddenItem");
+	const int itemDetailWeightOffset = GetExeAddress(*section, "ItemDetailWeight");
+	const int itemDetailConditionOffset = GetExeAddress(*section, "ItemDetailCondition");
+	const int itemDetailWeaponOffset = GetExeAddress(*section, "ItemDetailWeapon");
+	const int itemDetailArmorOffset = GetExeAddress(*section, "ItemDetailArmor");
+	const int itemDetailArmorNoWeightOffset = GetExeAddress(*section, "ItemDetailArmorNoWeight");
+	const int itemDetailChargesLeftOffset = GetExeAddress(*section, "ItemDetailChargesLeft");
+	const int itemDetailStatBonusOffset = GetExeAddress(*section, "ItemDetailStatBonus");
+	const int itemDetailUsesLeftOffset = GetExeAddress(*section, "ItemDetailUsesLeft");
+	const int itemDetailPotionOffset = GetExeAddress(*section, "ItemDetailPotion");
 	const int staffPieceCountOffset = GetExeAddress(*section, "StaffPieceCount");
 
 	initInt8Array(this->enchantmentChances, exeBytes, enchantmentChancesOffset);
@@ -717,6 +754,7 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	initInt8Array(this->armorClassItemMaterialChances, exeBytes, armorClassItemMaterialChancesOffset);
 	initInt16Array(this->armorClassItemMaterialPriceMultipliers, exeBytes, armorClassItemMaterialPriceMultipliersOffset);
 	initStringArrayNullTerminated(this->potionNames, exeBytes, potionNamesOffset);
+	initInt16Array(this->potionGoldPrices, exeBytes, potionGoldPricesOffset);
 	this->unidentifiedPotionName = GetExeStringNullTerminated(exeBytes, unidentifiedPotionNameOffset);
 	initStringArrayNullTerminated(this->bodyPartNames, exeBytes, bodyPartNamesOffset);
 	initStringArrayNullTerminated(this->weaponAnimationFilenames, exeBytes, weaponAnimFilenamesOffset);
@@ -728,6 +766,15 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	this->alreadyEquippedItem = GetExeStringNullTerminated(exeBytes, alreadyEquippedItemOffset);
 	this->unequippableItem = GetExeStringNullTerminated(exeBytes, unequippableItemOffset);
 	this->classForbiddenItem = GetExeStringNullTerminated(exeBytes, classForbiddenItemOffset);
+	this->itemDetailWeight = GetExeStringNullTerminated(exeBytes, itemDetailWeightOffset);
+	this->itemDetailCondition = GetExeStringNullTerminated(exeBytes, itemDetailConditionOffset);
+	this->itemDetailWeapon = GetExeStringNullTerminated(exeBytes, itemDetailWeaponOffset);
+	this->itemDetailArmor = GetExeStringNullTerminated(exeBytes, itemDetailArmorOffset);
+	this->itemDetailArmorNoWeight = GetExeStringNullTerminated(exeBytes, itemDetailArmorNoWeightOffset);
+	this->itemDetailChargesLeft = GetExeStringNullTerminated(exeBytes, itemDetailChargesLeftOffset);
+	this->itemDetailStatBonus = GetExeStringNullTerminated(exeBytes, itemDetailStatBonusOffset);
+	this->itemDetailUsesLeft = GetExeStringNullTerminated(exeBytes, itemDetailUsesLeftOffset);
+	this->itemDetailPotion = GetExeStringNullTerminated(exeBytes, itemDetailPotionOffset); 
 	this->staffPieceCount = GetExeStringNullTerminated(exeBytes, staffPieceCountOffset);
 
 	return true;
@@ -789,6 +836,7 @@ bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int charCreationProvinceNamesOffset = GetExeAddress(*section, "CharCreationProvinceNames");
 	const int provinceImgFilenamesOffset = GetExeAddress(*section, "ProvinceImgFilenames");
 	const int locationTypesOffset = GetExeAddress(*section, "LocationTypes");
+	const int locationTypesLowercaseOffset = GetExeAddress(*section, "LocationTypesLowercase");
 	const int menuMifPrefixesOffset = GetExeAddress(*section, "MenuMifPrefixes");
 	const int centerProvinceCityMifNameOffset = GetExeAddress(*section, "CenterProvinceCityMifName");
 	const int startDungeonNameOffset = GetExeAddress(*section, "StartDungeonName");
@@ -800,6 +848,7 @@ bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int climateSpeedTablesOffset = GetExeAddress(*section, "ClimateSpeedTables");
 	const int weatherSpeedTablesOffset = GetExeAddress(*section, "WeatherSpeedTables");
 	const int rulerTitlesOffset = GetExeAddress(*section, "RulerTitles");
+	const int centerProvinceRulerNameOffset = GetExeAddress(*section, "CenterProvinceRulerName");
 	const int distantMountainFilenamesOffset = GetExeAddress(*section, "DistantMountainFilenames");
 	const int animDistantMountainFilenamesOffset = GetExeAddress(*section, "AnimDistantMountainFilenames");
 	const int cloudFilenameOffset = GetExeAddress(*section, "CloudFilename");
@@ -816,6 +865,7 @@ bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	initStringArrayNullTerminated(this->charCreationProvinceNames, exeBytes, charCreationProvinceNamesOffset);
 	initStringArrayNullTerminated(this->provinceImgFilenames, exeBytes, provinceImgFilenamesOffset);
 	initStringArrayNullTerminated(this->locationTypes, exeBytes, locationTypesOffset);
+	initStringArrayNullTerminated(this->locationTypesLowercase, exeBytes, locationTypesLowercaseOffset);
 	initStringArrayNullTerminated(this->menuMifPrefixes, exeBytes, menuMifPrefixesOffset);
 	this->centerProvinceCityMifName = GetExeStringNullTerminated(exeBytes, centerProvinceCityMifNameOffset);
 	this->startDungeonName = GetExeStringNullTerminated(exeBytes, startDungeonNameOffset);
@@ -827,6 +877,7 @@ bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	init2DInt8Array(this->climateSpeedTables, exeBytes, climateSpeedTablesOffset);
 	init2DInt8Array(this->weatherSpeedTables, exeBytes, weatherSpeedTablesOffset);
 	initStringArrayNullTerminated(this->rulerTitles, exeBytes, rulerTitlesOffset);
+	this->centerProvinceRulerName = GetExeStringNullTerminated(exeBytes, centerProvinceRulerNameOffset);
 	initStringArrayNullTerminated(this->distantMountainFilenames, exeBytes, distantMountainFilenamesOffset);
 	initStringArrayNullTerminated(this->animDistantMountainFilenames, exeBytes, animDistantMountainFilenamesOffset);
 	this->cloudFilename = GetExeStringNullTerminated(exeBytes, cloudFilenameOffset);
@@ -1027,6 +1078,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int tavernModalRumorsOffset = GetExeAddress(*section, "TavernModalRumors");
 	const int tavernModalExitOffset = GetExeAddress(*section, "TavernModalExit");
 	const int tavernDrinksOffset = GetExeAddress(*section, "TavernDrinks");
+	const int tavernDrinkGoldPricesOffset = GetExeAddress(*section, "TavernDrinkGoldPrices");
 	const int tavernRoomTypesOffset = GetExeAddress(*section, "TavernRoomTypes");
 	const int tavernRoomsAvailableOffset = GetExeAddress(*section, "TavernRoomsAvailable");
 	const int tavernSneakIntoRoomUnsuccessfulOffset = GetExeAddress(*section, "TavernSneakIntoRoomUnsuccessful");
@@ -1061,6 +1113,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int citizenRumorsModalWorkAskInTownOffset = GetExeAddress(*section, "CitizenRumorsModalWorkAskInTown");
 	const int citizenWhereIsOptionsCityOffset = GetExeAddress(*section, "CitizenWhereIsOptionsCity");
 	const int citizenWhereIsOptionsWildernessOffset = GetExeAddress(*section, "CitizenWhereIsOptionsWilderness");
+	const int playerGoldRemainingOffset = GetExeAddress(*section, "PlayerGoldRemaining");
 
 	initInt8Array(this->tavernRoomHealModifiers, exeBytes, tavernRoomHealModifiersOffset);
 	this->palaceClosedAtNight = GetExeStringNullTerminated(exeBytes, palaceClosedAtNightOffset);
@@ -1096,6 +1149,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->tavernModalRumors = GetExeStringNullTerminated(exeBytes, tavernModalRumorsOffset);
 	this->tavernModalExit = GetExeStringNullTerminated(exeBytes, tavernModalExitOffset);
 	initStringArrayNullTerminated(this->tavernDrinks, exeBytes, tavernDrinksOffset);
+	initInt8Array(this->tavernDrinkGoldPrices, exeBytes, tavernDrinkGoldPricesOffset);
 	initStringArrayNullTerminated(this->tavernRoomTypes, exeBytes, tavernRoomTypesOffset);
 	this->tavernRoomsAvailable = GetExeStringNullTerminated(exeBytes, tavernRoomsAvailableOffset);
 	this->tavernSneakIntoRoomUnsuccessful = GetExeStringNullTerminated(exeBytes, tavernSneakIntoRoomUnsuccessfulOffset);
@@ -1130,6 +1184,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->citizenRumorsModalWorkAskInTown = GetExeStringNullTerminated(exeBytes, citizenRumorsModalWorkAskInTownOffset);
 	initStringArrayNullTerminated(this->citizenWhereIsOptionsCity, exeBytes, citizenWhereIsOptionsCityOffset);
 	initStringArrayNullTerminated(this->citizenWhereIsOptionsWilderness, exeBytes, citizenWhereIsOptionsWildernessOffset);
+	this->playerGoldRemaining = GetExeStringNullTerminated(exeBytes, playerGoldRemainingOffset);
 
 	return true;
 }
@@ -1424,6 +1479,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->charClasses.init(exeBytes, keyValueFile);
 	success &= this->charCreation.init(exeBytes, keyValueFile);
 	success &= this->cityGen.init(exeBytes, keyValueFile);
+	success &= this->dialogue.init(exeBytes, keyValueFile);
 	success &= this->entities.init(exeBytes, keyValueFile);
 	success &= this->equipment.init(exeBytes, keyValueFile);
 	success &= this->items.init(exeBytes, keyValueFile);

@@ -216,7 +216,10 @@ namespace MapGeneration
 		bool isCreature = false;
 		bool isCreatureFinalBoss = false;
 		bool isHumanEnemy = false;
-		std::optional<StaticNpcPersonalityType> staticNpcPersonalityType;
+		std::optional<ArenaNpcPersonalityType> personalityType;
+		std::optional<ArenaShopkeeperType> shopkeeperType;
+		bool isTavernPatron = false;
+		bool isRuler = false;
 		bool isPileContainer = false;
 		bool isLockedHolderContainer = false;
 		bool isUnlockedHolderContainer = false;
@@ -227,13 +230,26 @@ namespace MapGeneration
 		{
 			isCreature = ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isCreatureFinalBoss);
 			isHumanEnemy = ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
-			staticNpcPersonalityType = ArenaAnimUtils::tryGetStaticNpcPersonalityType(*optItemIndex, mapType);
+			personalityType = ArenaAnimUtils::tryGetStaticNpcPersonalityType(*optItemIndex);
+
+			if (interiorType.has_value())
+			{
+				shopkeeperType = ArenaAnimUtils::tryGetShopkeeperType(*optItemIndex, *interiorType);
+			}
+			
+			isTavernPatron = ArenaAnimUtils::isNpcTavernPatron(*optItemIndex);
 			isPileContainer = ArenaAnimUtils::isTreasurePileContainerIndex(*optItemIndex);
 			isLockedHolderContainer = ArenaAnimUtils::isLockedHolderContainerIndex(*optItemIndex);
 			isUnlockedHolderContainer = ArenaAnimUtils::isUnlockedHolderContainerIndex(*optItemIndex);
 			isKey = *optItemIndex == ArenaAnimUtils::KeyItemIndex;
 			isQuestItem = *optItemIndex == ArenaAnimUtils::QuestItemIndex;
 			isTransition = ArenaAnimUtils::isWildernessDen(*optItemIndex, mapType);
+		}
+
+		if (interiorType.has_value())
+		{
+			// Rulers apparently don't have an *ITEM index.
+			isRuler = ArenaAnimUtils::isRulerFlatIndex(flatIndex, *interiorType);
 		}
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
@@ -243,7 +259,7 @@ namespace MapGeneration
 		{
 			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType, rulerIsMale, inf, textureManager, &entityAnimDef))
 			{
-				DebugLogWarning("Couldn't make static entity anims for flat \"" + std::to_string(flatIndex) + "\".");
+				DebugLogWarningFormat("Couldn't make static entity anims for flat %d.", flatIndex);
 				return false;
 			}
 		}
@@ -253,7 +269,7 @@ namespace MapGeneration
 			const std::optional<bool> isMale = true;
 			if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, inf, charClassLibrary, binaryAssetLibrary, textureManager, &entityAnimDef))
 			{
-				DebugLogWarning("Couldn't make dynamic entity anims for flat \"" + std::to_string(flatIndex) + "\".");
+				DebugLogWarningFormat("Couldn't make dynamic entity anims for flat %d.", flatIndex);
 				return false;
 			}
 		}
@@ -275,7 +291,7 @@ namespace MapGeneration
 			EntityDefID entityDefID;
 			if (!entityDefLibrary.tryGetDefinitionID(entityDefKey, &entityDefID))
 			{
-				DebugLogWarning("Couldn't get creature definition " + std::to_string(creatureDefID) + " from library.");
+				DebugLogWarningFormat("Couldn't get creature definition %d from library.", creatureDefID);
 				return false;
 			}
 
@@ -287,13 +303,26 @@ namespace MapGeneration
 			const int charClassID = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
 			outDef->initEnemyHuman(male, charClassID, std::move(entityAnimDef));
 		}
-		else if (staticNpcPersonalityType.has_value())
+		else if (personalityType.has_value())
 		{
-			outDef->initStaticNpc(*staticNpcPersonalityType, std::move(entityAnimDef));
+			outDef->initStaticNpcGeneral(*personalityType, std::move(entityAnimDef));
+		}
+		else if (shopkeeperType.has_value())
+		{
+			outDef->initStaticNpcShopkeeper(*shopkeeperType, std::move(entityAnimDef));
+		}
+		else if (isTavernPatron)
+		{
+			outDef->initStaticNpcTavernPatron(std::move(entityAnimDef));
+		}
+		else if (isRuler)
+		{
+			outDef->initStaticNpcRuler(std::move(entityAnimDef));
 		}
 		else if (isPileContainer)
 		{
-			outDef->initContainerPile(std::move(entityAnimDef));
+			constexpr bool allowsLootGeneration = true;
+			outDef->initContainerPile(allowsLootGeneration, std::move(entityAnimDef));
 		}
 		else if (isLockedHolderContainer || isUnlockedHolderContainer)
 		{

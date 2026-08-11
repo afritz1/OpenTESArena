@@ -4,9 +4,16 @@
 #include "../Input/InputActionMapName.h"
 #include "../UI/UiPivotType.h"
 
+#include "components/utilities/String.h"
+
 namespace
 {
 	constexpr char AutomapTextureElementName[] = "AutomapTexture";
+
+	std::string GetAutomapDirectionsDetailEntryElementName(const DialogueDirectionsDetailEntry &entry)
+	{
+		return String::format("AutomapDirectionsDetailEntry_%s(%s)", entry.buildingName.c_str(), entry.entranceWorldVoxel.toString().c_str());
+	}
 }
 
 AutomapUiState::AutomapUiState()
@@ -78,6 +85,20 @@ void AutomapUI::create(Game &game)
 	const UiElementInstanceID locationTextBoxElementInstID = uiManager.getElementByName("AutomapLocationTextBox");
 	uiManager.setTextBoxText(locationTextBoxElementInstID, automapLocationName.c_str());
 
+	for (const DialogueDirectionsDetailEntry &entry : gameState.getAutomapDirectionsDetailEntries())
+	{
+		UiElementInitInfo directionsTextBoxElementInitInfo;
+		directionsTextBoxElementInitInfo.name = GetAutomapDirectionsDetailEntryElementName(entry);
+		directionsTextBoxElementInitInfo.drawOrder = 2;
+		directionsTextBoxElementInitInfo.clipRect = AutomapUiView::DrawingArea;
+
+		UiTextBoxInitInfo directionsTextBoxInitInfo;
+		directionsTextBoxInitInfo.text = entry.buildingName;
+		directionsTextBoxInitInfo.fontName = ArenaFontName::S;
+		directionsTextBoxInitInfo.defaultColor = Color(56, 16, 12);
+		uiManager.createTextBox(directionsTextBoxElementInitInfo, directionsTextBoxInitInfo, state.contextInstID, renderer);
+	}
+
 	const UiCursorOverrideState cursorOverrideState(state.cursorTextureID, UiPivotType::BottomLeft);
 	game.setCursorOverride(cursorOverrideState);
 
@@ -119,19 +140,44 @@ void AutomapUI::update(double dt)
 {
 	const AutomapUiState &state = AutomapUI::state;
 
-	constexpr double pixelSizeReal = static_cast<double>(AutomapUiView::PixelSize);
-	const int offsetX = static_cast<int>(std::floor(state.automapOffset.x * pixelSizeReal));
-	const int offsetY = static_cast<int>(std::floor(state.automapOffset.y * pixelSizeReal));
+	auto makeAutomapTransformPosition = [](Double2 offset)
+	{
+		constexpr double pixelSizeReal = static_cast<double>(AutomapUiView::PixelSize);
+		const int offsetX = static_cast<int>(std::floor(offset.x * pixelSizeReal));
+		const int offsetY = static_cast<int>(std::floor(offset.y * pixelSizeReal));
 
-	constexpr Rect drawingArea = AutomapUiView::DrawingArea;
-	const int mapX = (drawingArea.getLeft() + (drawingArea.width / 2)) + offsetX;
-	const int mapY = (drawingArea.getTop() + (drawingArea.height / 2)) + offsetY;
-	const Int2 mapPosition(mapX, mapY);
+		constexpr Rect drawingArea = AutomapUiView::DrawingArea;
+		const int positionX = (drawingArea.getLeft() + (drawingArea.width / 2)) + offsetX;
+		const int positionY = (drawingArea.getTop() + (drawingArea.height / 2)) + offsetY;
+		return Int2(positionX, positionY);
+	};
+
+	const Int2 mapTransformPosition = makeAutomapTransformPosition(state.automapOffset);
 
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID mapImageElementInstID = uiManager.getElementByName(AutomapTextureElementName);
-	uiManager.setTransformPosition(mapImageElementInstID, mapPosition);
+	uiManager.setTransformPosition(mapImageElementInstID, mapTransformPosition);
+
+	const GameState &gameState = game.gameState;
+	const Player &player = game.player;
+	const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), gameState.getActiveCeilingScale());
+	const CoordInt3 playerVoxelCoord = VoxelUtils::worldVoxelToCoord(playerWorldVoxel);
+	const CoordInt2 automapTopLeftCornerCoord(playerVoxelCoord.chunk + (ChunkInt2(-1, 1)), VoxelInt2(0, ChunkUtils::CHUNK_DIM));
+	const WorldInt2 automapTopLeftCornerWorldVoxel = VoxelUtils::coordToWorldVoxel(automapTopLeftCornerCoord);
+
+	for (const DialogueDirectionsDetailEntry &entry : gameState.getAutomapDirectionsDetailEntries())
+	{
+		const std::string entryElementName = GetAutomapDirectionsDetailEntryElementName(entry);
+		const UiElementInstanceID entryElementInstID = uiManager.getElementByName(entryElementName.c_str());
+
+		const WorldInt2 entryWorldVoxel = entry.entranceWorldVoxel.getXZ();
+		const Int2 automapTopLeftCornerToEntryDiff =  entryWorldVoxel - automapTopLeftCornerWorldVoxel;
+		const Int2 automapTopLeftCornerToEntryPixelDiff = automapTopLeftCornerToEntryDiff * AutomapUiView::PixelSize;
+		const Int2 entryTransformPosition = mapTransformPosition + Int2(-automapTopLeftCornerToEntryPixelDiff.y, automapTopLeftCornerToEntryPixelDiff.x);
+
+		uiManager.setTransformPosition(entryElementInstID, entryTransformPosition);
+	}
 }
 
 void AutomapUI::onMouseButtonHeld(Game &game, MouseButtonType buttonType, const Int2 &position, double dt)

@@ -44,6 +44,16 @@ void CitizenEntityAnimationKey::init(bool male, ArenaClimateType climateType)
 	this->climateType = climateType;
 }
 
+ContainerEntityAnimationKey::ContainerEntityAnimationKey()
+{
+	this->isPlayerItemDropPile = false;
+}
+
+void ContainerEntityAnimationKey::init(bool isPlayerItemDropPile)
+{
+	this->isPlayerItemDropPile = isPlayerItemDropPile;
+}
+
 VfxEntityAnimationKey::VfxEntityAnimationKey()
 {
 	this->type = static_cast<VfxEntityAnimationType>(-1);
@@ -62,9 +72,9 @@ void VfxEntityAnimationKey::initSpellExplosion(int spellIndex)
 	this->index = spellIndex;
 }
 
-void VfxEntityAnimationKey::initMeleeStrike(int bloodIndex)
+void VfxEntityAnimationKey::initPhysicalHit(int bloodIndex)
 {
-	this->type = VfxEntityAnimationType::MeleeStrike;
+	this->type = VfxEntityAnimationType::PhysicalHit;
 	this->index = bloodIndex;
 }
 
@@ -160,21 +170,36 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 		this->citizenDefIDs.emplace_back(std::move(femaleAnimKey), femaleAnimDefID);
 	}
 
+	// Player item drop container
+	const std::string &playerItemDropContainerAnimFilename = ArenaAnimUtils::PlayerItemDropContainerFilename;
+	EntityAnimationDefinition playerItemDropContainerAnimDef;
+	if (!ArenaAnimUtils::tryMakePlayerItemDropContainerAnim(playerItemDropContainerAnimFilename, textureManager, &playerItemDropContainerAnimDef))
+	{
+		DebugLogErrorFormat("Couldn't create animation definition for player item drop container \"%s\".", playerItemDropContainerAnimFilename.c_str());
+	}
+
+	const EntityAnimationDefinitionID playerItemDropContainerAnimDefID = static_cast<EntityAnimationDefinitionID>(this->defs.size());
+	this->defs.emplace_back(std::move(playerItemDropContainerAnimDef));
+
+	ContainerEntityAnimationKey playerItemDropContainerAnimKey;
+	playerItemDropContainerAnimKey.init(true);
+	this->containerDefIDs.emplace_back(std::move(playerItemDropContainerAnimKey), playerItemDropContainerAnimDefID);
+
 	// VFX
 	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;
-	const int meleeVfxCount = EntityAnimationUtils::MELEE_VFX_COUNT;
+	const int physicalHitVfxCount = EntityAnimationUtils::PHYSICAL_HIT_VFX_COUNT;
 	const int spellProjectileStartIndex = spellTypeCount;
 	const int spellExplosionStartIndex = 0;
-	const int meleeVfxStartIndex = spellProjectileStartIndex + spellTypeCount;
+	const int physicalHitVfxStartIndex = spellProjectileStartIndex + spellTypeCount;
 	const Span<const std::string> spellProjectileAnimFilenames(exeData.entities.effectAnimations + spellProjectileStartIndex, spellTypeCount);
 	const Span<const std::string> spellExplosionAnimFilenames(exeData.entities.effectAnimations + spellExplosionStartIndex, spellTypeCount);
-	const Span<const std::string> meleeVfxAnimFilenames(exeData.entities.effectAnimations + meleeVfxStartIndex, meleeVfxCount); // Blood, demon, undead
+	const Span<const std::string> physicalHitVfxAnimFilenames(exeData.entities.effectAnimations + physicalHitVfxStartIndex, physicalHitVfxCount); // Blood, demon, undead
 	const std::string bowProjectileAnimFilenames[] = { "ARROW02.CFA" };
 	for (int i = 0; i < spellProjectileAnimFilenames.getCount(); i++)
 	{
 		const std::string animFilename = String::toUppercase(spellProjectileAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, textureManager, &animDef))
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, true, textureManager, &animDef))
 		{
 			DebugLogError("Couldn't create VFX animation definition for spell projectile \"" + animFilename + "\".");
 			continue;
@@ -192,7 +217,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	{
 		const std::string animFilename = String::toUppercase(spellExplosionAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, textureManager, &animDef))
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, true, textureManager, &animDef))
 		{
 			DebugLogError("Couldn't create VFX animation definition for spell explosion \"" + animFilename + "\".");
 			continue;
@@ -206,11 +231,11 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
 	}
 	
-	for (int i = 0; i < meleeVfxAnimFilenames.getCount(); i++)
+	for (int i = 0; i < physicalHitVfxAnimFilenames.getCount(); i++)
 	{
-		const std::string animFilename = String::toUppercase(meleeVfxAnimFilenames[i]);
+		const std::string animFilename = String::toUppercase(physicalHitVfxAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, textureManager, &animDef))
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, false, false, textureManager, &animDef))
 		{
 			DebugLogError("Couldn't create VFX animation definition for melee strike \"" + animFilename + "\".");
 			continue;
@@ -220,7 +245,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 		this->defs.emplace_back(std::move(animDef));
 
 		VfxEntityAnimationKey animKey;
-		animKey.initMeleeStrike(i);
+		animKey.initPhysicalHit(i);
 		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
 	}
 
@@ -228,7 +253,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	{
 		const std::string animFilename = String::toUppercase(bowProjectileAnimFilenames[i]);
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, textureManager, &animDef))
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, true, textureManager, &animDef))
 		{
 			DebugLogError("Couldn't create VFX animation definition for bow projectile \"" + animFilename + "\".");
 			continue;
@@ -284,6 +309,19 @@ EntityAnimationDefinitionID EntityAnimationLibrary::getCitizenAnimDefID(const Ci
 	});
 
 	DebugAssert(iter != this->citizenDefIDs.end());
+	return iter->second;
+}
+
+EntityAnimationDefinitionID EntityAnimationLibrary::getContainerAnimDefID(const ContainerEntityAnimationKey &key) const
+{
+	const auto iter = std::find_if(this->containerDefIDs.begin(), this->containerDefIDs.end(),
+		[&key](const auto &pair)
+	{
+		const ContainerEntityAnimationKey &animKey = pair.first;
+		return animKey.isPlayerItemDropPile == key.isPlayerItemDropPile;
+	});
+
+	DebugAssert(iter != this->containerDefIDs.end());
 	return iter->second;
 }
 

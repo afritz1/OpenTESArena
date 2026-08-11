@@ -154,25 +154,27 @@ bool EntityEncounterSpawnInfo::isCityGuards() const
 
 CombatVoxelResult::CombatVoxelResult()
 {
-	this->isFromWeapon = false;
+	this->sourceType = static_cast<CombatResultSourceType>(-1);
 }
 
-void CombatVoxelResult::init(WorldInt3 voxel, bool isFromWeapon)
+void CombatVoxelResult::init(WorldInt3 voxel, CombatResultSourceType sourceType)
 {
 	this->voxel = voxel;
-	this->isFromWeapon = isFromWeapon;
+	this->sourceType = sourceType;
 }
 
 CombatEntityResult::CombatEntityResult()
 {
 	this->entityInstID = -1;
-	this->isFromMeleeWeapon = false;
+	this->sourceType = static_cast<CombatResultSourceType>(-1);
+	this->sourceEntityInstID = -1;
 }
 
-void CombatEntityResult::init(EntityInstanceID entityInstID, bool isFromMeleeWeapon)
+void CombatEntityResult::init(EntityInstanceID entityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID)
 {
 	this->entityInstID = entityInstID;
-	this->isFromMeleeWeapon = isFromMeleeWeapon;
+	this->sourceType = sourceType;
+	this->sourceEntityInstID = sourceEntityInstID;
 }
 
 void CombatResults::clear()
@@ -209,6 +211,42 @@ void CampingState::clear()
 	this->isCampingUntilHealed = false;
 	this->untilHealedHoursAccumulated = 0;
 	this->secondsUntilNextRecoveryTick = 0.0;
+}
+
+TavernRentedRoomState::TavernRentedRoomState()
+{
+	this->clear();
+}
+
+bool TavernRentedRoomState::hasTimeRemaining() const
+{
+	return /*!this->interiorName.empty() &&*/ (this->roomType >= 0) && (this->remainingSeconds > 0.0);
+}
+
+void TavernRentedRoomState::setRentedRoom(int roomType, int hours)
+{
+	this->roomType = roomType;
+	this->remainingSeconds = hours * 60.0 * 60.0;
+}
+
+void TavernRentedRoomState::update(double dt)
+{
+	if (this->remainingSeconds > 0.0)
+	{
+		this->remainingSeconds = std::max(this->remainingSeconds - dt, 0.0);
+
+		if (this->remainingSeconds == 0.0)
+		{
+			this->clear();
+		}
+	}
+}
+
+void TavernRentedRoomState::clear()
+{
+	//this->interiorName.clear();
+	this->roomType = -1;
+	this->remainingSeconds = 0.0;
 }
 
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
@@ -293,6 +331,8 @@ void GameState::clearSession()
 	this->weatherDef.initClear();
 
 	this->campingState.clear();
+	this->tavernRentedRoomState.clear();
+	this->automapDirectionsDetailEntries.clear();
 }
 
 bool GameState::hasPendingLevelIndexChange() const
@@ -560,6 +600,11 @@ const LocationDefinition &GameState::getLocationDefinition() const
 	return provinceDef.getLocationDef(this->locationIndex);
 }
 
+int GameState::getLocationIndex() const
+{
+	return this->locationIndex;
+}
+
 ProvinceInstance &GameState::getProvinceInstance()
 {
 	return this->worldMapInst.getProvinceInstance(this->provinceIndex);
@@ -581,22 +626,29 @@ Span<const ArenaWeatherType> GameState::getWorldMapWeathers() const
 	return this->worldMapWeathers;
 }
 
-ArenaWeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
+int GameState::getLocationGlobalQuarter(int provinceIndex, int locationIndex) const
 {
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 	const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
-
 	const CityDataFile &cityDataFile = BinaryAssetLibrary::getInstance().getCityDataFile();
-	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityDataFile);
+	return ArenaLocationUtils::getGlobalQuarter(globalPoint, cityDataFile);
+}
+
+ArenaWeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
+{
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+	const int quarterIndex = this->getLocationGlobalQuarter(provinceIndex, locationIndex);
 	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
 	ArenaWeatherType weatherType = this->worldMapWeathers[quarterIndex];
 
 	if (locationDef.getType() == LocationDefinitionType::City)
 	{
-		// Filter the possible weathers (in case it's trying to have snow in a desert).
+		// Filter the possible weathers in case it's trying to have snow in a desert.
 		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
 		const ArenaClimateType climateType = locationCityDef.climateType;
 		weatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, climateType);
@@ -678,6 +730,7 @@ void GameState::clearMaps()
 	this->nextMusicFunc = SceneChangeMusicFunc();
 	this->nextJingleMusicFunc = SceneChangeMusicFunc();
 	this->combatResults.clear();
+	this->queuedEntityInitInfos.clear();
 	this->guardSpawnState.clearQueue();
 }
 
@@ -746,21 +799,53 @@ void GameState::clearCampingState()
 	this->campingState.clear();
 }
 
-void GameState::addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon)
+bool GameState::canUseTavernRentedRoomForCamping() const
+{
+	const MapType mapType = this->getActiveMapType();
+	if (mapType != MapType::Interior)
+	{
+		return false;
+	}
+
+	const MapDefinitionInterior &mapDefInterior = this->activeMapDef.getSubDefinition().interior;
+	if (mapDefInterior.interiorType != ArenaInteriorType::Tavern)
+	{
+		return false;
+	}
+
+	return this->tavernRentedRoomState.hasTimeRemaining();
+}
+
+void GameState::setTavernRentedRoom(int roomType, int hours)
+{
+	this->tavernRentedRoomState.setRentedRoom(roomType, hours);
+}
+
+void GameState::clearTavernRentedRoomState()
+{
+	this->tavernRentedRoomState.clear();
+}
+
+void GameState::addCombatVoxelResult(WorldInt3 voxel, CombatResultSourceType sourceType)
 {
 	CombatVoxelResult result;
-	result.init(voxel, isFromWeapon);
+	result.init(voxel, sourceType);
 	this->combatResults.voxelResults.emplace_back(std::move(result));
 }
 
-void GameState::addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon)
+void GameState::addCombatEntityResult(EntityInstanceID entityInstID, CombatResultSourceType sourceType, EntityInstanceID sourceEntityInstID)
 {
 	CombatEntityResult result;
-	result.init(entityInstID, isFromMeleeWeapon);
+	result.init(entityInstID, sourceType, sourceEntityInstID);
 	this->combatResults.entityResults.emplace_back(std::move(result));
 }
 
-void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
+void GameState::queueEntityInstantiate(const EntityInitInfo &initInfo)
+{
+	this->queuedEntityInitInfos.emplace_back(initInfo);
+}
+
+int GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
 {
 	const Player &player = game.player;
 	ArenaRandom &arenaRandom = game.arenaRandom;
@@ -822,7 +907,7 @@ void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo
 		spawnEntityInitInfo.initialAnimStateIndex = *spawnAnimDef.findStateIndex(spawnAnimDef.initialStateName);
 		spawnEntityInitInfo.isSensorCollider = false;
 		spawnEntityInitInfo.canBeKilled = true;
-		spawnEntityInitInfo.direction = CardinalDirection::North;
+		spawnEntityInitInfo.direction = CardinalDirection::North3D;
 
 		if (!isCreature)
 		{
@@ -859,6 +944,8 @@ void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo
 
 		actualSpawnCount++;
 	}
+
+	return actualSpawnCount;
 }
 
 void GameState::queueCityGuardEncounter(Game &game, bool isViolence)
@@ -877,7 +964,7 @@ void GameState::queueCityGuardEncounter(Game &game, bool isViolence)
 	{
 		const Player &player = game.player;
 		const WorldDouble3 playerPosition = player.getEyePosition();
-		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 		if (entityChunkManager.anyEnemiesNearby(playerPosition))
 		{
 			DebugLog("Not spawning guards because enemies are nearby.");
@@ -913,8 +1000,58 @@ void GameState::queueCityGuardEncounter(Game &game, bool isViolence)
 
 		EntityEncounterSpawnInfo encounterSpawnInfo;
 		encounterSpawnInfo.initCityGuards(guardType, isViolence, guardLevel, guardCount);
-		this->spawnEncounterEnemies(game, encounterSpawnInfo);
+		const int successfulSpawnCount = this->spawnEncounterEnemies(game, encounterSpawnInfo);
+
+		if (successfulSpawnCount > 0)
+		{
+			const EntityInstancePredicate removeEntityForCrimePredicate = [&entityChunkManager](const EntityInstance &entityInst)
+			{
+				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+				const EntityDefinitionType entityDefType = entityDef.type;
+				bool shouldDestroyEntity = false;
+				if (entityDefType == EntityDefinitionType::Citizen)
+				{
+					shouldDestroyEntity = true;
+				}
+				else if (entityDefType == EntityDefinitionType::StaticNPC)
+				{
+					const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
+					const StaticNpcEntityDefinitionType staticNpcEntityDefType = staticNpcEntityDef.type;
+					shouldDestroyEntity = (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper) || (staticNpcEntityDefType == StaticNpcEntityDefinitionType::TavernPatron);
+				}
+
+				return shouldDestroyEntity;
+			};
+
+			// Clear entities who are sensitive to crime.
+			entityChunkManager.queueEntitiesDestroyIf(removeEntityForCrimePredicate);
+		}
 	};
+}
+
+Span<const DialogueDirectionsDetailEntry> GameState::getAutomapDirectionsDetailEntries() const
+{
+	return this->automapDirectionsDetailEntries;
+}
+
+void GameState::addAutomapDirectionsDetailEntry(const std::string &buildingName, WorldInt3 worldVoxel)
+{
+	DialogueDirectionsDetailEntry entry(buildingName, worldVoxel);
+	const auto existingIter = std::find_if(this->automapDirectionsDetailEntries.begin(), this->automapDirectionsDetailEntries.end(),
+		[&entry](const DialogueDirectionsDetailEntry &currentEntry)
+	{
+		return currentEntry.entranceWorldVoxel == entry.entranceWorldVoxel;
+	});
+
+	if (existingIter == this->automapDirectionsDetailEntries.end())
+	{
+		this->automapDirectionsDetailEntries.emplace_back(std::move(entry));
+	}
+}
+
+void GameState::clearAutomapDirectionsDetailEntries()
+{
+	this->automapDirectionsDetailEntries.clear();
 }
 
 void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt)
@@ -1065,7 +1202,9 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.random, textureManager);
 
+	this->queuedEntityInitInfos.clear();
 	this->guardSpawnState.clearQueue();
+	this->automapDirectionsDetailEntries.clear();
 
 	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
 	RenderCamera renderCamera;
@@ -1105,7 +1244,8 @@ void GameState::tickGameClock(double dt, Game &game)
 	const Clock prevClock = this->clock;
 	const bool isPlayerCamping = this->isCamping();
 	const double timeScale = ArenaClockUtils::GameSecondsPerRealTimeSecond * (isPlayerCamping ? ArenaClockUtils::CampingTimeScale : 1.0);
-	this->clock.incrementTime(dt * timeScale);
+	const double scaledDt = dt * timeScale;
+	this->clock.incrementTime(scaledDt);
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;
 
@@ -1253,6 +1393,8 @@ void GameState::tickGameClock(double dt, Game &game)
 			audioManager.setMusic(musicDef);
 		}
 	}
+
+	this->tavernRentedRoomState.update(scaledDt);
 }
 
 void GameState::tickChasmAnimation(double dt)
@@ -1431,9 +1573,13 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 
 		this->campingState.secondsUntilNextRecoveryTick += PlayerConstants::SECONDS_PER_RECOVERY_TICK;
 
-		// @todo provide correct values
 		const int restFactor = 1;
-		const int tavernRoomType = 0;
+		int tavernRoomType = 0;
+		if (this->tavernRentedRoomState.hasTimeRemaining())
+		{
+			tavernRoomType = this->tavernRentedRoomState.roomType;
+		}
+
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		player.applyRestHealing(restFactor, tavernRoomType, exeData);
 
@@ -1446,6 +1592,12 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 			}
 		}
 	}
+
+	if (player.effectsState.isDrunkToDeath())
+	{
+		DebugLog("Player died from being too drunk.");
+		GameWorldUiController::onShowPlayerDeathCinematic(game);
+	}
 }
 
 void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffectsState, const PlayerEffectsState &prevEffectsState)
@@ -1455,6 +1607,7 @@ void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffects
 
 	const bool isCatchingNewDisease = currentEffectsState.isDiseased() && (currentEffectsState.diseaseID != prevEffectsState.diseaseID);
 	const bool isBecomingParalyzed = currentEffectsState.isParalyzed() && !prevEffectsState.isParalyzed();
+	//const bool isBecomingDrunk = currentEffectsState.isDrunk() && !prevEffectsState.isDrunk(); // Doesn't catch the moment player leaves bartender dialogue
 
 	std::string effectText;
 	if (isCatchingNewDisease)
@@ -1465,6 +1618,10 @@ void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffects
 	{
 		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[6], exeData);
 	}
+	/*else if (isBecomingDrunk)
+	{
+		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[5], exeData);
+	}*/
 
 	if (!effectText.empty())
 	{
@@ -1624,15 +1781,14 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	}
 
 	EntityGenInfo entityGenInfo;
-	entityGenInfo.init(player.level, ArenaClockUtils::nightLightsAreActive(this->clock), lootCityType, lootInteriorType, levelIndex);
+	entityGenInfo.init(player.level, ArenaClockUtils::nightLightsAreActive(this->clock), lootCityType, lootInteriorType, levelIndex, this->provinceIndex);
 
 	const double ceilingScale = this->getActiveCeilingScale();
 
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	entityChunkManager.updatePrePhysicsStep(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
 		chunkManager.getFreedChunkPositions(), player, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices,
-		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game.random, voxelChunkManager, game.audioManager,
-		game.physicsSystem, game.textureManager, game.renderer);
+		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game);
 
 	if (this->guardSpawnState.isQueued())
 	{
@@ -1673,15 +1829,33 @@ void GameState::tickCombatResults(Game &game)
 	// These are applied after physics simulation since contact added handlers may create bodies for hit VFX etc. which is disallowed.
 	for (const CombatVoxelResult &result : this->combatResults.voxelResults)
 	{
-		CombatLogic::onVoxelHitByPlayer(result.voxel, result.isFromWeapon, game);
+		CombatLogic::onVoxelHitByPlayer(result.voxel, result.sourceType, game);
 	}
 
 	for (const CombatEntityResult &result : this->combatResults.entityResults)
 	{
-		CombatLogic::onEntityHitByPlayer(result.entityInstID, result.isFromMeleeWeapon, game);
+		CombatLogic::onEntityHitByPlayer(result.entityInstID, result.sourceType, result.sourceEntityInstID, game);
 	}
 
 	this->combatResults.clear();
+}
+
+void GameState::tickEntityInstantiations(Game &game)
+{
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+
+	for (const EntityInitInfo &initInfo : this->queuedEntityInitInfos)
+	{
+		entityChunkManager.createEntity(initInfo, game.random, game.physicsSystem, game.renderer);
+
+		if (!initInfo.spawnSfxName.empty())
+		{
+			AudioManager &audioManager = game.audioManager;
+			audioManager.playSoundOneShot(initInfo.spawnSfxName, initInfo.feetPosition);
+		}
+	}
+
+	this->queuedEntityInitInfos.clear();
 }
 
 void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)

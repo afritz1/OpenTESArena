@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/PhysicsSystem.h"
 
@@ -7,6 +9,7 @@
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationInstance.h"
 #include "EntityChunk.h"
+#include "EntityDefinitionLibrary.h"
 #include "EntityGeneration.h"
 #include "EntityInstance.h"
 #include "EntityUtils.h"
@@ -22,7 +25,7 @@
 
 class AudioManager;
 class BinaryAssetLibrary;
-class EntityDefinitionLibrary;
+class Game;
 class LevelDefinition;
 class LevelInfoDefinition;
 class Renderer;
@@ -34,12 +37,12 @@ struct MapSubDefinition;
 struct Player;
 struct VoxelChunk;
 
-struct EntityCitizenName
+struct EntityNpcName
 {
 	char name[64];
 
-	EntityCitizenName(const char *name);
-	EntityCitizenName();
+	EntityNpcName(const char *name);
+	EntityNpcName();
 };
 
 struct EntityInitInfo
@@ -49,11 +52,12 @@ struct EntityInitInfo
 	char initialAnimStateIndex;
 	bool isSensorCollider;
 	bool canBeKilled;
-	std::optional<Double2> direction;
+	std::optional<Double3> direction;
 	std::optional<int8_t> citizenDirectionIndex;
-	std::optional<EntityCitizenName> citizenName;
+	std::optional<EntityNpcName> npcName;
 	std::optional<uint16_t> citizenColorSeed;
 	std::optional<int> raceID;
+	std::optional<bool> dialogueGenderIsMale;
 	int humanEnemyLevel;
 	bool hasInventory;
 	bool hasCreatureSound;
@@ -62,6 +66,8 @@ struct EntityInitInfo
 	ArenaInteriorType interiorType;
 	int interiorLevelIndex;
 	int guardType;
+	std::optional<int> spellIndex;
+	std::string spawnSfxName;
 
 	EntityInitInfo();
 };
@@ -131,9 +137,26 @@ struct EntityCombatState
 	bool isDead;
 	bool hasBeenLootedBefore; // For awarding gold from creature corpse.
 
+	double health; // Don't need max health yet since monsters can't heal.
+
 	EntityCombatState();
 
 	bool isInDeathState() const;
+};
+
+struct EntitySpellState
+{
+	int spellIndex;
+
+	EntitySpellState();
+};
+
+struct EntityDialogueState
+{
+	bool isMale;
+	bool hasBeenIntroduced;
+
+	EntityDialogueState();
 };
 
 struct EntityLockState
@@ -143,23 +166,7 @@ struct EntityLockState
 	EntityLockState();
 };
 
-// Generated when an entity moves between chunks so systems can update resource ownership.
-struct EntityTransferResult
-{
-	EntityInstanceID id;
-	ChunkInt2 oldChunkPos;
-	ChunkInt2 newChunkPos;
-
-	EntityTransferResult();
-};
-
-struct EntityOccupiedVoxelState
-{
-	WorldInt2 voxel;
-	EntityInstanceID id;
-
-	EntityOccupiedVoxelState();
-};
+using EntityInstancePredicate = std::function<bool(const EntityInstance&)>;
 
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
@@ -167,11 +174,13 @@ public:
 	using EntityPool = KeyValuePool<EntityInstanceID, EntityInstance>;
 	using EntityPositionPool = KeyValuePool<EntityPositionID, WorldDouble3>;
 	using EntityBoundingBoxPool = KeyValuePool<EntityBoundingBoxID, BoundingBox3D>;
-	using EntityDirectionPool = KeyValuePool<EntityDirectionID, Double2>;
+	using EntityDirectionPool = KeyValuePool<EntityDirectionID, Double3>;
 	using EntityAnimationInstancePool = KeyValuePool<EntityAnimationInstanceID, EntityAnimationInstance>;
 	using EntityBehaviorStatePool = KeyValuePool<EntityBehaviorStateID, EntityBehaviorState>;
 	using EntityCombatStatePool = KeyValuePool<EntityCombatStateID, EntityCombatState>;
-	using EntityCitizenNamePool = KeyValuePool<EntityCitizenNameID, EntityCitizenName>;
+	using EntitySpellStatePool = KeyValuePool<EntitySpellStateID, EntitySpellState>;
+	using EntityNpcNamePool = KeyValuePool<EntityNpcNameID, EntityNpcName>;
+	using EntityDialogueStatePool = KeyValuePool<EntityDialogueStateID, EntityDialogueState>;
 	using EntityPaletteIndicesInstancePool = KeyValuePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
 	using EntityItemInventoryInstancePool = KeyValuePool<EntityItemInventoryInstanceID, ItemInventory>;
 	using EntityLockStatePool = KeyValuePool<EntityLockStateID, EntityLockState>;
@@ -184,7 +193,9 @@ public:
 	EntityAnimationInstancePool animInsts;
 	EntityBehaviorStatePool behaviorStates;
 	EntityCombatStatePool combatStates;
-	EntityCitizenNamePool citizenNames;
+	EntitySpellStatePool spellStates;
+	EntityNpcNamePool npcNames;
+	EntityDialogueStatePool dialogueStates;
 	EntityPaletteIndicesInstancePool paletteIndices;
 	EntityItemInventoryInstancePool itemInventories;
 	EntityLockStatePool lockStates;
@@ -201,12 +212,8 @@ public:
 	// Entities scheduled for destruction from memory this frame. These should not be simulated or rendered.
 	std::vector<EntityInstanceID> destroyedEntityIDs;
 
-	// Entities that have moved between chunks this frame and are still in play. Necessary for chunks that
-	// track the entities inside them for faster lookups.
-	std::vector<EntityTransferResult> transferResults;
-
 	// Voxels treated as solid for pathfinding due to the presence of an entity.
-	std::vector<EntityOccupiedVoxelState> occupiedVoxelStates;
+	std::unordered_map<WorldInt2, EntityInstanceID> occupiedVoxels;
 private:
 	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
@@ -229,28 +236,22 @@ private:
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const LevelDefinition &levelDef,
 		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random,
-		const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
-
-	void queueEntityTransfer(EntityInstanceID entityInstID, ChunkInt2 prevChunkPos, ChunkInt2 newChunkPos);
+		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
 	void updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
-	void updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Random &random, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager);
+	void updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Game &game);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
 	void updateDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
-	void updateVfx(double ceilingScale, const VoxelChunkManager &voxelChunkManager);
+	void updateVfx(WorldDouble3 playerPosition, double ceilingScale, const VoxelChunkManager &voxelChunkManager);
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
+	EntityDefID findEntityDefIdIf(const EntityDefinitionPredicate &predicate) const;
 	EntityInstanceID getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const;
-
-	// Count functions for specialized entities.
-	int getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const;
-	int getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const;
-	int getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const;
 
 	// Gets the entity visibility state necessary for rendering and ray cast selection.
 	void getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const;
@@ -270,8 +271,7 @@ public:
 		const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
 		Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs,
 		const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
-		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
-		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+		double ceilingScale, Game &game);
 
 	void updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem);
 
@@ -279,6 +279,8 @@ public:
 	// Don't need to notify the chunk if the chunk is being freed this frame.
 	void queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify);
 	void queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk);
+
+	void queueEntitiesDestroyIf(const EntityInstancePredicate &predicate);
 
 	void endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 	void clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);

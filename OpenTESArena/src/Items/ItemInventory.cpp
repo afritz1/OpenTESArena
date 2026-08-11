@@ -75,6 +75,20 @@ int ItemInventory::getCountOf(ItemDefinitionID defID) const
 	return count;
 }
 
+int ItemInventory::getValidSlotCountBeforeIndex(int index) const
+{
+	int count = 0;
+	for (int i = 0; i < index; i++)
+	{
+		if (this->getSlot(i).isValid())
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
 bool ItemInventory::findFirstEmptySlot(int *outIndex) const
 {
 	for (int i = 0; i < this->getTotalSlotCount(); i++)
@@ -107,7 +121,28 @@ bool ItemInventory::findFirstSlot(ItemDefinitionID defID, int *outIndex) const
 	return false;
 }
 
-bool ItemInventory::findFirstSlotIf(const ItemInventoryPredicate &predicate, int *outIndex) const
+bool ItemInventory::findFirstValidSlotIf(const ItemInstancePredicate &predicate, int *outIndex) const
+{
+	for (int i = 0; i < this->getTotalSlotCount(); i++)
+	{
+		const ItemInstance &itemInst = this->getSlot(i);
+		if (!itemInst.isValid())
+		{
+			continue;
+		}
+
+		if (predicate(itemInst))
+		{
+			*outIndex = i;
+			return true;
+		}
+	}
+
+	*outIndex = -1;
+	return false;
+}
+
+bool ItemInventory::findFirstValidSlotDefIf(const ItemDefinitionPredicate &predicate, int *outIndex) const
 {
 	for (int i = 0; i < this->getTotalSlotCount(); i++)
 	{
@@ -189,6 +224,7 @@ void ItemInventory::compact()
 			{
 				ItemInstance &destinationItemInst = this->getSlot(emptyIndex);
 				destinationItemInst.defID = itemInst.defID;
+				destinationItemInst.stackAmount = itemInst.stackAmount;
 				destinationItemInst.isEquipped = itemInst.isEquipped;
 				itemInst.clear();
 			}

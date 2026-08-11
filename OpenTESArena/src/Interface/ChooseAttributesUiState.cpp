@@ -2,6 +2,7 @@
 #include "CharacterSheetUiMVC.h"
 #include "ChooseAttributesUiState.h"
 #include "ChooseRaceUiState.h"
+#include "CommonUiMVC.h"
 #include "TextCinematicUiState.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
@@ -16,6 +17,8 @@
 #include "../World/CardinalDirection.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
+#include "components/utilities/String.h"
+
 namespace
 {
 	constexpr char ContextName_InitialPopUp[] = "ChooseAttributesInitialPopUp";
@@ -28,13 +31,9 @@ namespace
 	constexpr char PlayerSpellPointsTextBoxElementName[] = "ChooseAttributesSpellPointsTextBox";
 	constexpr char BonusPointsTextBoxElementName[] = "ChooseAttributesBonusPointsTextBox";
 
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
-
 	std::string GetPrimaryAttributeTextBoxElementName(const char *attributeName)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "ChooseAttributes%sTextBox", attributeName);
-		return std::string(elementName);
+		return String::format("ChooseAttributes%sTextBox", attributeName);
 	}
 
 	std::string GetDerivedAttributeTextBoxElementName(const char *attributeName)
@@ -44,9 +43,7 @@ namespace
 
 	std::string GetPrimaryAttributeUpDownButtonElementName(const char *attributeName, bool up)
 	{
-		char elementName[64];
-		std::snprintf(elementName, sizeof(elementName), "ChooseAttributes%s%sButton", attributeName, up ? "Up" : "Down");
-		return std::string(elementName);
+		return String::format("ChooseAttributes%s%sButton", attributeName, up ? "Up" : "Down");
 	}
 
 	void OnPrimaryAttributeButtonSelected(int attributeIndex)
@@ -287,7 +284,7 @@ void ChooseAttributesUI::create(Game &game)
 	initialPopUpButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo initialPopUpButtonInitInfo;
-	initialPopUpButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	initialPopUpButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	initialPopUpButtonInitInfo.callback = ChooseAttributesUI::onInitialPopUpBackButtonSelected;
 	uiManager.createButton(initialPopUpButtonElementInitInfo, initialPopUpButtonInitInfo, state.initialPopUpContextInstID);
 
@@ -434,7 +431,7 @@ void ChooseAttributesUI::create(Game &game)
 	remainingPointsPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo remainingPointsPopUpBackButtonInitInfo;
-	remainingPointsPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	remainingPointsPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	remainingPointsPopUpBackButtonInitInfo.callback = ChooseAttributesUI::onRemainingPointsPopUpBackButtonSelected;
 	uiManager.createButton(remainingPointsPopUpBackButtonElementInitInfo, remainingPointsPopUpBackButtonInitInfo, state.remainingPointsPopUpContextInstID);
 
@@ -479,7 +476,7 @@ void ChooseAttributesUI::create(Game &game)
 	portraitPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo portraitPopUpBackButtonInitInfo;
-	portraitPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	portraitPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	portraitPopUpBackButtonInitInfo.callback = ChooseAttributesUI::onPortraitPopUpBackButtonSelected;
 	uiManager.createButton(portraitPopUpBackButtonElementInitInfo, portraitPopUpBackButtonInitInfo, state.portraitPopUpContextInstID);
 

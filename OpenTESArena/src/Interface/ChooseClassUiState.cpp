@@ -61,8 +61,8 @@ void ChooseClassUI::create(Game &game)
 		const CharacterClassDefinition &charClassDef = state.charClasses[i];
 
 		UiListBoxItem listBoxItem;
-		listBoxItem.text = charClassDef.name;
-		listBoxItem.callback = [i](MouseButtonType) { ChooseClassUI::onListBoxItemSelected(i); };
+		listBoxItem.init(std::string(charClassDef.name), std::nullopt, [i](MouseButtonType) { ChooseClassUI::onListBoxItemSelected(i); });
+
 		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 	}
 

@@ -123,12 +123,6 @@ namespace ChooseClassUiView
 	Rect getListRect(Game &game);
 	Rect getUpButtonRect(Game &game);
 	Rect getDownButtonRect(Game &game);
-
-	UiListBoxInitInfo makeListBoxProperties(const FontLibrary &fontLibrary);
-
-	TextureAsset getListBoxTextureAsset();
-
-	UiTextureID allocPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseRaceUiView

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
@@ -14,6 +16,7 @@ struct CharacterEquipmentUiState
 	Game *game;
 	UiContextInstanceID contextInstID;
 	UiContextInstanceID itemDetailContextInstID;
+	UiContextInstanceID dropItemModalContextInstID;
 
 	CharacterEquipmentUiState();
 
@@ -25,6 +28,7 @@ namespace CharacterEquipmentUI
 	DECLARE_UI_CONTEXT(CharacterEquipment);
 
 	void showItemDetail(const char *text, Color textColor);
+	void showDropItemMessageBox(const char *titleText, const std::function<void()> &confirmCallback);
 
 	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
 

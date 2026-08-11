@@ -16,7 +16,7 @@ ScreenHeight=720
 WindowMode=0
 
 # Selects the 3D renderer to use.
-# 0: software, 1: Vulkan
+# 0: Vulkan, 1: software
 GraphicsAPI=0
 
 TargetFPS=60
@@ -91,6 +91,9 @@ ArenaSavesPath=data/ArenaSaves
 
 # Determines whether the player ignores collision and can fly around.
 GhostMode=false
+
+# Whether the player takes damage in combat.
+ImmuneToDamage=false
 
 # Shows the opening cinematic on engine start.
 ShowIntro=true

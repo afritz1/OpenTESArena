@@ -82,6 +82,7 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 	}
 
 	// @todo shouldn't need to iterate over chunks, just the chunk manager's total
+	// - if iterating over the entityChunkManager's total entities, need to check if entityInst.isQueuedForDestroy because destroyedEntityIDs are not yet removed from that at this point in the frame
 	for (int i = 0; i < entityChunkManager.getChunkCount(); i++)
 	{
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtIndex(i);

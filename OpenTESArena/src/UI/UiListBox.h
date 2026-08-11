@@ -16,9 +16,12 @@ struct UiListBoxInitInfo
 {
 	int textureWidth;
 	int textureHeight;
+	std::vector<int> columnPixelXOffsets;
 	int itemPixelSpacing;
 	std::string fontName;
 	Color defaultTextColor; // Color of item text unless overridden.
+	bool isHighlightEnabled;
+	std::optional<Color> highlightedTextColor;
 	MouseButtonTypeFlags mouseButtonFlags;
 	double scrollDeltaScale; // Multiplier of item height for each scroll.
 
@@ -29,11 +32,14 @@ using UiListBoxItemCallback = std::function<void(MouseButtonType mouseButtonType
 
 struct UiListBoxItem
 {
-	std::string text;
+	std::vector<std::string> textColumns;
 	std::optional<Color> overrideColor;
 	UiListBoxItemCallback callback;
 
 	UiListBoxItem();
+
+	void init(Span<const std::string> textColumns, const std::optional<Color> &overrideColor, const UiListBoxItemCallback &callback);
+	void init(const std::string &text, const std::optional<Color> &overrideColor, const UiListBoxItemCallback &callback);
 };
 
 struct UiListBox
@@ -42,21 +48,28 @@ struct UiListBox
 	int textureWidth;
 	int textureHeight;
 
+	std::vector<int> columnPixelXOffsets;
+
 	int itemPixelSpacing;
 	int fontDefIndex; // Index in font library.
 	Color defaultTextColor;
+	bool isHighlightEnabled;
+	std::optional<Color> highlightedTextColor;
 	double scrollDeltaScale; // Multiplier of item height for each scroll.
 
 	std::vector<UiListBoxItem> items;
 	MouseButtonTypeFlags mouseButtonFlags; // Mouse buttons allowed to trigger callback. Defaults to left mouse button only.
 	double scrollPixelOffset; // How many pixels the list box is currently scrolled down.
 
+	int highlightedItemIndex;
+
 	bool dirty;
 
 	UiListBox();
 
-	void init(UiTextureID textureID, int textureWidth, int textureHeight, int itemPixelSpacing, int fontDefIndex,
-		Color defaultTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale);
+	void init(UiTextureID textureID, int textureWidth, int textureHeight, Span<const int> columnPixelXOffsets, int itemPixelSpacing,
+		int fontDefIndex, Color defaultTextColor, bool isHighlightEnabled, std::optional<Color> highlightedTextColor, MouseButtonTypeFlags mouseButtonTypeFlags,
+		double scrollDeltaScale);
 
 	void free(Renderer &renderer);
 

@@ -44,6 +44,8 @@ namespace OptionsUI
 	void onMiscButtonSelected(MouseButtonType mouseButtonType);
 	void onDevButtonSelected(MouseButtonType mouseButtonType);
 	void onBackButtonSelected(MouseButtonType mouseButtonType);
+	void onListBoxScrollUpButtonSelected(MouseButtonType mouseButtonType);
+	void onListBoxScrollDownButtonSelected(MouseButtonType mouseButtonType);
 
 	void onBackInputAction(const InputActionCallbackValues &values);
 
@@ -54,7 +56,9 @@ namespace OptionsUI
 		DECLARE_UI_FUNC(OptionsUI, onInputButtonSelected),
 		DECLARE_UI_FUNC(OptionsUI, onMiscButtonSelected),
 		DECLARE_UI_FUNC(OptionsUI, onDevButtonSelected),
-		DECLARE_UI_FUNC(OptionsUI, onBackButtonSelected)
+		DECLARE_UI_FUNC(OptionsUI, onBackButtonSelected),
+		DECLARE_UI_FUNC(OptionsUI, onListBoxScrollUpButtonSelected),
+		DECLARE_UI_FUNC(OptionsUI, onListBoxScrollDownButtonSelected)
 	};
 
 	constexpr std::pair<const char*, UiInputListenerDefinitionCallback> InputActionCallbacks[] =

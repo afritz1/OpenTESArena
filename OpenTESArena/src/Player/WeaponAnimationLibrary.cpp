@@ -47,13 +47,13 @@ namespace
 
 void WeaponAnimationLibrary::init(const ExeData &exeData, TextureManager &textureManager)
 {
-	const int fistsWeaponID = ArenaItemUtils::FistsWeaponID;
+	const ArenaWeaponTypeID fistsWeaponID = ArenaItemUtils::FistsWeaponID;
 	const std::string fistsAnimFilename = ArenaWeaponUtils::getAnimationFilename(fistsWeaponID, exeData);
 	WeaponAnimationDefinition fistsAnimDef;
 	AddWeaponAnimationStates(fistsAnimDef, fistsAnimFilename, ArenaWeaponUtils::FistsAnimationStateInfos, textureManager);
 	this->animDefs.emplace(fistsWeaponID, std::move(fistsAnimDef));
 
-	for (const int meleeWeaponID : ArenaItemUtils::MeleeWeaponIDs)
+	for (const ArenaWeaponTypeID meleeWeaponID : ArenaItemUtils::MeleeWeaponIDs)
 	{
 		const std::string weaponAnimFilename = ArenaWeaponUtils::getAnimationFilename(meleeWeaponID, exeData);
 		WeaponAnimationDefinition animDef;
@@ -61,7 +61,7 @@ void WeaponAnimationLibrary::init(const ExeData &exeData, TextureManager &textur
 		this->animDefs.emplace(meleeWeaponID, animDef);
 	}
 
-	for (const int rangedWeaponID : ArenaItemUtils::RangedWeaponIDs)
+	for (const ArenaWeaponTypeID rangedWeaponID : ArenaItemUtils::RangedWeaponIDs)
 	{
 		const std::string weaponAnimFilename = ArenaWeaponUtils::getAnimationFilename(rangedWeaponID, exeData);
 		WeaponAnimationDefinition animDef;

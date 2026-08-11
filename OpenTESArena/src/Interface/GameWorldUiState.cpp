@@ -1,26 +1,36 @@
 #include <cstring>
+#include <numeric>
 
 #include "AutomapUiState.h"
 #include "CharacterUiState.h"
+#include "CommonUiMVC.h"
 #include "GameWorldUiMVC.h"
 #include "GameWorldUiState.h"
 #include "LogbookUiState.h"
 #include "PauseMenuUiState.h"
 #include "WorldMapUiState.h"
+#include "../Assets/ArenaSoundName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/TextAssetLibrary.h"
+#include "../Combat/CombatLogic.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../Interface/DialogueManager.h"
+#include "../Math/RandomUtils.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/TextEntry.h"
 #include "../UI/UiRenderSpace.h"
+#include "../World/ArenaInteriorUtils.h"
+#include "../World/CardinalDirection.h"
 #include "../World/MapType.h"
 
 #include "components/utilities/String.h"
+#include "components/utilities/StringView.h"
 
 namespace
 {
@@ -52,6 +62,7 @@ namespace
 	constexpr char CampingHoursTextBoxElementName[] = "GameWorldCampingHoursTextBox";
 
 	constexpr char ConversationModalListBoxElementName[] = "GameWorldConversationModalListBox";
+	constexpr char PlayerGoldTextBoxElementName[] = "GameWorldConversationModalPlayerGoldTextBox";
 
 	constexpr const char *ButtonElementNames[] =
 	{
@@ -68,13 +79,9 @@ namespace
 		"GameWorldScrollDownButton",
 	};
 
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
-
 	std::string GetKeyImageElementName(int keyIndex)
 	{
-		char elementName[32];
-		std::snprintf(elementName, sizeof(elementName), "GameWorldKey%dImage", keyIndex);
-		return std::string(elementName);
+		return String::format("GameWorldKey%dImage", keyIndex);
 	}
 
 	bool IsPlayerWeaponVisible(const Player &player)
@@ -97,7 +104,7 @@ namespace
 
 	std::string GetLootItemDisplayNameWithQty(const ItemDefinition &itemDef, int stackAmount)
 	{
-		std::string displayName = itemDef.getDisplayName(stackAmount);
+		std::string displayName = itemDef.getDisplayNameWithQty(stackAmount);
 		if (itemDef.type == ItemType::Gold)
 		{
 			size_t goldCountIndex = displayName.find("%u");
@@ -109,12 +116,152 @@ namespace
 
 		return displayName;
 	}
-}
 
-GameWorldLootUiItemMapping::GameWorldLootUiItemMapping()
-{
-	this->inventoryItemIndex = -1;
-	this->listBoxItemIndex = -1;
+	std::vector<DialogueDirectionsDetailEntry> GetDirectionsDetailEntries(ArenaMenuType menuType, const VoxelChunkManager &voxelChunkManager)
+	{
+		std::vector<DialogueDirectionsDetailEntry> detailEntries;
+
+		const std::optional<ArenaInteriorType> interiorType = ArenaInteriorUtils::menuTypeToInteriorType(menuType);
+
+		for (int chunkIndex = 0; chunkIndex < voxelChunkManager.getChunkCount(); chunkIndex++)
+		{
+			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtIndex(chunkIndex);
+			for (const std::pair<VoxelInt3, VoxelTransitionDefID> &pair : voxelChunk.transitionDefIndices)
+			{
+				const VoxelInt3 voxel = pair.first;
+				const VoxelTransitionDefID transitionDefID = pair.second;
+				const TransitionDefinition &transitionDef = voxelChunk.transitionDefs[transitionDefID];
+
+				bool isMatch = false;
+				if (transitionDef.type == TransitionType::CityGate)
+				{
+					isMatch = menuType == ArenaMenuType::CityGates;
+				}
+				else if (transitionDef.type == TransitionType::EnterInterior)
+				{
+					if (interiorType.has_value())
+					{
+						const InteriorEntranceTransitionDefinition &interiorEntranceTransitionDef = transitionDef.interiorEntrance;
+						isMatch = interiorEntranceTransitionDef.interiorGenInfo.interiorType == *interiorType;
+					}
+				}
+
+				if (isMatch)
+				{
+					std::string buildingName = "<missing building name>";
+					VoxelBuildingNameID buildingNameID;
+					if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
+					{
+						buildingName = voxelChunk.buildingNames[buildingNameID];
+					}
+
+					const WorldInt3 worldVoxel = VoxelUtils::coordToWorldVoxel(CoordInt3(voxelChunk.position, voxel));
+					DialogueDirectionsDetailEntry detailEntry(buildingName, worldVoxel);
+					detailEntries.emplace_back(std::move(detailEntry));
+				}
+			}
+		}
+
+		std::sort(detailEntries.begin(), detailEntries.end(),
+			[](const DialogueDirectionsDetailEntry &a, const DialogueDirectionsDetailEntry &b)
+		{
+			return a.buildingName.compare(b.buildingName) < 0;
+		});
+
+		return detailEntries;
+	}
+
+	Double2 GetDirectionsDetailEntryDirection(const DialogueDirectionsDetailEntry &detailEntry, WorldInt3 playerWorldVoxel)
+	{
+		const WorldDouble2 detailEntryPositionXZ = VoxelUtils::getVoxelCenter(detailEntry.entranceWorldVoxel.getXZ());
+		const WorldDouble2 playerPositionXZ = VoxelUtils::getVoxelCenter(playerWorldVoxel.getXZ());
+		return (detailEntryPositionXZ - playerPositionXZ).normalized();
+	}
+
+	double GetDirectionsDetailEntryDistanceSqr(const DialogueDirectionsDetailEntry &detailEntry, WorldInt3 playerWorldVoxel)
+	{
+		const WorldDouble2 detailEntryPositionXZ = VoxelUtils::getVoxelCenter(detailEntry.entranceWorldVoxel.getXZ());
+		const WorldDouble2 playerPositionXZ = VoxelUtils::getVoxelCenter(playerWorldVoxel.getXZ());
+		return (detailEntryPositionXZ - playerPositionXZ).lengthSquared();
+	}
+
+	CardinalDirectionName GetDirectionsDetailEntryCardinalDirection(Double2 direction)
+	{
+		DebugAssert(direction.isNormalized());
+		return CardinalDirection::getDirectionName(direction);
+	}
+
+	// How far a citizen will attempt to give directions.
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE = 128.0;
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE_SQR = DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE * DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE;
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE = 16.0;
+	constexpr double DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE_SQR = DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE * DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE;
+
+	int GetNearestDirectionsDetailEntryIndex(Span<const DialogueDirectionsDetailEntry> detailEntries, WorldInt3 playerWorldVoxel, const VoxelChunkManager &voxelChunkManager)
+	{
+		int closestIndex = -1;
+		for (int i = 0; i < detailEntries.getCount(); i++)
+		{
+			if (closestIndex < 0)
+			{
+				closestIndex = i;
+				continue;
+			}
+
+			const DialogueDirectionsDetailEntry &currentDetailEntry = detailEntries[i];
+			const DialogueDirectionsDetailEntry &closestDetailEntry = detailEntries[closestIndex];
+			const double currentDetailEntryDistanceSqr = GetDirectionsDetailEntryDistanceSqr(currentDetailEntry, playerWorldVoxel);
+			const double closestDetailEntryDistanceSqr = GetDirectionsDetailEntryDistanceSqr(closestDetailEntry, playerWorldVoxel);
+			if (currentDetailEntryDistanceSqr < closestDetailEntryDistanceSqr)
+			{
+				closestIndex = i;
+			}
+		}
+
+		return closestIndex;
+	}
+
+	std::string GetSubstitutedTextForDirectionsEntry(const DialogueDirectionsDetailEntry *detailEntry, WorldInt3 playerWorldVoxel, DialogueManager &dialogueManager, bool *outIsEntryValidForAutomap)
+	{
+		*outIsEntryValidForAutomap = false;
+
+		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+		const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
+
+		double detailEntryDistanceSqr = Constants::Infinity;
+		if (detailEntry != nullptr)
+		{
+			detailEntryDistanceSqr = GetDirectionsDetailEntryDistanceSqr(*detailEntry, playerWorldVoxel);
+		}
+
+		int entryKey = -1;
+		if (detailEntryDistanceSqr >= DIRECTIONS_DETAIL_ENTRY_MAX_DISTANCE_SQR)
+		{
+			// Too far away to know direction.
+			entryKey = 259;
+		}
+		else if (detailEntryDistanceSqr <= DIRECTIONS_DETAIL_ENTRY_MARK_ON_MAP_DISTANCE_SQR)
+		{
+			// Close enough to mark on player's map.
+			entryKey = 261;
+			*outIsEntryValidForAutomap = true;
+		}
+		else
+		{
+			// Worth giving directions for.
+			entryKey = 260;
+		}
+
+		const std::string entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+		if (detailEntry != nullptr)
+		{
+			const Double2 direction = GetDirectionsDetailEntryDirection(*detailEntry, playerWorldVoxel);
+			const CardinalDirectionName cardinalDirectionName = GetDirectionsDetailEntryCardinalDirection(direction);
+			dialogueManager.dialogueDirection = cardinalDirectionName;
+		}
+
+		return dialogueManager.getSubstitutedText(entryValue.c_str());
+	}
 }
 
 void GameWorldUiInitInfo::init(const std::string &textPopUpMessage)
@@ -144,7 +291,6 @@ GameWorldUiState::GameWorldUiState()
 	this->actionTextRemainingSeconds = 0.0;
 	this->effectTextRemainingSeconds = 0.0;
 	this->playerHurtRemainingSeconds = 0.0;
-	this->conversationEntityInstID = -1;
 }
 
 void GameWorldUiState::init(Game &game)
@@ -156,22 +302,6 @@ void GameWorldUiState::init(Game &game)
 	this->game = &game;
 
 	this->statusBarsTextureID = GameWorldUiView::allocStatusBarsTexture(textureManager, renderer);
-
-	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
-	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
-	this->weaponAnimTextureIDs.init(weaponAnimDef.frameCount);
-	for (int i = 0; i < weaponAnimDef.frameCount; i++)
-	{
-		const WeaponAnimationDefinitionFrame &weaponAnimDefFrame = weaponAnimDef.frames[i];
-		const TextureAsset &weaponAnimDefFrameTextureAsset = weaponAnimDefFrame.textureAsset;
-		const std::string &weaponAnimDefFrameTextureFilename = weaponAnimDefFrameTextureAsset.filename;
-		DebugAssert(weaponAnimDefFrameTextureAsset.index >= 0);
-		const int weaponAnimDefFrameTextureIndex = weaponAnimDefFrameTextureAsset.index;
-		// @todo: some WeaponAnimationDefinitionFrames are duplicates, this can cause duplicate UiTextureID allocations, maybe map TextureAsset to UiTextureID to avoid it
-		const UiTextureID weaponTextureID = GameWorldUiView::allocWeaponAnimTexture(weaponAnimDefFrameTextureFilename, weaponAnimDefFrameTextureIndex, textureManager, renderer);
-		this->weaponAnimTextureIDs.set(i, weaponTextureID);
-	}
 
 	const int keyTextureCount = GameWorldUiView::getKeyTextureCount(textureManager);
 	this->keyTextureIDs.init(keyTextureCount);
@@ -203,6 +333,7 @@ void GameWorldUiState::init(Game &game)
 	this->currentSpellPoints = player.currentSpellPoints;
 	this->maxSpellPoints = player.maxSpellPoints;
 	this->interactionType = GameWorldInteractionType::Default;
+	this->dialogueStartPlayerEffectsState.clear();
 }
 
 void GameWorldUiState::freeTextures(Renderer &renderer)
@@ -211,16 +342,6 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 	{
 		renderer.freeUiTexture(this->statusBarsTextureID);
 		this->statusBarsTextureID = -1;
-	}
-
-	if (this->weaponAnimTextureIDs.isValid())
-	{
-		for (const UiTextureID textureID : this->weaponAnimTextureIDs)
-		{
-			renderer.freeUiTexture(textureID);
-		}
-
-		this->weaponAnimTextureIDs.clear();
 	}
 
 	if (this->keyTextureIDs.isValid())
@@ -321,6 +442,7 @@ void GameWorldUI::create(Game &game)
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
 
 	const bool isModernInterface = options.getGraphics_ModernInterface();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	UiElementInitInfo weaponAnimImageElementInitInfo;
 	weaponAnimImageElementInitInfo.name = WeaponImageElementName;
@@ -328,7 +450,9 @@ void GameWorldUI::create(Game &game)
 	weaponAnimImageElementInitInfo.drawOrder = 0;
 	weaponAnimImageElementInitInfo.renderSpace = isModernInterface ? UiRenderSpace::Native : UiRenderSpace::Classic;
 
-	const UiTextureID dummyWeaponAnimImageTextureID = state.weaponAnimTextureIDs[0];
+	const WeaponAnimationDefinition &dummyWeaponAnimDef = WeaponAnimationLibrary::getInstance().getDefinition(ArenaItemUtils::FistsWeaponID);
+	const TextureAsset &dummyWeaponAnimFrameTextureAsset = dummyWeaponAnimDef.frames[0].textureAsset;
+	const UiTextureID dummyWeaponAnimImageTextureID = uiManager.getOrAddTexture(dummyWeaponAnimFrameTextureAsset, paletteTextureAsset, textureManager, renderer);
 	uiManager.createImage(weaponAnimImageElementInitInfo, dummyWeaponAnimImageTextureID, state.contextInstID, renderer);
 
 	for (int i = 0; i < state.keyTextureIDs.getCount(); i++)
@@ -375,7 +499,6 @@ void GameWorldUI::create(Game &game)
 
 	const Player &player = game.player;
 	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 	const UiTextureID playerPortraitTextureID = uiManager.getOrAddTexture(playerPortraitTextureAsset, paletteTextureAsset, textureManager, renderer);
 	const UiElementInstanceID playerPortraitImageElementInstID = uiManager.getElementByName(PlayerPortraitImageElementName);
 	uiManager.setImageTexture(playerPortraitImageElementInstID, playerPortraitTextureID);
@@ -451,6 +574,7 @@ void GameWorldUI::destroy()
 	Game &game = *state.game;
 	InputManager &inputManager = game.inputManager;
 	UiManager &uiManager = game.uiManager;
+	DialogueManager &dialogueManager = game.dialogueManager;
 	Renderer &renderer = game.renderer;
 
 	if (state.contextInstID >= 0)
@@ -504,8 +628,9 @@ void GameWorldUI::destroy()
 	state.currentSpellPoints = 0.0;
 	state.maxSpellPoints = 0.0;
 	state.playerHurtRemainingSeconds = 0.0;
-	state.lootPopUpItemMappings.clear();
-	state.conversationEntityInstID = -1;
+	state.dialogueWhereIsDetailEntries.clear();
+
+	dialogueManager.endDialogue();
 
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, false);
 
@@ -532,6 +657,7 @@ void GameWorldUI::update(double dt)
 	Renderer &renderer = game.renderer;
 
 	const bool isModernInterface = options.getGraphics_ModernInterface();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
 	// Compass
 	const Player &player = game.player;
@@ -557,7 +683,7 @@ void GameWorldUI::update(double dt)
 		const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
 		DebugAssertIndex(weaponAnimDef.frames, weaponAnimFrameIndex);
 		const WeaponAnimationDefinitionFrame &weaponAnimFrame = weaponAnimDef.frames[weaponAnimFrameIndex];
-		const UiTextureID weaponAnimTextureID = state.weaponAnimTextureIDs[weaponAnimFrameIndex];
+		const UiTextureID weaponAnimTextureID = uiManager.getOrAddTexture(weaponAnimFrame.textureAsset, paletteTextureAsset, textureManager, renderer);
 		const std::optional<Int2> weaponTextureDims = renderer.tryGetUiTextureDims(weaponAnimTextureID);
 		DebugAssert(weaponTextureDims.has_value());
 
@@ -646,7 +772,6 @@ void GameWorldUI::update(double dt)
 	{
 		const PlayerStatusGradientType statusGradientType = GameWorldUiModel::getCurrentPlayerStatusGradientType(player);
 		const TextureAsset statusGradientTextureAsset = GameWorldUiView::getStatusGradientTextureAsset(statusGradientType);
-		const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 		const UiTextureID statusGradientTextureID = uiManager.getOrAddTexture(statusGradientTextureAsset, paletteTextureAsset, textureManager, renderer);
 		const UiElementInstanceID statusGradientElementInstID = uiManager.getElementByName(StatusGradientImageElementName);
 		uiManager.setImageTexture(statusGradientElementInstID, statusGradientTextureID);
@@ -868,7 +993,7 @@ void GameWorldUI::showTextPopUp(const char *str, const std::string &fontName, Te
 	};
 
 	UiButtonInitInfo textPopUpBackButtonInitInfo;
-	textPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	textPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	textPopUpBackButtonInitInfo.callback = popUpButtonCallback;
 	uiManager.createButton(textPopUpBackButtonElementInitInfo, textPopUpBackButtonInitInfo, state.textPopUpContextInstID);
 
@@ -985,7 +1110,6 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 
 	uiManager.addMouseScrollChangedListener(lootPopUpMouseWheelScrollChangedCallback, ContextName_LootPopUp, inputManager);
 
-	state.lootPopUpItemMappings.clear();
 	for (int i = 0; i < itemInventory.getTotalSlotCount(); i++)
 	{
 		const ItemInstance &itemInst = itemInventory.getSlot(i);
@@ -994,40 +1118,14 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 			continue;
 		}
 
-		const int listBoxItemIndex = uiManager.getListBoxItemCount(listBoxElementInstID);
-
-		std::vector<GameWorldLootUiItemMapping> &itemMappings = state.lootPopUpItemMappings;
-		GameWorldLootUiItemMapping itemMapping;
-		itemMapping.inventoryItemIndex = i;
-		itemMapping.listBoxItemIndex = listBoxItemIndex;
-		itemMappings.emplace_back(itemMapping);
-
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
 		std::string itemDisplayName = GetLootItemDisplayNameWithQty(itemDef, itemInst.stackAmount);
+		const int lootInventorySlotIndex = i;
 
-		auto listBoxItemCallback = [&game, &itemInventory, &uiManager, &itemLibrary, listBoxElementInstID, lootPopUpBackButtonCallback, listBoxItemIndex, &itemMappings](MouseButtonType)
+		auto listBoxItemCallback = [&game, &itemInventory, &uiManager, &itemLibrary, listBoxElementInstID, lootPopUpBackButtonCallback, lootInventorySlotIndex](MouseButtonType)
 		{
-			// Find which inventory item slot this list box item points to.
-			int itemMappingsIndex = -1;
-			for (int curItemMappingsIndex = 0; curItemMappingsIndex < static_cast<int>(itemMappings.size()); curItemMappingsIndex++)
-			{
-				if (itemMappings[curItemMappingsIndex].listBoxItemIndex == listBoxItemIndex)
-				{
-					itemMappingsIndex = curItemMappingsIndex;
-					break;
-				}
-			}
-
-			DebugAssert(itemMappingsIndex >= 0);
-			const int mappedInventoryItemIndex = itemMappings[itemMappingsIndex].inventoryItemIndex;
-			if (mappedInventoryItemIndex < 0)
-			{
-				// This list box item was emptied previously.
-				return;
-			}
-
-			ItemInstance &selectedItemInst = itemInventory.getSlot(mappedInventoryItemIndex);
+			ItemInstance &selectedItemInst = itemInventory.getSlot(lootInventorySlotIndex);
 			const ItemDefinitionID selectedItemDefID = selectedItemInst.defID;
 			DebugAssert(selectedItemDefID >= 0);
 			const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(selectedItemDefID);
@@ -1050,37 +1148,13 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 				lootPopUpBackButtonCallback(MouseButtonType::Right);
 			}
 
-			// Shift mappings forward by one.
-			for (int curItemMappingsIndex = itemMappingsIndex; curItemMappingsIndex < static_cast<int>(itemMappings.size()); curItemMappingsIndex++)
-			{
-				GameWorldLootUiItemMapping &curItemMapping = itemMappings[curItemMappingsIndex];
-
-				const int nextItemMappingsIndex = curItemMappingsIndex + 1;
-				if (nextItemMappingsIndex < static_cast<int>(itemMappings.size()))
-				{
-					GameWorldLootUiItemMapping &nextItemMapping = itemMappings[nextItemMappingsIndex];
-					curItemMapping.inventoryItemIndex = nextItemMapping.inventoryItemIndex;
-				}
-				else
-				{
-					curItemMapping.inventoryItemIndex = -1;
-				}
-
-				std::string newListBoxItemText;
-				if (curItemMapping.inventoryItemIndex >= 0)
-				{
-					const ItemInstance &curItemInst = itemInventory.getSlot(curItemMapping.inventoryItemIndex);
-					const ItemDefinition &curItemDef = itemLibrary.getDefinition(curItemInst.defID);
-					newListBoxItemText = GetLootItemDisplayNameWithQty(curItemDef, curItemInst.stackAmount);
-				}
-
-				uiManager.setListBoxItemText(listBoxElementInstID, curItemMapping.listBoxItemIndex, newListBoxItemText.c_str());
-			}
+			// The list box item index is the # of remaining filled slots in the loot inventory up to this slot index.
+			const int listBoxItemIndex = itemInventory.getValidSlotCountBeforeIndex(lootInventorySlotIndex);
+			uiManager.eraseListBoxItem(listBoxElementInstID, listBoxItemIndex);
 		};
 
 		UiListBoxItem listBoxItem;
-		listBoxItem.text = std::move(itemDisplayName);
-		listBoxItem.callback = listBoxItemCallback;
+		listBoxItem.init(itemDisplayName, std::nullopt, listBoxItemCallback);
 		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 	}
 
@@ -1119,6 +1193,7 @@ void GameWorldUI::showCampModal()
 	campModalTitleTextBoxElementInitInfo.name = "GameWorldCampModalTitleTextBox";
 	campModalTitleTextBoxElementInitInfo.position = campModalTitleImageElementInitInfo.position;
 	campModalTitleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	campModalTitleTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo campModalTitleTextBoxInitInfo;
 	campModalTitleTextBoxInitInfo.text = GameWorldUiModel::getCampModalTitleText(exeData);
@@ -1138,6 +1213,7 @@ void GameWorldUI::showCampModal()
 	campModalManualHoursTextBoxElementInitInfo.name = "GameWorldCampModalManualHoursTextBox";
 	campModalManualHoursTextBoxElementInitInfo.position = campModalManualHoursImageElementInitInfo.position;
 	campModalManualHoursTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	campModalManualHoursTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo campModalManualHoursTextBoxInitInfo;
 	campModalManualHoursTextBoxInitInfo.text = GameWorldUiModel::getCampModalManualHoursText(exeData);
@@ -1176,6 +1252,7 @@ void GameWorldUI::showCampModal()
 	campModalUntilHealedTextBoxElementInitInfo.name = "GameWorldCampModalUntilHealedTextBox";
 	campModalUntilHealedTextBoxElementInitInfo.position = campModalUntilHealedImageElementInitInfo.position;
 	campModalUntilHealedTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	campModalUntilHealedTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo campModalUntilHealedTextBoxInitInfo;
 	campModalUntilHealedTextBoxInitInfo.text = GameWorldUiModel::getCampModalUntilHealedText(exeData);
@@ -1299,6 +1376,7 @@ void GameWorldUI::showCampManualHoursModal()
 	textBoxElementInitInfo.name = "GameWorldCampManualHoursModalTextBox";
 	textBoxElementInitInfo.position = imageGlobalRect.getTopLeft() + Int2(13, 11);
 	textBoxElementInitInfo.pivotType = UiPivotType::TopLeft;
+	textBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo textBoxInitInfo;
 	textBoxInitInfo.text = GameWorldUiModel::getCampManualHoursModalText(exeData);
@@ -1311,6 +1389,7 @@ void GameWorldUI::showCampManualHoursModal()
 	inputTextBoxElementInitInfo.name = "GameWorldCampManualHoursModalInputTextBox";
 	inputTextBoxElementInitInfo.position = textBoxGlobalRect.getTopRight();
 	inputTextBoxElementInitInfo.pivotType = UiPivotType::TopLeft;
+	inputTextBoxElementInitInfo.drawOrder = 2;
 
 	UiTextBoxInitInfo inputTextBoxInitInfo;
 	inputTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(3);
@@ -1433,11 +1512,124 @@ void GameWorldUI::showPlayerHurt()
 	state.playerHurtRemainingSeconds = 1.0 / ArenaRenderUtils::FRAMES_PER_SECOND;
 }
 
-void GameWorldUI::setConversationEntityInstanceID(EntityInstanceID entityInstID)
+void GameWorldUI::setConversationMessageBoxInputActionMapActive(const char *mapName)
 {
 	GameWorldUiState &state = GameWorldUI::state;
-	DebugAssert(state.conversationEntityInstID < 0);
-	state.conversationEntityInstID = entityInstID;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+
+	constexpr const char *npcMapNames[] =
+	{
+		InputActionMapName::EquipmentStore,
+		InputActionMapName::EquipmentStoreBuy,
+		InputActionMapName::MagesGuild,
+		InputActionMapName::MagesGuildBuy,
+		InputActionMapName::MagesGuildSteal,
+		InputActionMapName::NpcGeneral,
+		InputActionMapName::NpcRumors,
+		InputActionMapName::Tavern,
+		InputActionMapName::TavernRumors,
+		InputActionMapName::Temple
+	};
+
+	for (const char *npcMapName : npcMapNames)
+	{
+		const bool shouldSetActive = !String::isNullOrEmpty(mapName) && StringView::equals(npcMapName, mapName);
+		inputManager.setInputActionMapActive(npcMapName, shouldSetActive);
+	}
+}
+
+void GameWorldUI::addConversationMessageBoxInputActionListeners(const char *mapName)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+
+	const char *contextName = ContextName_ConversationModal;
+
+	const GameState &gameState = game.gameState;
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+
+	if (StringView::equals(mapName, InputActionMapName::EquipmentStore))
+	{
+		uiManager.addInputActionListener(InputActionName::EquipmentStoreBuy, GameWorldUI::onEquipmentStoreBuyInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::EquipmentStoreSell, GameWorldUI::onEquipmentStoreSellInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::EquipmentStoreRepair, GameWorldUI::onEquipmentStoreRepairInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::EquipmentStoreSteal, GameWorldUI::onEquipmentStoreStealInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::EquipmentStoreExit, GameWorldUI::onEquipmentStoreExitInputAction, contextName, inputManager);
+	}
+	else if (StringView::equals(mapName, InputActionMapName::EquipmentStoreBuy))
+	{
+		uiManager.addInputActionListener(InputActionName::EquipmentStoreBuyWeapon, GameWorldUI::onEquipmentStoreBuyWeaponInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::EquipmentStoreBuyArmor, GameWorldUI::onEquipmentStoreBuyArmorInputAction, contextName, inputManager);
+	}
+	else if (StringView::equals(mapName, InputActionMapName::MagesGuild))
+	{
+		uiManager.addInputActionListener(InputActionName::MagesGuildBuy, GameWorldUI::onMagesGuildBuyInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::MagesGuildDetectMagic, GameWorldUI::onMagesGuildDetectMagicInputAction, contextName, inputManager);
+
+		if (charClassDef.castsMagic)
+		{
+			uiManager.addInputActionListener(InputActionName::MagesGuildSpellmaker, GameWorldUI::onMagesGuildSpellmakerInputAction, contextName, inputManager);
+		}
+		
+		uiManager.addInputActionListener(InputActionName::MagesGuildSteal, GameWorldUI::onMagesGuildStealInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::MagesGuildExit, GameWorldUI::onMagesGuildExitInputAction, contextName, inputManager);
+	}
+	else if (StringView::equals(mapName, InputActionMapName::MagesGuildBuy))
+	{
+		uiManager.addInputActionListener(InputActionName::MagesGuildBuyPotions, GameWorldUI::onMagesGuildBuyPotionsInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::MagesGuildBuyMagicItems, GameWorldUI::onMagesGuildBuyMagicItemsInputAction, contextName, inputManager);
+
+		if (charClassDef.castsMagic)
+		{
+			uiManager.addInputActionListener(InputActionName::MagesGuildBuySpells, GameWorldUI::onMagesGuildBuySpellsInputAction, contextName, inputManager);
+		}
+	}
+	else if (StringView::equals(mapName, InputActionMapName::MagesGuildSteal))
+	{
+		uiManager.addInputActionListener(InputActionName::MagesGuildStealPotions, GameWorldUI::onMagesGuildStealPotionsInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::MagesGuildStealMagicItems, GameWorldUI::onMagesGuildStealMagicItemsInputAction, contextName, inputManager);
+	}
+	else if (StringView::equals(mapName, InputActionMapName::NpcGeneral))
+	{
+		uiManager.addInputActionListener(InputActionName::NpcWhoAreYou, GameWorldUI::onNpcWhoAreYouInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::NpcWhereIs, GameWorldUI::onNpcWhereIsInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::NpcRumors, GameWorldUI::onNpcRumorsInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::NpcExit, GameWorldUI::onNpcExitInputAction, contextName, inputManager);
+	}
+	else if (StringView::equals(mapName, InputActionMapName::NpcRumors))
+	{
+		uiManager.addInputActionListener(InputActionName::NpcRumorsGeneral, GameWorldUI::onNpcRumorsGeneralInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::NpcRumorsWork, GameWorldUI::onNpcRumorsWorkInputAction, contextName, inputManager);
+	}
+	else if (StringView::equals(mapName, InputActionMapName::Tavern))
+	{
+		uiManager.addInputActionListener(InputActionName::TavernBuyDrinks, GameWorldUI::onTavernBuyDrinksInputAction, contextName, inputManager);
+
+		if (!gameState.canUseTavernRentedRoomForCamping())
+		{
+			uiManager.addInputActionListener(InputActionName::TavernGetRoom, GameWorldUI::onTavernGetRoomInputAction, contextName, inputManager);
+			uiManager.addInputActionListener(InputActionName::TavernSneakIntoRoom, GameWorldUI::onTavernSneakIntoRoomInputAction, contextName, inputManager);
+		}
+		
+		uiManager.addInputActionListener(InputActionName::TavernRumors, GameWorldUI::onTavernRumorsInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::TavernExit, GameWorldUI::onTavernExitInputAction, contextName, inputManager);
+	}
+	else if (StringView::equals(mapName, InputActionMapName::TavernRumors))
+	{
+		uiManager.addInputActionListener(InputActionName::TavernRumorsGeneral, GameWorldUI::onTavernRumorsGeneralInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::TavernRumorsWork, GameWorldUI::onTavernRumorsWorkInputAction, contextName, inputManager);
+	}
+	else if (StringView::equals(mapName, InputActionMapName::Temple))
+	{
+		uiManager.addInputActionListener(InputActionName::TempleBless, GameWorldUI::onTempleBlessInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::TempleCure, GameWorldUI::onTempleCureInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::TempleHeal, GameWorldUI::onTempleHealInputAction, contextName, inputManager);
+		uiManager.addInputActionListener(InputActionName::TempleExit, GameWorldUI::onTempleExitInputAction, contextName, inputManager);
+	}
 }
 
 void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageBoxType)
@@ -1456,11 +1648,18 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 	const bool canCastMagic = playerCharClassDef.castsMagic;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
+	const bool isPaused = !game.shouldSimulateScene;
+	if (!isPaused)
+	{
+		state.dialogueStartPlayerEffectsState = player.effectsState;
+	}	
+
 	std::string messageBoxTitleText;
 	int messageBoxButtonCount = 0;
 	constexpr int messageBoxMaxButtonCount = 5;
 	UiButtonCallback messageBoxButtonCallbacks[messageBoxMaxButtonCount];
 	std::string messageBoxButtonTexts[messageBoxMaxButtonCount];
+	const char *inputActionMapName = nullptr;
 
 	switch (messageBoxType)
 	{
@@ -1475,6 +1674,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonTexts[1] = exeData.services.citizenModalWhereIs;
 		messageBoxButtonTexts[2] = exeData.services.citizenModalRumors;
 		messageBoxButtonTexts[3] = exeData.services.citizenModalExit;
+		inputActionMapName = InputActionMapName::NpcGeneral;
 		break;
 	case ConversationMessageBoxType::CitizenRumors:
 		messageBoxTitleText = exeData.services.citizenRumorsModalTitle;
@@ -1483,6 +1683,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcRumorsWorkButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.citizenRumorsModalGeneral;
 		messageBoxButtonTexts[1] = exeData.services.citizenRumorsModalWork;
+		inputActionMapName = InputActionMapName::NpcRumors;
 		break;
 	case ConversationMessageBoxType::Equipment:
 		messageBoxTitleText = exeData.services.equipmentModalTitle;
@@ -1497,6 +1698,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonTexts[2] = exeData.services.equipmentModalRepair;
 		messageBoxButtonTexts[3] = exeData.services.equipmentModalSteal;
 		messageBoxButtonTexts[4] = exeData.services.equipmentModalExit;
+		inputActionMapName = InputActionMapName::EquipmentStore;
 		break;
 	case ConversationMessageBoxType::EquipmentBuyItem:
 		messageBoxTitleText = exeData.services.equipmentBuyModalTitle;
@@ -1505,6 +1707,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcEquipmentBuyArmorButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.equipmentBuyModalWeapons;
 		messageBoxButtonTexts[1] = exeData.services.equipmentBuyModalArmor;
+		inputActionMapName = InputActionMapName::EquipmentStoreBuy;
 		break;
 	case ConversationMessageBoxType::MagesGuild:
 		messageBoxTitleText = exeData.services.magesGuildModalTitle;
@@ -1536,16 +1739,32 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 			messageBoxButtonTexts[3] = exeData.services.magesGuildModalExit;
 		}
 
+		inputActionMapName = InputActionMapName::MagesGuild;
+
 		break;
 	case ConversationMessageBoxType::MagesGuildBuyItem:
 		messageBoxTitleText = exeData.services.magesGuildPickItemModalTitle;
-		messageBoxButtonCount = 3;
-		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected;
-		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected;
-		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildBuySpellsButtonSelected;
-		messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
-		messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
-		messageBoxButtonTexts[2] = exeData.services.magesGuildPickItemModalSpells;
+
+		if (canCastMagic)
+		{
+			messageBoxButtonCount = 3;
+			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected;
+			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected;
+			messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildBuySpellsButtonSelected;
+			messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
+			messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
+			messageBoxButtonTexts[2] = exeData.services.magesGuildPickItemModalSpells;
+		}
+		else
+		{
+			messageBoxButtonCount = 2;
+			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected;
+			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected;
+			messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
+			messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
+		}
+		
+		inputActionMapName = InputActionMapName::MagesGuildBuy;
 		break;
 	case ConversationMessageBoxType::MagesGuildSteal:
 		messageBoxTitleText = exeData.services.magesGuildPickItemModalTitle;
@@ -1554,13 +1773,13 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
 		messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
+		inputActionMapName = InputActionMapName::MagesGuildSteal;
 		break;
 	case ConversationMessageBoxType::Tavern:
 	{
 		messageBoxTitleText = exeData.services.tavernModalTitle;
 
-		const bool isRoomRented = false; // @todo query some TavernRoomState in GameState eventually
-		if (isRoomRented)
+		if (gameState.canUseTavernRentedRoomForCamping())
 		{
 			messageBoxButtonCount = 3;
 			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcTavernBuyDrinksButtonSelected;
@@ -1585,6 +1804,8 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 			messageBoxButtonTexts[4] = exeData.services.tavernModalExit;
 		}
 
+		inputActionMapName = InputActionMapName::Tavern;
+
 		break;
 	}
 	case ConversationMessageBoxType::TavernRumors:
@@ -1594,6 +1815,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcTavernRumorsWorkButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.citizenRumorsModalGeneral;
 		messageBoxButtonTexts[1] = exeData.services.citizenRumorsModalWork;
+		inputActionMapName = InputActionMapName::TavernRumors;
 		break;
 	case ConversationMessageBoxType::Temple:
 		messageBoxTitleText = exeData.services.templeModalTitle;
@@ -1606,6 +1828,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonTexts[1] = exeData.services.templeModalCure;
 		messageBoxButtonTexts[2] = exeData.services.templeModalHeal;
 		messageBoxButtonTexts[3] = exeData.services.templeModalExit;
+		inputActionMapName = InputActionMapName::Temple;
 		break;
 	default:
 		DebugNotImplemented();
@@ -1701,9 +1924,16 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 
 	uiManager.addInputActionListener(InputActionName::Back, backInputActionCallback, ContextName_ConversationModal, inputManager);
 
+	GameWorldUI::setShopkeeperPlayerGoldVisible(false);
+	GameWorldUI::setConversationMessageBoxInputActionMapActive(inputActionMapName);
+
+	if (!String::isNullOrEmpty(inputActionMapName))
+	{
+		GameWorldUI::addConversationMessageBoxInputActionListeners(inputActionMapName);
+	}
+
 	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
 
-	const bool isPaused = !game.shouldSimulateScene;
 	if (!isPaused)
 	{
 		GameWorldUI::onPauseChanged(true);
@@ -1716,6 +1946,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	Game &game = *state.game;
 	InputManager &inputManager = game.inputManager;
 	UiManager &uiManager = game.uiManager;
+	DialogueManager &dialogueManager = game.dialogueManager;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
 	uiManager.clearContextElements(state.conversationModalContextInstID, inputManager, renderer);
@@ -1727,6 +1958,13 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	const ArenaTypes::Spellsg &standardSpells = binaryAssetLibrary.getStandardSpells();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+
+	const GameWorldPopUpClosedCallback returnToCitizenMessageBoxCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Citizen);
+	const GameWorldPopUpClosedCallback returnToEquipmentStoreMessageBoxCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Equipment);
+	const GameWorldPopUpClosedCallback returnToMagesGuildMessageBoxCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::MagesGuild);
+	const GameWorldPopUpClosedCallback returnToTavernMessageBoxCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Tavern);
+	const GameWorldPopUpClosedCallback returnToTempleMessageBoxCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Temple);
 
 	constexpr int sceneViewCenterY = ArenaRenderUtils::SCENE_VIEW_HEIGHT / 2;
 	constexpr int barterViewCenterY = 122 / 2;
@@ -1738,10 +1976,12 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	std::string listBoxFontName;
 	int listBoxTextureWidth = 0;
 	int listBoxTextureHeight = 0;
+	std::vector<int> listBoxColumnPixelXOffsets = { 0 };
 	Int2 listBoxButtonUpPositionOffset;
 	Int2 listBoxButtonDownPositionOffset;
-	std::vector<std::string> listBoxItems;
+	std::vector<std::vector<std::string>> listBoxItemTextColumns;
 	std::vector<UiListBoxItemCallback> listBoxItemCallbacks;
+	bool shouldShowPlayerGold = true;
 
 	switch (listBoxType)
 	{
@@ -1753,28 +1993,42 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(28, 20);
 		listBoxFontName = ArenaFontName::Arena;
 		listBoxTextureWidth = 185;
-		listBoxTextureHeight = 82;
+		listBoxTextureHeight = 81;
 		listBoxButtonUpPositionOffset = Int2(9, 7);
 		listBoxButtonDownPositionOffset = Int2(9, 102);
+		shouldShowPlayerGold = false;
 
-		Span<const std::string> sourceItems;
-		if (mapType == MapType::City)
-		{
-			sourceItems = exeData.services.citizenWhereIsOptionsCity;
-		}
-		else if (mapType == MapType::Wilderness)
-		{
-			sourceItems = exeData.services.citizenWhereIsOptionsWilderness;
-		}
+		const double ceilingScale = gameState.getActiveCeilingScale();
+		const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
 
-		for (int i = 0; i < sourceItems.getCount(); i++)
+		if (state.dialogueWhereIsDetailEntries.empty())
 		{
-			listBoxItems.emplace_back(sourceItems[i]);
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			std::vector<DialogueDirectionsEntry> directionsEntries;
+			if (mapType == MapType::City)
 			{
-				DebugLogFormat("Where is %d.", i);
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+				directionsEntries = dialogueManager.cityDirectionsEntries;
+			}
+			else if (mapType == MapType::Wilderness)
+			{
+				directionsEntries = dialogueManager.wildernessDirectionsEntries;
+			}
+
+			for (int i = 0; i < static_cast<int>(directionsEntries.size()); i++)
+			{
+				const DialogueDirectionsEntry &directionsEntry = directionsEntries[i];
+				listBoxItemTextColumns.emplace_back(std::vector<std::string> { directionsEntry.displayString });
+				listBoxItemCallbacks.emplace_back(GameWorldUI::makeDirectionsEntryCallback(directionsEntry));
+			}
+		}
+		else
+		{
+			for (const DialogueDirectionsDetailEntry &detailEntry : state.dialogueWhereIsDetailEntries)
+			{
+				listBoxItemTextColumns.emplace_back(std::vector<std::string> { detailEntry.buildingName });
+				listBoxItemCallbacks.emplace_back(GameWorldUI::makeDirectionsDetailEntryCallback(detailEntry));
+			}
+
+			state.dialogueWhereIsDetailEntries.clear();
 		}
 
 		break;
@@ -1785,7 +2039,8 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(30, 28);
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 275;
-		listBoxTextureHeight = 80;
+		listBoxTextureHeight = 72;
+		listBoxColumnPixelXOffsets = { 0, 170, 197, 218, 253 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
 
@@ -1795,15 +2050,23 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			return itemDef.type == ItemType::Weapon;
 		});
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Buy weapon.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
+			const WeaponItemDefinition &sourceWeaponDef = sourceItemDef.weapon;
+			const std::string weaponDisplayName = sourceItemDef.getDisplayNameWithoutQty();
+			const int weaponHandedness = sourceWeaponDef.handCount;
+			const double weaponWeightKgs = sourceItemDef.getWeight();
+			const int weaponPrice = sourceItemDef.getGoldValue();
+
+			const std::string weaponHandednessString = String::format("%-8d", weaponHandedness);
+			const std::string weaponWeightString = String::format("%-.1f", weaponWeightKgs);
+			const std::string weaponPriceString = String::format("%10d", weaponPrice);
+			const std::string weaponPriceUnitString = "gp";
+			std::vector<std::string> weaponTextColumns = { weaponDisplayName, weaponHandednessString, weaponWeightString, weaponPriceString, weaponPriceUnitString };
+			listBoxItemTextColumns.emplace_back(std::move(weaponTextColumns));
+
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemPurchaseCallback(sourceItemDefID, weaponPrice, ConversationMessageBoxType::Equipment));
 		}
 
 		break;
@@ -1814,7 +2077,8 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(30, 28);
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 275;
-		listBoxTextureHeight = 80;
+		listBoxTextureHeight = 72;
+		listBoxColumnPixelXOffsets = { 0, 154, 203, 218, 253 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
 
@@ -1824,15 +2088,23 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			return (itemDef.type == ItemType::Armor) || (itemDef.type == ItemType::Shield);
 		});
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Buy armor.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
+			const ArmorItemDefinition &sourceArmorDef = sourceItemDef.armor;
+			const std::string armorDisplayName = sourceItemDef.getDisplayNameWithoutQty();
+			const double armorWeightKgs = sourceItemDef.getWeight();
+			const int armorPrice = sourceItemDef.getGoldValue();
+
+			DebugAssertIndex(exeData.equipment.bodyPartNames, sourceArmorDef.typeID);
+			const std::string armorProtectedBodyPartString = exeData.equipment.bodyPartNames[sourceArmorDef.typeID];
+			const std::string armorWeightString = String::format("%-.1f", armorWeightKgs);
+			const std::string armorPriceString = String::format("%10d", armorPrice);
+			const std::string armorPriceUnitString = "gp";
+			std::vector<std::string> armorTextColumns = { armorDisplayName, armorProtectedBodyPartString, armorWeightString, armorPriceString, armorPriceUnitString };
+			listBoxItemTextColumns.emplace_back(std::move(armorTextColumns));
+
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemPurchaseCallback(sourceItemDefID, armorPrice, ConversationMessageBoxType::Equipment));
 		}
 
 		break;
@@ -1843,29 +2115,26 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 155;
-		listBoxTextureHeight = 65;
+		listBoxTextureHeight = 56;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
-		std::vector<ItemDefinitionID> sourceItemDefIDs;
+		std::vector<int> playerInventorySlotIndices;
 		for (int i = 0; i < player.inventory.getTotalSlotCount(); i++)
 		{
 			const ItemInstance &itemInst = player.inventory.getSlot(i);
 			if (itemInst.isValid())
 			{
-				sourceItemDefIDs.emplace_back(itemInst.defID);
+				playerInventorySlotIndices.emplace_back(i);
 			}
 		}
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const int inventorySlotIndex : playerInventorySlotIndices)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Sell item.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemInstance &sourceItemInst = player.inventory.getSlot(inventorySlotIndex);
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemInst.defID);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayNameWithoutQty() });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemSellCallback(inventorySlotIndex));
 		}
 
 		break;
@@ -1876,33 +2145,31 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 155;
-		listBoxTextureHeight = 65;
+		listBoxTextureHeight = 56;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
-		std::vector<ItemDefinitionID> sourceItemDefIDs;
+		std::vector<int> playerInventorySlotIndices;
 		for (int i = 0; i < player.inventory.getTotalSlotCount(); i++)
 		{
 			const ItemInstance &itemInst = player.inventory.getSlot(i);
 			if (itemInst.isValid())
 			{
 				const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-				if (itemDef.type == ItemType::Weapon || itemDef.type == ItemType::Armor || itemDef.type == ItemType::Shield)
+				const bool isValidItemForRepair = ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
+				if (isValidItemForRepair)
 				{
-					sourceItemDefIDs.emplace_back(itemInst.defID);
+					playerInventorySlotIndices.emplace_back(i);
 				}
 			}
 		}
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const int inventorySlotIndex : playerInventorySlotIndices)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Repair item.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemInstance &sourceItemInst = player.inventory.getSlot(inventorySlotIndex);
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemInst.defID);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDef.getDisplayNameWithoutQty() });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemRepairCallback(inventorySlotIndex));
 		}
 
 		break;
@@ -1914,6 +2181,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 150;
 		listBoxTextureHeight = 56;
+		listBoxColumnPixelXOffsets = { 0, 123 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
@@ -1923,15 +2191,14 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			return itemDef.type == ItemType::Consumable;
 		});
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Buy potion.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
+			const std::string consumableDisplayName = String::format("%.28s", sourceItemDef.getDisplayNameWithoutQty().c_str());
+			const int consumableGoldPrice = sourceItemDef.getGoldValue();
+			const std::string consumableGoldPriceString = String::format("%d gp", consumableGoldPrice);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { consumableDisplayName, consumableGoldPriceString });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemPurchaseCallback(sourceItemDefID, consumableGoldPrice, ConversationMessageBoxType::MagesGuild));
 		}
 
 		break;
@@ -1943,6 +2210,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 270;
 		listBoxTextureHeight = 72;
+		listBoxColumnPixelXOffsets = { 0, 180 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
 
@@ -1952,15 +2220,15 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			return (itemDef.type == ItemType::Accessory) || (itemDef.type == ItemType::Trinket);
 		});
 
-		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		for (const ItemDefinitionID sourceItemDefID : sourceItemDefIDs)
 		{
-			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
-			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Buy magic item.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefID);
+			const std::string sourceItemDisplayName = String::format("%.30s", sourceItemDef.getDisplayNameWithoutQty().c_str());
+			const int sourceItemGoldPrice = sourceItemDef.getGoldValue();
+
+			const std::string sourceItemGoldPriceString = String::format("%d gp", sourceItemGoldPrice);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { sourceItemDisplayName, sourceItemGoldPriceString });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeShopkeeperItemPurchaseCallback(sourceItemDefID, sourceItemGoldPrice, ConversationMessageBoxType::MagesGuild));
 		}
 
 		break;
@@ -1982,17 +2250,14 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			if (!spellName.empty())
 			{
 				spellNames.emplace_back(std::move(spellName));
-			}			
+			}
 		}
 
 		for (int i = 0; i < static_cast<int>(spellNames.size()); i++)
 		{
-			listBoxItems.emplace_back(spellNames[i]);
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Buy spell.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const std::string &spellName = spellNames[i];
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { spellName });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeMagesGuildSpellPurchaseCallback(spellName));
 		}
 
 		break;
@@ -2004,30 +2269,32 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Arena;
 		listBoxTextureWidth = 155;
 		listBoxTextureHeight = 54;
+		listBoxColumnPixelXOffsets = { 0, 120 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
 		Span<const std::string> drinkNames = exeData.services.tavernDrinks;
-		for (int i = 0; i < drinkNames.getCount(); i++)
+		Span<const uint8_t> drinkGoldPrices = exeData.services.tavernDrinkGoldPrices;
+
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
+		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+		ArenaRandom tempRandom(locationCityDef.citySeed); // @todo use interior seed from the entrance XY
+
+		constexpr int maxAvailableDrinkCount = 10;
+		std::vector<int> availableDrinkIndices(drinkNames.getCount());
+		std::iota(availableDrinkIndices.begin(), availableDrinkIndices.end(), 0);
+		RandomUtils::shuffle<int>(availableDrinkIndices, tempRandom);
+		availableDrinkIndices.resize(maxAvailableDrinkCount);
+
+		for (int i = 0; i < static_cast<int>(availableDrinkIndices.size()); i++)
 		{
-			const std::string &drinkName = drinkNames[i];
-			listBoxItems.emplace_back(drinkName);
-			listBoxItemCallbacks.emplace_back([&uiManager, &exeData, drinkName](MouseButtonType)
-			{
-				uiManager.disableTopMostContext();
-
-				std::string consumeDrinkText = String::replace(exeData.services.tavernConsumeDrink, "%s", drinkName);
-				consumeDrinkText = String::distributeNewlines(consumeDrinkText, 60);
-
-				GameWorldPopUpClosedCallback consumeDrinkOnCloseCallback = [&uiManager]()
-				{
-					// @todo make player drunk
-					uiManager.disableTopMostContext();
-					GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
-				};
-
-				GameWorldUI::showTextPopUp(consumeDrinkText.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, consumeDrinkOnCloseCallback);
-			});
+			const int drinkIndex = availableDrinkIndices[i];
+			const std::string &drinkName = drinkNames[drinkIndex];
+			const int drinkGoldPrice = drinkGoldPrices[drinkIndex];
+			const std::string drinkNameTruncated = String::format("%.22s", drinkName.c_str());
+			const std::string drinkGoldPriceString = String::format("%d gp", drinkGoldPrice);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { drinkNameTruncated, drinkGoldPriceString });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeTavernDrinkPurchaseCallback(drinkName, drinkGoldPrice));
 		}
 
 		break;
@@ -2037,20 +2304,25 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxTextureName = ArenaTextureName::ContainerInventory;
 		listBoxPositionOffset = Int2(29, 36);
 		listBoxFontName = ArenaFontName::A;
-		listBoxTextureWidth = 146;
+		listBoxTextureWidth = 170;
 		listBoxTextureHeight = 44;
+		listBoxColumnPixelXOffsets = { 0, 112 };
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
-		Span<const std::string> roomTypes = exeData.services.tavernRoomTypes;
-		for (int i = 0; i < roomTypes.getCount(); i++)
+		Span<const std::string> roomTypeNames = exeData.services.tavernRoomTypes;
+		constexpr int roomGoldPricesPerDay[] = { 10, 20, 35, 50, 75 }; // @todo get from ExeData
+
+		for (int i = 0; i < roomTypeNames.getCount(); i++)
 		{
-			listBoxItems.emplace_back(roomTypes[i]);
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
-			{
-				DebugLogFormat("Rent room %d.", i);
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			const int roomType = i;
+			const std::string roomTypeName = String::format("%.13s", roomTypeNames[i].c_str());
+			const int baseRoomGoldPrice = roomGoldPricesPerDay[i];
+			const int roomRentDayCount = 1;
+			const int calculatedRoomGoldPrice = baseRoomGoldPrice * roomRentDayCount;
+			const std::string roomGoldPriceString = String::format("%d gp", calculatedRoomGoldPrice);
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { roomTypeName, roomGoldPriceString });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeTavernRoomPurchaseCallback(roomType, calculatedRoomGoldPrice));
 		}
 
 		break;
@@ -2067,12 +2339,8 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 		if (player.effectsState.isDiseased())
 		{
-			listBoxItems.emplace_back(exeData.status.effectNames[0]);
-			listBoxItemCallbacks.emplace_back([&uiManager](MouseButtonType)
-			{
-				DebugLogFormat("Cure disease.");
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-			});
+			listBoxItemTextColumns.emplace_back(std::vector<std::string> { exeData.status.effectNames[0] });
+			listBoxItemCallbacks.emplace_back(GameWorldUI::makeTempleCurePurchaseCallback());
 		}
 
 		break;
@@ -2102,15 +2370,17 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	UiListBoxInitInfo listBoxInitInfo;
 	listBoxInitInfo.textureWidth = listBoxTextureWidth;
 	listBoxInitInfo.textureHeight = listBoxTextureHeight;
+	listBoxInitInfo.columnPixelXOffsets = listBoxColumnPixelXOffsets;
 	listBoxInitInfo.itemPixelSpacing = 0;
 	listBoxInitInfo.fontName = listBoxFontName;
 	listBoxInitInfo.defaultTextColor = Color(190, 113, 0);
+	listBoxInitInfo.highlightedTextColor = Color(251, 239, 77);
 	const UiElementInstanceID listBoxElementInstID = uiManager.createListBox(listBoxElementInitInfo, listBoxInitInfo, state.conversationModalContextInstID, renderer);
 
-	for (int i = 0; i < static_cast<int>(listBoxItems.size()); i++)
+	for (int i = 0; i < static_cast<int>(listBoxItemTextColumns.size()); i++)
 	{
 		UiListBoxItem listBoxItem;
-		listBoxItem.text = listBoxItems[i];
+		listBoxItem.textColumns = listBoxItemTextColumns[i];
 		listBoxItem.callback = listBoxItemCallbacks[i];
 		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 	}
@@ -2179,7 +2449,926 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 	uiManager.addMouseScrollChangedListener(mouseScrollChangedListener, ContextName_ConversationModal, inputManager);
 
+	GameWorldUI::setShopkeeperPlayerGoldVisible(shouldShowPlayerGold);
+
 	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
+}
+
+void GameWorldUI::showShopkeeperBackground(const char *titleText)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.shopkeeperBgContextInstID, inputManager, renderer);
+
+	const bool shouldUseSmallerFont = std::strlen(titleText) >= 32;
+	std::string fontName = ArenaFontName::C;
+	if (shouldUseSmallerFont)
+	{
+		fontName = ArenaFontName::Arena;
+	}
+
+	UiElementInitInfo titleTextBoxElementInitInfo;
+	titleTextBoxElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleTextBox";
+	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 10);
+	titleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	titleTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo titleTextBoxInitInfo;
+	titleTextBoxInitInfo.text = titleText;
+	titleTextBoxInitInfo.fontName = fontName;
+	titleTextBoxInitInfo.defaultColor = Color(12, 12, 24);
+	titleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	const UiElementInstanceID titleTextBoxElementInstID = uiManager.createTextBox(titleTextBoxElementInitInfo, titleTextBoxInitInfo, state.shopkeeperBgContextInstID, renderer);
+	const Rect titleTextBoxGlobalRect = uiManager.getTransformGlobalRect(titleTextBoxElementInstID);
+
+	const int titleImageTextureWidth = titleTextBoxGlobalRect.width + 24;
+	constexpr int titleImageTextureHeight = 20;
+	const UiTextureID titleImageTextureID = uiManager.getOrAddTexture(UiTexturePatternType::ShopkeeperTitle, titleImageTextureWidth, titleImageTextureHeight, textureManager, renderer);
+
+	UiElementInitInfo titleImageElementInitInfo;
+	titleImageElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleImage";
+	titleImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 0);
+	titleImageElementInitInfo.pivotType = UiPivotType::Top;
+	titleImageElementInitInfo.drawOrder = 0;
+	uiManager.createImage(titleImageElementInitInfo, titleImageTextureID, state.shopkeeperBgContextInstID, renderer);
+
+	const TextureAsset barterBgTextureAsset(ArenaTextureName::BarterBackground);
+	const TextureAsset barterBgPaletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+	const UiTextureID barterBgImageTextureID = uiManager.getOrAddTexture(barterBgTextureAsset, barterBgPaletteTextureAsset, textureManager, renderer);
+
+	UiElementInitInfo barterBgImageElementInitInfo;
+	barterBgImageElementInitInfo.name = "GameWorldShopkeeperBackgroundBarterImage";
+	barterBgImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
+	barterBgImageElementInitInfo.pivotType = UiPivotType::Bottom;
+	uiManager.createImage(barterBgImageElementInitInfo, barterBgImageTextureID, state.shopkeeperBgContextInstID, renderer);
+
+	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, true);
+}
+
+GameWorldPopUpClosedCallback GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType messageBoxType)
+{
+	return [messageBoxType]()
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationMessageBox(messageBoxType);
+	};
+}
+
+void GameWorldUI::setShopkeeperPlayerGoldVisible(bool visible)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	Renderer &renderer = game.renderer;
+
+	UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(PlayerGoldTextBoxElementName);
+	if (textBoxElementInstID < 0)
+	{
+		UiElementInitInfo textBoxElementInitInfo;
+		textBoxElementInitInfo.name = PlayerGoldTextBoxElementName;
+		textBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
+		textBoxElementInitInfo.pivotType = UiPivotType::Middle;
+		textBoxElementInitInfo.drawOrder = 1;
+
+		UiTextBoxInitInfo textBoxInitInfo;
+		textBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(15);
+		textBoxInitInfo.fontName = ArenaFontName::A;
+		textBoxInitInfo.defaultColor = Color(28, 89, 125);
+		textBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+		textBoxElementInstID = uiManager.createTextBox(textBoxElementInitInfo, textBoxInitInfo, state.shopkeeperBgContextInstID, renderer);
+	}
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Player &player = game.player;
+	const std::string text = String::format("%s%d", exeData.services.playerGoldRemaining.c_str(), player.gold);
+	uiManager.setTextBoxText(textBoxElementInstID, text.c_str());
+	uiManager.setElementActive(textBoxElementInstID, visible);
+}
+
+UiButtonCallback GameWorldUI::makeDirectionsEntryCallback(const DialogueDirectionsEntry &entry)
+{
+	return [entry](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		GameState &gameState = game.gameState;
+		const double ceilingScale = gameState.getActiveCeilingScale();
+		const Player &player = game.player;
+		const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
+		const MapType mapType = gameState.getActiveMapType();
+		DialogueManager &dialogueManager = game.dialogueManager;
+		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Citizen);
+
+		if (entry.showsDetailList)
+		{
+			if (mapType == MapType::Wilderness)
+			{
+				GameWorldUI::showTextPopUp(exeData.services.citizenRumorsModalWorkAskInTown.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, popUpClosedCallback);
+			}
+			else
+			{
+				state.dialogueWhereIsDetailEntries = GetDirectionsDetailEntries(entry.menuType, voxelChunkManager);
+				GameWorldUI::showConversationListBox(ConversationListBoxType::CitizenWhereIs);
+			}
+		}
+		else
+		{
+			std::string text;
+			if ((mapType == MapType::Wilderness) && entry.isCityOnly())
+			{
+				text = exeData.dialogue.directionIsCityOnly;
+			}
+			else
+			{
+				const std::vector<DialogueDirectionsDetailEntry> detailEntries = GetDirectionsDetailEntries(entry.menuType, voxelChunkManager);
+				const DialogueDirectionsDetailEntry *nearestDetailEntry = nullptr;
+				const int nearestDetailEntryIndex = GetNearestDirectionsDetailEntryIndex(detailEntries, playerWorldVoxel, voxelChunkManager);
+				if (nearestDetailEntryIndex >= 0)
+				{
+					nearestDetailEntry = &detailEntries[nearestDetailEntryIndex];
+				}
+
+				bool isEntryValidForAutomap;
+				text = GetSubstitutedTextForDirectionsEntry(nearestDetailEntry, playerWorldVoxel, dialogueManager, &isEntryValidForAutomap);
+
+				if (isEntryValidForAutomap)
+				{
+					DebugAssert(nearestDetailEntry != nullptr);
+					gameState.addAutomapDirectionsDetailEntry(nearestDetailEntry->buildingName, nearestDetailEntry->entranceWorldVoxel);
+				}
+			}
+
+			GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, popUpClosedCallback);
+		}
+	};
+}
+
+UiButtonCallback GameWorldUI::makeDirectionsDetailEntryCallback(const DialogueDirectionsDetailEntry &detailEntry)
+{
+	return [detailEntry](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		GameState &gameState = game.gameState;
+		const double ceilingScale = gameState.getActiveCeilingScale();
+		const Player &player = game.player;
+		const WorldInt3 playerWorldVoxel = VoxelUtils::pointToVoxel(player.getEyePosition(), ceilingScale);
+		DialogueManager &dialogueManager = game.dialogueManager;
+		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+
+		const Span<const DialogueDirectionsDetailEntry> detailEntries(&detailEntry, 1);
+		const DialogueDirectionsDetailEntry *nearestDetailEntry = nullptr;
+		const int nearestDetailEntryIndex = GetNearestDirectionsDetailEntryIndex(detailEntries, playerWorldVoxel, voxelChunkManager);
+		if (nearestDetailEntryIndex >= 0)
+		{
+			nearestDetailEntry = &detailEntry;
+		}
+
+		bool isEntryValidForAutomap;
+		const std::string text = GetSubstitutedTextForDirectionsEntry(nearestDetailEntry, playerWorldVoxel, dialogueManager, &isEntryValidForAutomap);
+		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Citizen);
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, popUpClosedCallback);
+
+		if (isEntryValidForAutomap)
+		{
+			DebugAssert(nearestDetailEntry != nullptr);
+			gameState.addAutomapDirectionsDetailEntry(nearestDetailEntry->buildingName, nearestDetailEntry->entranceWorldVoxel);
+		}
+	};
+}
+
+UiButtonCallback GameWorldUI::makeShopkeeperItemPurchaseCallback(ItemDefinitionID itemDefID, int itemGoldPrice, ConversationMessageBoxType returnMessageBoxType)
+{
+	return [itemDefID, itemGoldPrice, returnMessageBoxType](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(returnMessageBoxType);
+
+		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+		const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(itemDefID);
+		const std::string selectedItemDisplayName = selectedItemDef.getDisplayNameWithoutQty();
+
+		Player &player = game.player;
+		ItemInventory &playerInventory = player.inventory;
+		const bool canPlayerAffordPurchase = player.gold >= itemGoldPrice;
+		if (canPlayerAffordPurchase)
+		{
+			playerInventory.insert(itemDefID);
+			player.gold -= itemGoldPrice;
+
+			const std::string text = String::format("Bought %s for %d gold.", selectedItemDisplayName.c_str(), itemGoldPrice);
+			GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+		}
+		else
+		{
+			const std::string text = String::format("%s is too expensive.", selectedItemDisplayName.c_str());
+			GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+		}
+	};
+}
+
+UiButtonCallback GameWorldUI::makeShopkeeperItemSellCallback(int playerInventorySlotIndex)
+{
+	return [playerInventorySlotIndex](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Equipment);
+
+		Player &player = game.player;
+		ItemInventory &playerInventory = player.inventory;
+		ItemInstance &selectedItemInst = playerInventory.getSlot(playerInventorySlotIndex);
+		const bool isSelectedItemEquipped = selectedItemInst.isEquipped;
+
+		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+		const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(selectedItemInst.defID);
+		const std::string selectedItemDisplayName = selectedItemDef.getDisplayNameWithoutQty();
+		const int selectedItemGoldValue = selectedItemDef.getGoldValue();
+		const int selectedItemGoldValueForSelling = (3 * selectedItemGoldValue) / 4; // 75%
+
+		player.gold += selectedItemGoldValueForSelling;
+		selectedItemInst.clear();
+		playerInventory.compact();
+
+		if (isSelectedItemEquipped)
+		{
+			if (selectedItemDef.type == ItemType::Weapon)
+			{
+				// Reset weapon animation.
+				player.setWeaponAnimationFromItem(player.getEquippedWeaponItemDefID());
+			}
+		}
+
+		const std::string text = String::format("Sold %s for %d gold.", selectedItemDisplayName.c_str(), selectedItemGoldValueForSelling);
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+	};
+}
+
+UiButtonCallback GameWorldUI::makeShopkeeperItemRepairCallback(int playerInventorySlotIndex)
+{
+	return [playerInventorySlotIndex](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		const std::string text = "Repairing not implemented.";
+		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Equipment);
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+	};
+}
+
+UiButtonCallback GameWorldUI::makeMagesGuildSpellPurchaseCallback(const std::string &spellName)
+{
+	return [spellName](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		const std::string text = "Spells not implemented.";
+		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::MagesGuild);
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+	};
+}
+
+UiButtonCallback GameWorldUI::makeTavernDrinkPurchaseCallback(const std::string &drinkName, int drinkGoldPrice)
+{
+	return [drinkName, drinkGoldPrice](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const GameWorldPopUpClosedCallback returnToTavernMessageBoxCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Tavern);
+
+		Player &player = game.player;
+
+		std::string text;
+		GameWorldPopUpClosedCallback popUpClosedCallback;
+		if (player.gold >= drinkGoldPrice)
+		{
+			player.gold -= drinkGoldPrice;
+
+			std::string consumeDrinkText = String::replace(exeData.services.tavernConsumeDrink, "%s", drinkName);
+			text = String::distributeNewlines(consumeDrinkText, 60);
+
+			popUpClosedCallback = [&game, returnToTavernMessageBoxCallback]()
+			{
+				Player &player = game.player;
+				player.effectsState.applyDrink();
+
+				returnToTavernMessageBoxCallback();
+			};
+		}
+		else
+		{
+			text = String::format("%s is too expensive.", drinkName.c_str());
+			popUpClosedCallback = returnToTavernMessageBoxCallback;
+		}
+
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, popUpClosedCallback);
+	};
+}
+
+UiButtonCallback GameWorldUI::makeTavernRoomPurchaseCallback(int roomType, int goldPrice)
+{
+	return [roomType, goldPrice](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		GameState &gameState = game.gameState;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const std::string &roomTypeName = exeData.services.tavernRoomTypes[roomType];
+
+		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Tavern);
+
+		Player &player = game.player;
+
+		std::string text;
+		if (player.gold >= goldPrice)
+		{
+			player.gold -= goldPrice;
+
+			const int rentedRoomHours = 24;
+			gameState.setTavernRentedRoom(roomType, rentedRoomHours);
+
+			text = String::format(exeData.services.tavernRoomRented.c_str(), roomTypeName.c_str());
+		}
+		else
+		{
+			text = String::format("%s is too expensive.", roomTypeName.c_str());
+		}
+		
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+	};
+}
+
+UiButtonCallback GameWorldUI::makeTempleCurePurchaseCallback()
+{
+	return [](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+
+		Player &player = game.player;
+		player.effectsState.cureDisease();
+
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const std::string text = String::format(exeData.services.templeReceiveCuring.c_str(), player.firstName.c_str());
+		const GameWorldPopUpClosedCallback popUpClosedCallback = GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType::Temple);
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, popUpClosedCallback);
+	};
+}
+
+void GameWorldUI::onPlayerStealItemSuccess(const ItemLibraryPredicate &stealableItemsPredicate, ConversationMessageBoxType mainMessageBoxType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+	const std::vector<ItemDefinitionID> stealableItemDefIDs = itemLibrary.getDefinitionIDsIf(stealableItemsPredicate);
+
+	Random &random = game.random;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	const int stolenItemDefIdIndex = random.next(static_cast<int>(stealableItemDefIDs.size()));
+	const ItemDefinitionID stolenItemDefID = stealableItemDefIDs[stolenItemDefIdIndex];
+	const ItemDefinition &stolenItemDef = itemLibrary.getDefinition(stolenItemDefID);
+	const std::string itemName = stolenItemDef.getDisplayNameWithoutQty();
+	const std::string text = String::replace(exeData.services.equipmentStealSuccess, "%s", itemName.c_str());
+
+	Player &player = game.player;
+	player.inventory.insert(stolenItemDefID);
+
+	GameWorldPopUpClosedCallback callback = [mainMessageBoxType, &uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationMessageBox(mainMessageBoxType);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, callback);
+}
+
+void GameWorldUI::onPlayerStealItemFailure()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string &text = exeData.services.tavernSneakIntoRoomUnsuccessful;
+	GameWorldPopUpClosedCallback callback = [&game, &uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
+
+		GameState &gameState = game.gameState;
+		gameState.queueCityGuardEncounter(game);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment, callback);
+}
+
+bool GameWorldUI::isTriggerTextVisible()
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	return state.triggerTextRemainingSeconds > 0.0;
+}
+
+bool GameWorldUI::isActionTextVisible()
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	return state.actionTextRemainingSeconds > 0.0;
+}
+
+bool GameWorldUI::isEffectTextVisible()
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	return state.effectTextRemainingSeconds > 0.0;
+}
+
+bool GameWorldUI::isCampingHoursTextVisible()
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	const Game &game = *state.game;
+	return game.gameState.isCamping();
+}
+
+void GameWorldUI::setTriggerText(const char *str)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(TriggerTextBoxElementName);
+	uiManager.setTextBoxText(textBoxElementInstID, str);
+
+	GameWorldUI::setTriggerTextDuration(str);
+}
+
+void GameWorldUI::setActionText(const char *str)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
+	uiManager.setTextBoxText(textBoxElementInstID, str);
+
+	GameWorldUI::setActionTextDuration(str);
+}
+
+void GameWorldUI::setEffectText(const char *str)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+	uiManager.setTextBoxText(textBoxElementInstID, str);
+
+	GameWorldUI::setEffectTextDuration(str);
+}
+
+void GameWorldUI::setCampingHoursText(const char *str)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(CampingHoursTextBoxElementName);
+	uiManager.setTextBoxText(textBoxElementInstID, str);
+}
+
+void GameWorldUI::setTriggerTextDuration(const std::string_view text)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.triggerTextRemainingSeconds = GameWorldUiView::getTriggerTextSeconds(text);
+}
+
+void GameWorldUI::setActionTextDuration(const std::string_view text)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.actionTextRemainingSeconds = GameWorldUiView::getActionTextSeconds(text);
+}
+
+void GameWorldUI::setEffectTextDuration(const std::string_view text)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.effectTextRemainingSeconds = GameWorldUiView::getEffectTextSeconds(text);
+}
+
+void GameWorldUI::resetTriggerTextDuration()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.triggerTextRemainingSeconds = 0.0;
+}
+
+void GameWorldUI::resetActionTextDuration()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.actionTextRemainingSeconds = 0.0;
+}
+
+void GameWorldUI::resetEffectTextDuration()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.effectTextRemainingSeconds = 0.0;
+}
+
+void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed)
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	const Rect &centerCursorRegion = state.nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
+
+	if (pressed)
+	{
+		GameState &gameState = game.gameState;
+		if (gameState.isCamping())
+		{
+			gameState.clearCampingState();
+		}
+
+		const bool isLeftClick = type == MouseButtonType::Left;
+		const bool isRightClick = type == MouseButtonType::Right;
+
+		const Options &options = game.options;
+		if (options.getGraphics_ModernInterface())
+		{
+			if (isRightClick)
+			{
+				Player &player = game.player;
+				const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+				const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+				const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
+				const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
+				DebugAssertIndex(weaponAnimDef.states, weaponAnimInst.currentStateIndex);
+				const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+				ItemDefinitionID weaponItemDefID = player.getEquippedWeaponItemDefID();
+				bool isRangedWeapon = false;
+				if (weaponItemDefID >= 0)
+				{
+					const ItemDefinition &weaponItemDef = itemLibrary.getDefinition(weaponItemDefID);
+					isRangedWeapon = weaponItemDef.weapon.isRanged;
+				}
+
+				if (WeaponAnimationUtils::isIdle(weaponAnimDefState) && !isRangedWeapon)
+				{
+					CardinalDirectionName randomMeleeSwingDirection = PlayerLogic::getRandomMeleeSwingDirection(game.random);
+					player.queuedMeleeSwingDirection = static_cast<int>(randomMeleeSwingDirection);
+				}
+			}
+		}
+		else
+		{
+			if (centerCursorRegion.contains(position))
+			{
+				if (isLeftClick)
+				{
+					GameWorldUI::onScreenToWorldInteraction(position, true);
+				}
+				else if (isRightClick)
+				{
+					GameWorldUI::onScreenToWorldInteraction(position, false);
+				}
+			}
+		}
+	}
+}
+
+void GameWorldUI::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt)
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	const Options &options = game.options;
+	const Rect &centerCursorRegion = state.nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
+	if (!options.getGraphics_ModernInterface() && !centerCursorRegion.contains(position))
+	{
+		if (type == MouseButtonType::Left)
+		{
+			// @todo: move out of PlayerLogicController::handlePlayerTurning() and handlePlayerAttack()
+		}
+	}
+}
+
+void GameWorldUI::onWindowResized(int width, int height)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.updateNativeCursorRegions(width, height);
+
+	Game &game = *state.game;
+	Renderer &renderer = game.renderer;
+
+	if (state.playerHurtTextureID >= 0)
+	{
+		renderer.freeUiTexture(state.playerHurtTextureID);
+		state.playerHurtTextureID = -1;
+	}
+
+	UiManager &uiManager = game.uiManager;
+	const Window &window = game.window;
+	state.playerHurtTextureID = GameWorldUiView::allocPlayerHurtTexture(window.getSceneViewAspectRatio(), window.fullGameWindow, renderer);
+	
+	const UiElementInstanceID playerHurtImageElementInstID = uiManager.getElementByName(PlayerHurtImageElementName);
+	uiManager.setTransformSize(playerHurtImageElementInstID, window.getSceneViewDimensions());
+	uiManager.setImageTexture(playerHurtImageElementInstID, state.playerHurtTextureID);
+}
+
+void GameWorldUI::onCharacterSheetButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
+	game.setNextContext(CharacterUI::ContextName);
+}
+
+void GameWorldUI::onWeaponToggleButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
+	if (!game.canPlayerMoveAndTurn())
+	{
+		return;
+	}
+
+	Player &player = game.player;
+	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
+	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+
+	int newStateIndex = -1;
+	int nextStateIndex = -1;
+	if (WeaponAnimationUtils::isSheathed(weaponAnimDefState))
+	{
+		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_UNSHEATHING.c_str(), &newStateIndex);
+		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_IDLE.c_str(), &nextStateIndex);
+	}
+	else if (WeaponAnimationUtils::isIdle(weaponAnimDefState))
+	{
+		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHING.c_str(), &newStateIndex);
+		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHED.c_str(), &nextStateIndex);
+	}
+
+	if (newStateIndex >= 0)
+	{
+		weaponAnimInst.setStateIndex(newStateIndex);
+		weaponAnimInst.setNextStateIndex(nextStateIndex);
+	}
+}
+
+void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
+	if (mouseButtonType == MouseButtonType::Left)
+	{
+		game.setNextContext(AutomapUI::ContextName);
+	}
+	else if (mouseButtonType == MouseButtonType::Right)
+	{
+		const MapType mapType = gameState.getActiveMapType();
+		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+		const Player &player = game.player;
+		const WorldDouble3 playerTravelPosition = player.getEyePosition();
+		const bool isPlayerSafeToTravel = !entityChunkManager.anyEnemiesNearby(playerTravelPosition);
+		const bool isPlayerInBoat = false; // @todo vehicle support
+		const bool isPlayerAllowedToTravel = mapType != MapType::Interior;
+
+		std::string text;
+		if (!isPlayerSafeToTravel)
+		{
+			text = exeData.travel.notSafeToTravel;
+		}
+		else if (isPlayerInBoat)
+		{
+			text = exeData.travel.notAllowedToTravelInBoat;
+		}
+		else if (!isPlayerAllowedToTravel)
+		{
+			text = exeData.travel.notAllowedToTravel;
+		}
+
+		if (!text.empty())
+		{
+			GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+		}
+		else
+		{
+			game.setNextContext(WorldMapUI::ContextName);
+		}
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(mouseButtonType)));
+	}
+}
+
+void GameWorldUI::onStealButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
+	GameWorldUI::setInteractionType(GameWorldInteractionType::Thieving);
+}
+
+void GameWorldUI::onStatusButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
+	const std::string text = GameWorldUiModel::getStatusButtonText(game);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+}
+
+void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
+	Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	if (!charClassDef.castsMagic)
+	{
+		return;
+	}
+
+	const int spellPointCost = 10; // @todo original spell costs
+	const bool canPlayerAffordSpellCast = static_cast<int>(player.currentSpellPoints) >= spellPointCost;
+	if (!canPlayerAffordSpellCast)
+	{
+		return;
+	}
+
+	player.currentSpellPoints -= spellPointCost;
+
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	Random &random = game.random;
+
+	const int spellIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT);
+	const WorldDouble3 spellProjectilePosition = player.getEyePosition() - Double3(0.0, 0.20, 0.0);
+
+	Double3 projectileDirection = player.forward;
+	if (!game.options.getGraphics_ModernInterface())
+	{
+		const InputManager &inputManager = game.inputManager;
+		const Int2 mousePosition = inputManager.getMousePosition();
+		projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition);
+	}
+
+	const EntityInitInfo spellProjectileEntityInitInfo = CombatLogic::getSpellProjectileEntityInitInfo(spellIndex, spellProjectilePosition, projectileDirection);
+	gameState.queueEntityInstantiate(spellProjectileEntityInitInfo);
+}
+
+void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
+	game.setNextContext(LogbookUI::ContextName);
+}
+
+void GameWorldUI::onUseItemButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
+	DebugLog("Use item.");
+}
+
+void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		gameState.clearCampingState();
+		return;
+	}
+
+	const MapType mapType = gameState.getActiveMapType();
+	const MapSubDefinition &mapSubDef = gameState.getActiveMapDef().getSubDefinition();
+	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	const Player &player = game.player;
+	const WorldDouble3 playerRestPosition = player.getEyePosition();
+	const bool isPlayerSafeForResting = !entityChunkManager.anyEnemiesNearby(playerRestPosition);
+	const bool isPlayerAllowedToRest = (mapType != MapType::City) && player.groundState.onGround && !player.groundState.isSwimming;
+	const bool isPlayerAttemptingRestInTavern = (mapType == MapType::Interior) && (mapSubDef.interior.interiorType == ArenaInteriorType::Tavern);
+
+	std::string text;
+	if (!isPlayerSafeForResting)
+	{
+		text = exeData.camping.enemiesNearbyBeforeResting;
+	}
+	else if (!isPlayerAllowedToRest)
+	{
+		text = exeData.camping.campingNotAllowed;
+	}
+	else if (isPlayerAttemptingRestInTavern)
+	{
+		if (!gameState.canUseTavernRentedRoomForCamping())
+		{
+			text = exeData.camping.tavernBedNotRented;
+		}
+	}
+
+	if (!text.empty())
+	{
+		GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
+	}
+	else
+	{
+		GameWorldUI::showCampModal();
+	}
+}
+
+void GameWorldUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)
+{
+	// Nothing yet.
+}
+
+void GameWorldUI::onScrollDownButtonSelected(MouseButtonType mouseButtonType)
+{
+	// Nothing yet.
 }
 
 void GameWorldUI::onCloseConversationButtonSelected(MouseButtonType mouseButtonType)
@@ -2187,9 +3376,26 @@ void GameWorldUI::onCloseConversationButtonSelected(MouseButtonType mouseButtonT
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
+	DialogueManager &dialogueManager = game.dialogueManager;
+	state.dialogueWhereIsDetailEntries.clear();
+	
+	// Have to check here since the real-time effects check doesn't handle coming out of UI.
+	const Player &player = game.player;
+	const bool isBecomingDrunk = player.effectsState.isDrunk() && !state.dialogueStartPlayerEffectsState.isDrunk();
+	if (isBecomingDrunk)
+	{
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const Span<const std::string> effectNames = exeData.status.effectNames;
+		const std::string drunkText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[5], exeData);
+		GameWorldUI::setEffectText(drunkText.c_str());
+	}
+
+	state.dialogueStartPlayerEffectsState.clear();
+
 	uiManager.setContextEnabled(state.conversationModalContextInstID, false);
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
-	state.conversationEntityInstID = -1;
+	dialogueManager.endDialogue();
+	GameWorldUI::setConversationMessageBoxInputActionMapActive(nullptr);
 	GameWorldUI::onPauseChanged(false);
 }
 
@@ -2198,52 +3404,23 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
+	DialogueManager &dialogueManager = game.dialogueManager;
 	uiManager.disableTopMostContext();
 
-
-	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-	const EntityInstance &entityInst = entityChunkManager.entities.get(state.conversationEntityInstID);
-	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-	const EntityDefinitionType entityDefType = entityDef.type;
-
-	std::string entityDisplayName;
-	if (entityDefType == EntityDefinitionType::Citizen)
+	const EntityInstance &entityInst = dialogueManager.getEntityInstance();
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	EntityDialogueState &dialogueState = entityChunkManager.dialogueStates.get(entityInst.dialogueStateID);
+	const bool prevHasBeenIntroduced = dialogueState.hasBeenIntroduced;
+	if (!prevHasBeenIntroduced)
 	{
-		const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
-		entityDisplayName = citizenName.name;
-	}
-	else if (entityDefType == EntityDefinitionType::StaticNPC)
-	{
-		const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
-
-		// @todo static NPC randomly generated names, store in EntityInstance?
-		constexpr std::pair<StaticNpcPersonalityType, const char*> personalityTypeNames[] =
-		{
-			{ StaticNpcPersonalityType::Shopkeeper, "Shopkeeper" },
-			{ StaticNpcPersonalityType::Beggar, "Beggar" },
-			{ StaticNpcPersonalityType::Firebreather, "Firebreather" },
-			{ StaticNpcPersonalityType::Prostitute, "Prostitute" },
-			{ StaticNpcPersonalityType::Jester, "Jester" },
-			{ StaticNpcPersonalityType::StreetVendor, "StreetVendor" },
-			{ StaticNpcPersonalityType::Musician, "Musician" },
-			{ StaticNpcPersonalityType::Priest, "Priest" },
-			{ StaticNpcPersonalityType::Thief, "Thief" },
-			{ StaticNpcPersonalityType::SnakeCharmer, "SnakeCharmer" },
-			{ StaticNpcPersonalityType::StreetVendorAlchemist, "StreetVendorAlchemist" },
-			{ StaticNpcPersonalityType::Wizard, "Wizard" },
-			{ StaticNpcPersonalityType::TavernPatron, "TavernPatron" }
-		};
-
-		const std::string tempName = personalityTypeNames[static_cast<int>(staticNpcEntityDef.personalityType)].second;
-		entityDisplayName = "TODO " + tempName;
-	}
-	else
-	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
+		dialogueState.hasBeenIntroduced = true;
 	}
 
-	std::string text = String::replace("TODO my name is %s.", "%s", entityDisplayName);
-	text = String::distributeNewlines(text, 60);
+	const int hasBeenIntroducedEntryOffset = prevHasBeenIntroduced ? 15 : 0;
+	const ArenaNpcPersonalityType personalityType = dialogueManager.getEntityPersonalityType();
+	const int entryIndex = 100 + hasBeenIntroducedEntryOffset + static_cast<int>(personalityType);
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryIndex);
+	const std::string text = dialogueManager.getSubstitutedText(entryValue.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2317,7 +3494,19 @@ void GameWorldUI::onNpcRumorsGeneralButtonSelected(MouseButtonType mouseButtonTy
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "General rumors not implemented.";
+	DialogueManager &dialogueManager = game.dialogueManager;
+	constexpr int uninterestingRumorEntryKey = 159;
+	constexpr int randomRumorEntryKey = 185;
+
+	Random &random = game.random;
+	int entryKey = uninterestingRumorEntryKey;
+	if (random.nextBool())
+	{
+		entryKey = randomRumorEntryKey;
+	}
+
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+	const std::string text = dialogueManager.getSubstitutedText(entryValue.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2335,7 +3524,27 @@ void GameWorldUI::onNpcRumorsWorkButtonSelected(MouseButtonType mouseButtonType)
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "Work rumors not implemented.";
+	const GameState &gameState = game.gameState;
+	DialogueManager &dialogueManager = game.dialogueManager;
+
+	std::string dialogueStr;
+	if (gameState.getActiveMapType() == MapType::Wilderness || (gameState.isActiveMapNested() && gameState.getExteriorMapType() == MapType::Wilderness))
+	{
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		dialogueStr = exeData.services.citizenRumorsModalWorkAskInTown;
+	}
+	else
+	{
+		constexpr int noWorkEntryKey = 160;
+
+		// @todo actual work rumors, requires quest support
+		const int entryKey = noWorkEntryKey;
+
+		const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+		dialogueStr = entryValue + " (quests not implemented)";
+	}
+
+	const std::string text = dialogueManager.getSubstitutedText(dialogueStr.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2584,15 +3793,46 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "TODO sneak into room";
+	GameState &gameState = game.gameState;
+	Random &random = game.random;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
-	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	const bool isSneakingSuccessful = random.nextReal() <= 0.70; // Arbitrary
+
+	std::string text;
+	std::string fontName;
+	GameWorldPopUpClosedCallback callback;
+	if (isSneakingSuccessful)
 	{
-		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
-	};
+		Span<const std::string> roomTypeNames = exeData.services.tavernRoomTypes;
+		const int roomType = random.next(roomTypeNames.getCount());
+		const int rentedRoomHours = 24;
+		gameState.setTavernRentedRoom(roomType, rentedRoomHours);
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+		const std::string &roomName = roomTypeNames[roomType];
+		text = String::format(exeData.services.tavernSneakIntoRoomSuccessful.c_str(), roomName.c_str());
+		text = String::distributeNewlines(text, 60);
+
+		fontName = GameWorldUiView::StatusPopUpFontName;
+		callback = [&uiManager]()
+		{
+			uiManager.disableTopMostContext();
+			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
+		};
+	}
+	else
+	{
+		text = exeData.services.tavernSneakIntoRoomUnsuccessful;
+		fontName = ArenaFontName::A;
+		callback = [&game, &uiManager, &gameState]()
+		{
+			uiManager.disableTopMostContext();
+			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
+			gameState.queueCityGuardEncounter(game);
+		};
+	}
+
+	GameWorldUI::showTextPopUp(text.c_str(), fontName, TextAlignment::TopLeft, callback);
 }
 
 void GameWorldUI::onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonType)
@@ -2611,7 +3851,19 @@ void GameWorldUI::onNpcTavernRumorsGeneralButtonSelected(MouseButtonType mouseBu
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "Tavern general rumors not implemented.";
+	DialogueManager &dialogueManager = game.dialogueManager;
+	constexpr int uninterestingRumorEntryKey = 159;
+	constexpr int randomRumorEntryKey = 185;
+
+	Random &random = game.random;
+	int entryKey = uninterestingRumorEntryKey;
+	if (random.nextBool())
+	{
+		entryKey = randomRumorEntryKey;
+	}
+
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+	const std::string text = dialogueManager.getSubstitutedText(entryValue.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2629,7 +3881,15 @@ void GameWorldUI::onNpcTavernRumorsWorkButtonSelected(MouseButtonType mouseButto
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "Tavern work rumors not implemented.";
+	DialogueManager &dialogueManager = game.dialogueManager;
+	constexpr int bartenderNoWorkEntryKey = 196;
+
+	// @todo actual work rumors, requires quest support
+	const int entryKey = bartenderNoWorkEntryKey;
+
+	const std::string &entryValue = dialogueManager.getRandomTemplateDatEntryValue(entryKey);
+	const std::string entryValueAndTBD = entryValue + " (quests not implemented)";
+	const std::string text = dialogueManager.getSubstitutedText(entryValueAndTBD.c_str());
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2647,7 +3907,8 @@ void GameWorldUI::onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "TODO bless";
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string text = exeData.services.templeReceiveBlessing;
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2672,7 +3933,8 @@ void GameWorldUI::onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType)
 	}
 	else
 	{
-		const std::string text = "TODO cure not diseased";
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const std::string text = String::format(exeData.services.templePlayerIsNotDiseased.c_str(), player.firstName.c_str());
 
 		GameWorldPopUpClosedCallback callback = [&uiManager]()
 		{
@@ -2691,10 +3953,12 @@ void GameWorldUI::onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType)
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const Player &player = game.player;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	Player &player = game.player;
 	if (player.currentHealth == player.maxHealth)
 	{
-		const std::string text = "TODO heal at full health";
+		const std::string text = String::format(exeData.services.templePlayerIsFullHealth.c_str(), player.firstName.c_str());
 
 		GameWorldPopUpClosedCallback callback = [&uiManager]()
 		{
@@ -2706,7 +3970,9 @@ void GameWorldUI::onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType)
 	}
 	else
 	{
-		const std::string text = "TODO heal needs healing";
+		player.currentHealth = player.maxHealth;
+
+		const std::string text = String::format(exeData.services.templeReceiveHealing.c_str(), player.firstName.c_str());
 
 		GameWorldPopUpClosedCallback callback = [&uiManager]()
 		{
@@ -2716,542 +3982,6 @@ void GameWorldUI::onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType)
 
 		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
 	}
-}
-
-void GameWorldUI::showShopkeeperBackground(const char *titleText)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	InputManager &inputManager = game.inputManager;
-	UiManager &uiManager = game.uiManager;
-	TextureManager &textureManager = game.textureManager;
-	Renderer &renderer = game.renderer;
-	uiManager.clearContextElements(state.shopkeeperBgContextInstID, inputManager, renderer);
-
-	const bool shouldUseSmallerFont = std::strlen(titleText) >= 32;
-	std::string fontName = ArenaFontName::C;
-	if (shouldUseSmallerFont)
-	{
-		fontName = ArenaFontName::Arena;
-	}
-
-	UiElementInitInfo titleTextBoxElementInitInfo;
-	titleTextBoxElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleTextBox";
-	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 10);
-	titleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
-	titleTextBoxElementInitInfo.drawOrder = 1;
-
-	UiTextBoxInitInfo titleTextBoxInitInfo;
-	titleTextBoxInitInfo.text = titleText;
-	titleTextBoxInitInfo.fontName = fontName;
-	titleTextBoxInitInfo.defaultColor = Color(12, 12, 24);
-	titleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
-	const UiElementInstanceID titleTextBoxElementInstID = uiManager.createTextBox(titleTextBoxElementInitInfo, titleTextBoxInitInfo, state.shopkeeperBgContextInstID, renderer);
-	const Rect titleTextBoxGlobalRect = uiManager.getTransformGlobalRect(titleTextBoxElementInstID);
-
-	const int titleImageTextureWidth = titleTextBoxGlobalRect.width + 24;
-	constexpr int titleImageTextureHeight = 20;
-	const UiTextureID titleImageTextureID = uiManager.getOrAddTexture(UiTexturePatternType::ShopkeeperTitle, titleImageTextureWidth, titleImageTextureHeight, textureManager, renderer);
-
-	UiElementInitInfo titleImageElementInitInfo;
-	titleImageElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleImage";
-	titleImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 0);
-	titleImageElementInitInfo.pivotType = UiPivotType::Top;
-	titleImageElementInitInfo.drawOrder = 0;
-	uiManager.createImage(titleImageElementInitInfo, titleImageTextureID, state.shopkeeperBgContextInstID, renderer);
-
-	const TextureAsset barterBgTextureAsset(ArenaTextureName::BarterBackground);
-	const TextureAsset barterBgPaletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-	const UiTextureID barterBgImageTextureID = uiManager.getOrAddTexture(barterBgTextureAsset, barterBgPaletteTextureAsset, textureManager, renderer);
-
-	UiElementInitInfo barterBgImageElementInitInfo;
-	barterBgImageElementInitInfo.name = "GameWorldShopkeeperBackgroundBarterImage";
-	barterBgImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
-	barterBgImageElementInitInfo.pivotType = UiPivotType::Bottom;
-	uiManager.createImage(barterBgImageElementInitInfo, barterBgImageTextureID, state.shopkeeperBgContextInstID, renderer);
-
-	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, true);
-}
-
-void GameWorldUI::onPlayerStealItemSuccess(const ItemLibraryPredicate &stealableItemsPredicate, ConversationMessageBoxType mainMessageBoxType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;
-
-	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-	const std::vector<ItemDefinitionID> stealableItemDefIDs = itemLibrary.getDefinitionIDsIf(stealableItemsPredicate);
-
-	Random &random = game.random;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-	const int stolenItemDefIdIndex = random.next(static_cast<int>(stealableItemDefIDs.size()));
-	const ItemDefinitionID stolenItemDefID = stealableItemDefIDs[stolenItemDefIdIndex];
-	const ItemDefinition &stolenItemDef = itemLibrary.getDefinition(stolenItemDefID);
-	const std::string itemName = stolenItemDef.getDisplayName(1);
-	const std::string text = String::replace(exeData.services.equipmentStealSuccess, "%s", itemName.c_str());
-
-	Player &player = game.player;
-	player.inventory.insert(stolenItemDefID);
-
-	GameWorldPopUpClosedCallback callback = [mainMessageBoxType, &uiManager]()
-	{
-		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationMessageBox(mainMessageBoxType);
-	};
-
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, callback);
-}
-
-void GameWorldUI::onPlayerStealItemFailure()
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;
-
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const std::string &text = exeData.services.tavernSneakIntoRoomUnsuccessful;
-	GameWorldPopUpClosedCallback callback = [&game, &uiManager]()
-	{
-		uiManager.disableTopMostContext();
-		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-
-		GameState &gameState = game.gameState;
-		gameState.queueCityGuardEncounter(game, false);
-	};
-
-	GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment, callback);
-}
-
-bool GameWorldUI::isTriggerTextVisible()
-{
-	const GameWorldUiState &state = GameWorldUI::state;
-	return state.triggerTextRemainingSeconds > 0.0;
-}
-
-bool GameWorldUI::isActionTextVisible()
-{
-	const GameWorldUiState &state = GameWorldUI::state;
-	return state.actionTextRemainingSeconds > 0.0;
-}
-
-bool GameWorldUI::isEffectTextVisible()
-{
-	const GameWorldUiState &state = GameWorldUI::state;
-	return state.effectTextRemainingSeconds > 0.0;
-}
-
-bool GameWorldUI::isCampingHoursTextVisible()
-{
-	const GameWorldUiState &state = GameWorldUI::state;
-	const Game &game = *state.game;
-	return game.gameState.isCamping();
-}
-
-void GameWorldUI::setTriggerText(const char *str)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;
-	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(TriggerTextBoxElementName);
-	uiManager.setTextBoxText(textBoxElementInstID, str);
-
-	GameWorldUI::setTriggerTextDuration(str);
-}
-
-void GameWorldUI::setActionText(const char *str)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;
-	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
-	uiManager.setTextBoxText(textBoxElementInstID, str);
-
-	GameWorldUI::setActionTextDuration(str);
-}
-
-void GameWorldUI::setEffectText(const char *str)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;
-	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
-	uiManager.setTextBoxText(textBoxElementInstID, str);
-
-	GameWorldUI::setEffectTextDuration(str);
-}
-
-void GameWorldUI::setCampingHoursText(const char *str)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;
-	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(CampingHoursTextBoxElementName);
-	uiManager.setTextBoxText(textBoxElementInstID, str);
-}
-
-void GameWorldUI::setTriggerTextDuration(const std::string_view text)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	state.triggerTextRemainingSeconds = GameWorldUiView::getTriggerTextSeconds(text);
-}
-
-void GameWorldUI::setActionTextDuration(const std::string_view text)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	state.actionTextRemainingSeconds = GameWorldUiView::getActionTextSeconds(text);
-}
-
-void GameWorldUI::setEffectTextDuration(const std::string_view text)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	state.effectTextRemainingSeconds = GameWorldUiView::getEffectTextSeconds(text);
-}
-
-void GameWorldUI::resetTriggerTextDuration()
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	state.triggerTextRemainingSeconds = 0.0;
-}
-
-void GameWorldUI::resetActionTextDuration()
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	state.actionTextRemainingSeconds = 0.0;
-}
-
-void GameWorldUI::resetEffectTextDuration()
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	state.effectTextRemainingSeconds = 0.0;
-}
-
-void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed)
-{
-	const GameWorldUiState &state = GameWorldUI::state;
-	const Rect &centerCursorRegion = state.nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
-
-	if (pressed)
-	{
-		GameState &gameState = game.gameState;
-		if (gameState.isCamping())
-		{
-			gameState.clearCampingState();
-		}
-
-		const bool isLeftClick = type == MouseButtonType::Left;
-		const bool isRightClick = type == MouseButtonType::Right;
-
-		const Options &options = game.options;
-		if (options.getGraphics_ModernInterface())
-		{
-			if (isRightClick)
-			{
-				Player &player = game.player;
-				const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
-				const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-				const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
-				const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
-				DebugAssertIndex(weaponAnimDef.states, weaponAnimInst.currentStateIndex);
-				const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
-
-				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-				ItemDefinitionID weaponItemDefID = player.getEquippedWeaponItemDefID();
-				bool isRangedWeapon = false;
-				if (weaponItemDefID >= 0)
-				{
-					const ItemDefinition &weaponItemDef = itemLibrary.getDefinition(weaponItemDefID);
-					isRangedWeapon = weaponItemDef.weapon.isRanged;
-				}
-
-				if (WeaponAnimationUtils::isIdle(weaponAnimDefState) && !isRangedWeapon)
-				{
-					CardinalDirectionName randomMeleeSwingDirection = PlayerLogic::getRandomMeleeSwingDirection(game.random);
-					player.queuedMeleeSwingDirection = static_cast<int>(randomMeleeSwingDirection);
-				}
-			}
-		}
-		else
-		{
-			if (centerCursorRegion.contains(position))
-			{
-				if (isLeftClick)
-				{
-					GameWorldUI::onScreenToWorldInteraction(position, true);
-				}
-				else if (isRightClick)
-				{
-					GameWorldUI::onScreenToWorldInteraction(position, false);
-				}
-			}
-		}
-	}
-}
-
-void GameWorldUI::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt)
-{
-	const GameWorldUiState &state = GameWorldUI::state;
-	const Options &options = game.options;
-	const Rect &centerCursorRegion = state.nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
-	if (!options.getGraphics_ModernInterface() && !centerCursorRegion.contains(position))
-	{
-		if (type == MouseButtonType::Left)
-		{
-			// @todo: move out of PlayerLogicController::handlePlayerTurning() and handlePlayerAttack()
-		}
-	}
-}
-
-void GameWorldUI::onWindowResized(int width, int height)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	state.updateNativeCursorRegions(width, height);
-
-	Game &game = *state.game;
-	Renderer &renderer = game.renderer;
-	DebugAssert(state.playerHurtTextureID >= 0);
-	renderer.freeUiTexture(state.playerHurtTextureID);
-
-	UiManager &uiManager = game.uiManager;
-	const Window &window = game.window;
-	const UiElementInstanceID playerHurtImageElementInstID = uiManager.getElementByName(PlayerHurtImageElementName);
-	uiManager.setTransformSize(playerHurtImageElementInstID, window.getSceneViewDimensions());
-
-	state.playerHurtTextureID = GameWorldUiView::allocPlayerHurtTexture(window.getSceneViewAspectRatio(), window.fullGameWindow, renderer);
-	uiManager.setImageTexture(playerHurtImageElementInstID, state.playerHurtTextureID);
-}
-
-void GameWorldUI::onCharacterSheetButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		return;
-	}
-
-	game.setNextContext(CharacterUI::ContextName);
-}
-
-void GameWorldUI::onWeaponToggleButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		return;
-	}
-
-	if (!game.canPlayerMoveAndTurn())
-	{
-		return;
-	}
-
-	Player &player = game.player;
-	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
-	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
-	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
-	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
-
-	int newStateIndex = -1;
-	int nextStateIndex = -1;
-	if (WeaponAnimationUtils::isSheathed(weaponAnimDefState))
-	{
-		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_UNSHEATHING.c_str(), &newStateIndex);
-		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_IDLE.c_str(), &nextStateIndex);
-	}
-	else if (WeaponAnimationUtils::isIdle(weaponAnimDefState))
-	{
-		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHING.c_str(), &newStateIndex);
-		weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHED.c_str(), &nextStateIndex);
-	}
-
-	if (newStateIndex >= 0)
-	{
-		weaponAnimInst.setStateIndex(newStateIndex);
-		weaponAnimInst.setNextStateIndex(nextStateIndex);
-	}
-}
-
-void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		return;
-	}
-
-	if (mouseButtonType == MouseButtonType::Left)
-	{
-		game.setNextContext(AutomapUI::ContextName);
-	}
-	else if (mouseButtonType == MouseButtonType::Right)
-	{
-		const MapType mapType = gameState.getActiveMapType();
-		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-		const Player &player = game.player;
-		const WorldDouble3 playerTravelPosition = player.getEyePosition();
-		const bool isPlayerSafeToTravel = !entityChunkManager.anyEnemiesNearby(playerTravelPosition);
-		const bool isPlayerInBoat = false; // @todo vehicle support
-		const bool isPlayerAllowedToTravel = mapType != MapType::Interior;
-
-		std::string text;
-		if (!isPlayerSafeToTravel)
-		{
-			text = exeData.travel.notSafeToTravel;
-		}
-		else if (isPlayerInBoat)
-		{
-			text = exeData.travel.notAllowedToTravelInBoat;
-		}
-		else if (!isPlayerAllowedToTravel)
-		{
-			text = exeData.travel.notAllowedToTravel;
-		}
-
-		if (!text.empty())
-		{
-			GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
-		}
-		else
-		{
-			game.setNextContext(WorldMapUI::ContextName);
-		}
-	}
-	else
-	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(mouseButtonType)));
-	}
-}
-
-void GameWorldUI::onStealButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		return;
-	}
-
-	GameWorldUI::setInteractionType(GameWorldInteractionType::Thieving);
-}
-
-void GameWorldUI::onStatusButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		return;
-	}
-
-	const std::string text = GameWorldUiModel::getStatusButtonText(game);
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
-}
-
-void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		return;
-	}
-
-	DebugLog("Magic.");
-}
-
-void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		return;
-	}
-
-	game.setNextContext(LogbookUI::ContextName);
-}
-
-void GameWorldUI::onUseItemButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		return;
-	}
-
-	DebugLog("Use item.");
-}
-
-void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
-{
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	if (gameState.isCamping())
-	{
-		gameState.clearCampingState();
-		return;
-	}
-
-	const MapType mapType = gameState.getActiveMapType();
-	const MapSubDefinition &mapSubDef = gameState.getActiveMapDef().getSubDefinition();
-	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-	const Player &player = game.player;
-	const WorldDouble3 playerRestPosition = player.getEyePosition();
-	const bool isPlayerSafeForResting = !entityChunkManager.anyEnemiesNearby(playerRestPosition);
-	const bool isPlayerAllowedToRest = (mapType != MapType::City) && player.groundState.onGround && !player.groundState.isSwimming;
-	const bool isPlayerAttemptingRestInTavern = (mapType == MapType::Interior) && (mapSubDef.interior.interiorType == ArenaInteriorType::Tavern);
-
-	std::string text;
-	if (!isPlayerSafeForResting)
-	{
-		text = exeData.camping.enemiesNearbyBeforeResting;
-	}
-	else if (!isPlayerAllowedToRest)
-	{
-		text = exeData.camping.campingNotAllowed;
-	}
-	else if (isPlayerAttemptingRestInTavern)
-	{
-		// @todo actually check if a bed has been rented
-		text = exeData.camping.tavernBedNotRented;
-	}
-
-	if (!text.empty())
-	{
-		GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
-	}
-	else
-	{
-		GameWorldUI::showCampModal();
-	}
-}
-
-void GameWorldUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)
-{
-	// Nothing yet.
-}
-
-void GameWorldUI::onScrollDownButtonSelected(MouseButtonType mouseButtonType)
-{
-	// Nothing yet.
 }
 
 void GameWorldUI::onActivateInputAction(const InputActionCallbackValues &values)
@@ -3402,5 +4132,277 @@ void GameWorldUI::onPauseMenuInputAction(const InputActionCallbackValues &values
 		}
 
 		game.setNextContext(PauseMenuUI::ContextName);
+	}
+}
+
+void GameWorldUI::onEquipmentStoreBuyInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcEquipmentBuyButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onEquipmentStoreSellInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcEquipmentSellButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onEquipmentStoreRepairInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcEquipmentRepairButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onEquipmentStoreStealInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onEquipmentStoreExitInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onEquipmentStoreBuyWeaponInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcEquipmentBuyWeaponsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onEquipmentStoreBuyArmorInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcEquipmentBuyArmorButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildBuyInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildBuyButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildDetectMagicInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildDetectMagicButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildSpellmakerInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildSpellmakerButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildStealInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildStealButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildExitInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildBuyPotionsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildBuyMagicItemsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildBuySpellsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildBuySpellsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildStealPotionsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onMagesGuildStealMagicItemsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onNpcWhoAreYouInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onNpcWhereIsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcWhereIsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onNpcRumorsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcRumorsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onNpcExitInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onNpcRumorsGeneralInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcRumorsGeneralButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onNpcRumorsWorkInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcRumorsWorkButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTavernBuyDrinksInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTavernBuyDrinksButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTavernGetRoomInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTavernGetARoomButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTavernSneakIntoRoomInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTavernRumorsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTavernRumorsButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTavernExitInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTavernRumorsGeneralInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTavernRumorsGeneralButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTavernRumorsWorkInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTavernRumorsWorkButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTempleBlessInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTempleBlessButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTempleCureInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTempleCureButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTempleHealInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onNpcTempleHealButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void GameWorldUI::onTempleExitInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
 	}
 }

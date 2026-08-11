@@ -44,8 +44,12 @@ struct AccessoryItemDefinition
 	ItemMaterialDefinitionID materialDefID;
 	int basePrice;
 	PrimaryAttributeID attributeID;
+	int armorClass;
 
-	void init(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice);
+	void initAttribute(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, int basePrice, PrimaryAttributeID attributeID);
+	void initArmor(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, int basePrice, int armorClass);
+
+	bool isAttributeEnhancing() const;
 };
 
 static constexpr int ARMOR_MATERIAL_TYPE_COUNT = static_cast<int>(ArenaArmorMaterialType::Leather) + 1;
@@ -56,21 +60,24 @@ struct ArmorItemDefinition
 	ArenaArmorTypeID typeID;
 	double weight;
 	ArenaArmorMaterialType materialType;
+	int armorClass;
+	int basePrice;
 	ItemMaterialDefinitionID plateMaterialDefID;
 
-	void initLeather(const char *name, ArenaArmorTypeID typeID, double weight);
-	void initChain(const char *name, ArenaArmorTypeID typeID, double weight);
-	void initPlate(const char *name, ArenaArmorTypeID typeID, double weight, ItemMaterialDefinitionID materialDefID);
+	void initLeather(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice);
+	void initChain(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice);
+	void initPlate(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice, ItemMaterialDefinitionID materialDefID);
 };
 
 struct ConsumableItemDefinition
 {
 	char name[64]; // "Potion of <effect>", etc.
 	ArenaConsumableTypeID typeID;
+	int basePrice;
 	char unidentifiedName[64];
 	// @todo: effect def ID?
 
-	void init(const char *name, ArenaConsumableTypeID typeID, const char *unidentifiedName);
+	void init(const char *name, ArenaConsumableTypeID typeID, int basePrice, const char *unidentifiedName);
 };
 
 struct GoldItemDefinition
@@ -94,18 +101,21 @@ struct ShieldItemDefinition
 	char name[64]; // Buckler, kite, etc.
 	ArenaArmorTypeID armorTypeID; // Shield type ID + 7. The original game treats shields as armor.
 	double weight;
+	int armorClass;
+	int basePrice;
 
-	void init(const char *name, ArenaArmorTypeID armorTypeID, double weight);
+	void init(const char *name, ArenaArmorTypeID armorTypeID, double weight, int armorClass, int basePrice);
 };
 
 struct TrinketItemDefinition
 {
 	char name[64]; // "Crystal, mark, etc. of <spell>"
 	ArenaTrinketTypeID typeID;
+	int basePrice;
 	char unidentifiedName[64]; // Crystal, mark, etc.
 	SpellID spellID;
 
-	void init(const char *name, ArenaTrinketTypeID typeID, const char *unidentifiedName, SpellID spellID);
+	void init(const char *name, ArenaTrinketTypeID typeID, int basePrice, const char *unidentifiedName, SpellID spellID);
 };
 
 struct WeaponItemDefinition
@@ -178,6 +188,8 @@ struct ItemDefinition
 
 	void init(ItemType type);
 
-	std::string getDisplayName(int stackAmount) const;
+	std::string getDisplayNameWithQty(int stackAmount) const;
+	std::string getDisplayNameWithoutQty() const;
 	double getWeight() const;
+	int getGoldValue() const;
 };

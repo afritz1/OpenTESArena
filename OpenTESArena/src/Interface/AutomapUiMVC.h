@@ -29,7 +29,7 @@ struct VoxelTraitsDefinition;
 namespace AutomapUiModel
 {
 	// Calculates automap screen offset in pixels for rendering.
-	Double2 makeAutomapOffset(const VoxelInt2 &playerVoxel);
+	Double2 makeAutomapOffset(const VoxelInt2 &voxel);
 
 	// Helper function for obtaining relative wild origin in new coordinate system.
 	WorldInt2 makeRelativeWildOrigin(const WorldInt2 &voxel, SNInt gridWidth, WEInt gridDepth);

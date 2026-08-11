@@ -683,7 +683,7 @@ void InputManager::handleHeldInputs(Game &game, Span<const InputActionMap*> acti
 	}
 }
 
-void InputManager::update(Game &game, double dt, const UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent)
+void InputManager::update(Game &game, double dt, UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent)
 {
 	int logicalMouseDeltaX, logicalMouseDeltaY;
 	SDL_GetRelativeMouseState(&logicalMouseDeltaX, &logicalMouseDeltaY);
@@ -888,8 +888,7 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 							const bool isMouseButtonValid = uiManager.isMouseButtonValidForListBox(listBoxElementInstID, *buttonType);
 							if (isValidMouseSelection && isMouseButtonValid)
 							{
-								const UiListBoxItemCallback &listBoxItemCallback = uiManager.getListBoxItemCallback(listBoxElementInstID, i);
-								listBoxItemCallback(*buttonType);
+								uiManager.selectListBoxItem(listBoxElementInstID, i, *buttonType);
 								isListBoxItemCallbackExecuted = true;
 								break;
 							}

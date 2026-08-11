@@ -86,6 +86,8 @@ namespace
 	std::string GetStatusEffectString(const Player &player, const ExeData &exeData)
 	{
 		const bool isDiseased = player.effectsState.isDiseased();
+		const bool isCriticallyHurt = player.isHealthCriticallyLow();
+		const bool isDrunk = player.effectsState.isDrunk();
 		const bool isParalyzed = player.effectsState.isParalyzed();
 
 		std::string text = exeData.status.effect;
@@ -94,6 +96,14 @@ namespace
 		if (isDiseased)
 		{
 			effectStrIndex = 1;
+		}
+		else if (isCriticallyHurt)
+		{
+			effectStrIndex = 3;
+		}
+		else if (isDrunk)
+		{
+			effectStrIndex = 4;
 		}
 
 		const std::string &effectStr = exeData.status.effectsList[effectStrIndex];
@@ -129,20 +139,20 @@ namespace
 		return text;
 	}
 
-	ConversationMessageBoxType GetShopkeeperConversationMessageBoxType(ArenaBuildingType buildingType)
+	ConversationMessageBoxType GetShopkeeperConversationMessageBoxType(ArenaShopkeeperType shopkeeperType)
 	{
-		switch (buildingType)
+		switch (shopkeeperType)
 		{
-		case ArenaBuildingType::Tavern:
-			return ConversationMessageBoxType::Tavern;
-		case ArenaBuildingType::Temple:
-			return ConversationMessageBoxType::Temple;
-		case ArenaBuildingType::Equipment:
+		case ArenaShopkeeperType::Equipment:
 			return ConversationMessageBoxType::Equipment;
-		case ArenaBuildingType::MagesGuild:
+		case ArenaShopkeeperType::MagesGuild:
 			return ConversationMessageBoxType::MagesGuild;
+		case ArenaShopkeeperType::Tavern:
+			return ConversationMessageBoxType::Tavern;
+		case ArenaShopkeeperType::Temple:
+			return ConversationMessageBoxType::Temple;
 		default:
-			DebugUnhandledReturnMsg(ConversationMessageBoxType, std::to_string(static_cast<int>(buildingType)));
+			DebugUnhandledReturnMsg(ConversationMessageBoxType, std::to_string(static_cast<int>(shopkeeperType)));
 		}
 	}
 }
@@ -240,7 +250,7 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	return str;
 }
 
-std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
+std::optional<GameWorldUiButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
 {
 	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
@@ -255,7 +265,7 @@ std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonTy
 	const Int2 classicPosition = window.nativeToOriginal(mousePosition);
 	for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
 	{
-		const ButtonType buttonType = static_cast<ButtonType>(i);
+		const GameWorldUiButtonType buttonType = static_cast<GameWorldUiButtonType>(i);
 		const Rect buttonRect = GameWorldUiView::getButtonRect(buttonType);
 		if (buttonRect.contains(classicPosition))
 		{
@@ -266,9 +276,9 @@ std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonTy
 	return std::nullopt;
 }
 
-bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
+bool GameWorldUiModel::isButtonTooltipAllowed(GameWorldUiButtonType buttonType, Game &game)
 {
-	if (buttonType == ButtonType::Magic)
+	if (buttonType == GameWorldUiButtonType::Magic)
 	{
 		const Player &player = game.player;
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
@@ -282,27 +292,27 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 	}
 }
 
-std::string GameWorldUiModel::getButtonTooltip(ButtonType buttonType)
+std::string GameWorldUiModel::getButtonTooltip(GameWorldUiButtonType buttonType)
 {
 	switch (buttonType)
 	{
-	case ButtonType::CharacterSheet:
+	case GameWorldUiButtonType::CharacterSheet:
 		return "Character Sheet";
-	case ButtonType::ToggleWeapon:
+	case GameWorldUiButtonType::ToggleWeapon:
 		return "Draw/Sheathe Weapon";
-	case ButtonType::Map:
+	case GameWorldUiButtonType::Map:
 		return "Automap/World Map";
-	case ButtonType::Steal:
+	case GameWorldUiButtonType::Steal:
 		return "Steal";
-	case ButtonType::Status:
+	case GameWorldUiButtonType::Status:
 		return "Status";
-	case ButtonType::Magic:
+	case GameWorldUiButtonType::Magic:
 		return "Spells";
-	case ButtonType::Logbook:
+	case GameWorldUiButtonType::Logbook:
 		return "Logbook";
-	case ButtonType::UseItem:
+	case GameWorldUiButtonType::UseItem:
 		return "Use Item";
-	case ButtonType::Camp:
+	case GameWorldUiButtonType::Camp:
 		return "Camp";
 	default:
 		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(buttonType)));
@@ -351,7 +361,7 @@ PlayerStatusGradientType GameWorldUiModel::getCurrentPlayerStatusGradientType(co
 	{
 		return PlayerStatusGradientType::NearDeath;
 	}
-	else if (false) // @todo poison
+	else if (player.effectsState.isDrunk())
 	{
 		return PlayerStatusGradientType::Poisoned;
 	}
@@ -673,27 +683,27 @@ Rect GameWorldUiView::getScrollDownButtonRect()
 	return Rect(208, ArenaRenderUtils::SCENE_VIEW_HEIGHT + 44, 9, 9);
 }
 
-Rect GameWorldUiView::getButtonRect(GameWorldUiModel::ButtonType buttonType)
+Rect GameWorldUiView::getButtonRect(GameWorldUiButtonType buttonType)
 {
 	switch (buttonType)
 	{
-	case GameWorldUiModel::ButtonType::CharacterSheet:
+	case GameWorldUiButtonType::CharacterSheet:
 		return GameWorldUiView::getCharacterSheetButtonRect();
-	case GameWorldUiModel::ButtonType::ToggleWeapon:
+	case GameWorldUiButtonType::ToggleWeapon:
 		return GameWorldUiView::getWeaponSheathButtonRect();
-	case GameWorldUiModel::ButtonType::Map:
+	case GameWorldUiButtonType::Map:
 		return GameWorldUiView::getMapButtonRect();
-	case GameWorldUiModel::ButtonType::Steal:
+	case GameWorldUiButtonType::Steal:
 		return GameWorldUiView::getStealButtonRect();
-	case GameWorldUiModel::ButtonType::Status:
+	case GameWorldUiButtonType::Status:
 		return GameWorldUiView::getStatusButtonRect();
-	case GameWorldUiModel::ButtonType::Magic:
+	case GameWorldUiButtonType::Magic:
 		return GameWorldUiView::getMagicButtonRect();
-	case GameWorldUiModel::ButtonType::Logbook:
+	case GameWorldUiButtonType::Logbook:
 		return GameWorldUiView::getLogbookButtonRect();
-	case GameWorldUiModel::ButtonType::UseItem:
+	case GameWorldUiButtonType::UseItem:
 		return GameWorldUiView::getUseItemButtonRect();
-	case GameWorldUiModel::ButtonType::Camp:
+	case GameWorldUiButtonType::Camp:
 		return GameWorldUiView::getCampButtonRect();
 	default:
 		DebugUnhandledReturnMsg(Rect, std::to_string(static_cast<int>(buttonType)));
@@ -816,6 +826,7 @@ UiListBoxInitInfo GameWorldUiView::getLootListBoxProperties()
 	listBoxInitInfo.textureHeight = textureGenInfo.height;
 	listBoxInitInfo.fontName = fontName;
 	listBoxInitInfo.defaultTextColor = InventoryUiView::ItemDefaultColor;
+	listBoxInitInfo.highlightedTextColor = InventoryUiView::ItemEquippedColor;
 	return listBoxInitInfo;
 }
 
@@ -1069,7 +1080,7 @@ UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFil
 	return textureID;
 }
 
-UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType buttonType,
+UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiButtonType buttonType,
 	const FontLibrary &fontLibrary, Renderer &renderer)
 {
 	const std::string text = GameWorldUiModel::getButtonTooltip(buttonType);
@@ -1441,12 +1452,14 @@ void GameWorldUiController::onEnemyAliveInspected(Game &game, EntityInstanceID e
 
 void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory, bool destroyEntityIfEmpty)
 {
-	// @todo: need to queue entity destroy if container is empty
-	// @todo: if closing and container is not empty, then inventory.compact(). Don't compact while removing items since that would invalidate mappings
-
 	auto callback = [&game, entityInstID, &itemInventory, destroyEntityIfEmpty]()
 	{
-		if (destroyEntityIfEmpty && (itemInventory.getOccupiedSlotCount() == 0))
+		const bool hasRemainingItems = itemInventory.getOccupiedSlotCount() > 0;
+		if (hasRemainingItems)
+		{
+			itemInventory.compact();
+		}
+		else if (destroyEntityIfEmpty)
 		{
 			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 			entityChunkManager.queueEntityDestroy(entityInstID, true);
@@ -1568,7 +1581,7 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 
 void GameWorldUiController::onCitizenInteracted(Game &game, EntityInstanceID entityInstID)
 {
-	GameWorldUI::setConversationEntityInstanceID(entityInstID);
+	game.dialogueManager.beginDialogue(entityInstID);
 	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 }
 
@@ -1587,68 +1600,60 @@ void GameWorldUiController::onCitizenKilled(Game &game)
 	GameWorldUI::setActionText(text.c_str());
 }
 
-void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID entityInstID, StaticNpcPersonalityType personalityType)
+void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID entityInstID, StaticNpcEntityDefinitionType staticNpcEntityDefType)
 {
 	const GameState &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
+	DialogueManager &dialogueManager = game.dialogueManager;
 
 	std::string interiorDisplayName;
-	ArenaBuildingType buildingType = ArenaBuildingType::None;
 	if (mapDef.getMapType() == MapType::Interior)
 	{
 		const MapDefinitionInterior &mapDefInterior = mapDef.getSubDefinition().interior;
 		interiorDisplayName = mapDefInterior.displayName;
-		buildingType = ArenaTypes::interiorTypeToBuildingType(mapDefInterior.interiorType);
 	}
 
-	if (personalityType == StaticNpcPersonalityType::Shopkeeper)
+	if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::General)
 	{
-		GameWorldUI::setConversationEntityInstanceID(entityInstID);
+		dialogueManager.beginDialogue(entityInstID);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
+	}
+	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper)
+	{
+		dialogueManager.beginDialogue(entityInstID);
 		GameWorldUI::showShopkeeperBackground(interiorDisplayName.c_str());
 
-		const ConversationMessageBoxType messageBoxType = GetShopkeeperConversationMessageBoxType(buildingType);
+		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+		DebugAssert(entityDef.type == EntityDefinitionType::StaticNPC);
+		const StaticNpcShopkeeperEntityDefinition &staticNpcShopkeeperEntityDef = entityDef.staticNpc.shopkeeper;
+		const ConversationMessageBoxType messageBoxType = GetShopkeeperConversationMessageBoxType(staticNpcShopkeeperEntityDef.type);
 		GameWorldUI::showConversationMessageBox(messageBoxType);
 	}
-	else if (personalityType == StaticNpcPersonalityType::TavernPatron)
+	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::TavernPatron)
 	{
-		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-		const ArenaTemplateDatEntry &patronDialoguesEntry = textAssetLibrary.templateDat.getEntry(1430);
+		dialogueManager.beginDialogue(entityInstID);
 
-		Random &random = game.random;
-		const int patronDialoguesRandomIndex = random.next(patronDialoguesEntry.values.size());
-		std::string text = patronDialoguesEntry.values[patronDialoguesRandomIndex];
+		const std::string patronDialogueString = dialogueManager.getRandomTemplateDatEntryValue(1430);
+		const std::string text = dialogueManager.getSubstitutedText(patronDialogueString.c_str());
 
-		const Player &player = game.player;
-		const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
-		const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(player.raceID);
+		GameWorldPopUpClosedCallback callback = [&game, &dialogueManager]()
+		{
+			dialogueManager.endDialogue();
+			GameWorldUiController::onPopUpSelected(game);
+		};
 
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		const std::string &locationName = locationDef.getName();
-
-		const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
-		const std::string &provinceName = provinceDef.getName();
-		const int provinceID = provinceDef.getRaceID();
-
-		const int oathsProvinceID = (provinceID != ArenaLocationUtils::CENTER_PROVINCE_ID) ? provinceID : random.next(ArenaLocationUtils::CENTER_PROVINCE_ID);
-		const int oathsID = 364 + oathsProvinceID;
-		const ArenaTemplateDatEntry &oathsEntry = textAssetLibrary.templateDat.getEntry(oathsID);
-		const int oathsRandomIndex = random.next(oathsEntry.values.size());
-		const std::string &oathString = oathsEntry.values[oathsRandomIndex];
-
-		// @todo move this into a global dialogue processor, see "Dialog" wiki
-		text = String::replace(text, "%ra", charRaceDef.singularName);
-		text = String::replace(text, "%cn", locationName);
-		text = String::replace(text, "%lp", provinceName);
-		text = String::replace(text, "%oth", oathString);
-		text = String::replace(text, "%nt", interiorDisplayName);
-		text = String::distributeNewlines(text, 65);
-
-		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+	}
+	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Ruler)
+	{
+		const std::string text = "Ruler not implemented.";
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
 	}
 	else
 	{
-		GameWorldUI::setConversationEntityInstanceID(entityInstID);
-		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(staticNpcEntityDefType)));
 	}
 }
 

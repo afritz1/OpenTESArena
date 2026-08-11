@@ -2,6 +2,7 @@
 #include "ChooseAttributesUiState.h"
 #include "ChooseGenderUiState.h"
 #include "ChooseRaceUiState.h"
+#include "CommonUiMVC.h"
 #include "WorldMapUiMVC.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
@@ -14,8 +15,6 @@ namespace
 	constexpr char ContextName_ProvinceConfirmed2[] = "ChooseRaceProvinceConfirmed2";
 	constexpr char ContextName_ProvinceConfirmed3[] = "ChooseRaceProvinceConfirmed3";
 	constexpr char ContextName_ProvinceConfirmed4[] = "ChooseRaceProvinceConfirmed4";
-
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 }
 
 ChooseRaceUiState::ChooseRaceUiState()
@@ -87,7 +86,7 @@ void ChooseRaceUI::create(Game &game)
 	initialPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo initialPopUpBackButtonInitInfo;
-	initialPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	initialPopUpBackButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	initialPopUpBackButtonInitInfo.callback = ChooseRaceUI::onInitialPopUpBackButtonSelected;
 	uiManager.createButton(initialPopUpBackButtonElementInitInfo, initialPopUpBackButtonInitInfo, state.initialPopUpContextInstID);
 
@@ -397,7 +396,7 @@ void ChooseRaceUI::onProvinceConfirmPopUpAcceptButtonSelected(MouseButtonType mo
 	provinceConfirmed1ButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo provinceConfirmed1ButtonInitInfo;
-	provinceConfirmed1ButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	provinceConfirmed1ButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	provinceConfirmed1ButtonInitInfo.callback = ChooseRaceUI::onProvinceConfirmed1PopUpBackButtonSelected;
 	uiManager.createButton(provinceConfirmed1ButtonElementInitInfo, provinceConfirmed1ButtonInitInfo, state.provinceConfirmed1ContextInstID);
 
@@ -468,7 +467,7 @@ void ChooseRaceUI::onProvinceConfirmed1PopUpBackButtonSelected(MouseButtonType m
 	provinceConfirmed2ButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo provinceConfirmed2ButtonInitInfo;
-	provinceConfirmed2ButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	provinceConfirmed2ButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	provinceConfirmed2ButtonInitInfo.callback = ChooseRaceUI::onProvinceConfirmed2PopUpBackButtonSelected;
 	uiManager.createButton(provinceConfirmed2ButtonElementInitInfo, provinceConfirmed2ButtonInitInfo, state.provinceConfirmed2ContextInstID);
 
@@ -522,7 +521,7 @@ void ChooseRaceUI::onProvinceConfirmed2PopUpBackButtonSelected(MouseButtonType m
 	provinceConfirmed3ButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo provinceConfirmed3ButtonInitInfo;
-	provinceConfirmed3ButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	provinceConfirmed3ButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	provinceConfirmed3ButtonInitInfo.callback = ChooseRaceUI::onProvinceConfirmed3PopUpBackButtonSelected;
 	uiManager.createButton(provinceConfirmed3ButtonElementInitInfo, provinceConfirmed3ButtonInitInfo, state.provinceConfirmed3ContextInstID);
 
@@ -576,7 +575,7 @@ void ChooseRaceUI::onProvinceConfirmed3PopUpBackButtonSelected(MouseButtonType m
 	provinceConfirmed4ButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo provinceConfirmed4ButtonInitInfo;
-	provinceConfirmed4ButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	provinceConfirmed4ButtonInitInfo.mouseButtonFlags = CommonUiView::PopUpMouseButtonTypeFlags;
 	provinceConfirmed4ButtonInitInfo.callback = ChooseRaceUI::onProvinceConfirmed4PopUpBackButtonSelected;
 	uiManager.createButton(provinceConfirmed4ButtonElementInitInfo, provinceConfirmed4ButtonInitInfo, state.provinceConfirmed4ContextInstID);
 

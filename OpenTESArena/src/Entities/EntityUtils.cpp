@@ -274,7 +274,18 @@ std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &ent
 		}
 
 		break;
-	}		
+	}
+	case EntityDefinitionType::Vfx:
+	{
+		const VfxEntityDefinition &vfxDef = entityDef.vfx;
+		const bool vfxHasLight = (vfxDef.type == VfxEntityAnimationType::SpellProjectile) || (vfxDef.type == VfxEntityAnimationType::SpellExplosion);
+		if (vfxHasLight)
+		{
+			return ArenaRenderUtils::SPELL_LIGHT_RADIUS;
+		}
+
+		break;
+	}
 	case EntityDefinitionType::Decoration:
 	{
 		const DecorationEntityDefinition &decorationDef = entityDef.decoration;

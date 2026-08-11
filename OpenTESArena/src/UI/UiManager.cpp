@@ -273,7 +273,6 @@ UiElementInstanceID UiManager::getElementByName(const char *name) const
 		}
 	}
 
-	DebugLogErrorFormat("Couldn't find element \"%s\".", name);
 	return -1;
 }
 
@@ -281,6 +280,12 @@ void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
 {
 	UiElement &element = this->elements.get(elementInstID);
 	element.active = active;
+}
+
+void UiManager::setElementDrawOrder(UiElementInstanceID elementInstID, int drawOrder)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	element.drawOrder = drawOrder;
 }
 
 std::vector<UiElementInstanceID> UiManager::getTopMostActiveElementsOfType(UiElementType elementType) const
@@ -628,8 +633,9 @@ UiElementInstanceID UiManager::createListBox(const UiElementInitInfo &initInfo, 
 	const UiTextureID listBoxTextureID = renderer.createUiTexture(listBoxInitInfo.textureWidth, listBoxInitInfo.textureHeight);
 
 	UiListBox &listBox = this->listBoxes.get(listBoxInstID);
-	listBox.init(listBoxTextureID, listBoxInitInfo.textureWidth, listBoxInitInfo.textureHeight, listBoxInitInfo.itemPixelSpacing, fontDefIndex,
-		listBoxInitInfo.defaultTextColor, listBoxInitInfo.mouseButtonFlags, listBoxInitInfo.scrollDeltaScale);
+	listBox.init(listBoxTextureID, listBoxInitInfo.textureWidth, listBoxInitInfo.textureHeight, listBoxInitInfo.columnPixelXOffsets,
+		listBoxInitInfo.itemPixelSpacing, fontDefIndex, listBoxInitInfo.defaultTextColor, listBoxInitInfo.isHighlightEnabled,
+		listBoxInitInfo.highlightedTextColor, listBoxInitInfo.mouseButtonFlags, listBoxInitInfo.scrollDeltaScale);
 
 	Int2 contentSize = initInfo.size;
 	if (initInfo.sizeType == UiTransformSizeType::Content)
@@ -655,6 +661,25 @@ int UiManager::getListBoxItemCount(UiElementInstanceID elementInstID) const
 	DebugAssert(element.type == UiElementType::ListBox);
 	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
 	return static_cast<int>(listBox.items.size());
+}
+
+int UiManager::getListBoxColumnCount(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	return static_cast<int>(listBox.columnPixelXOffsets.size());
+}
+
+int UiManager::getListBoxColumnPixelXOffset(UiElementInstanceID elementInstID, int column) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	DebugAssertIndex(listBox.columnPixelXOffsets, column);
+	return listBox.columnPixelXOffsets[column];
 }
 
 Rect UiManager::getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const
@@ -693,7 +718,16 @@ const UiListBoxItemCallback &UiManager::getListBoxItemCallback(UiElementInstance
 	return listBox.items[itemIndex].callback;
 }
 
-void UiManager::setListBoxItemText(UiElementInstanceID elementInstID, int index, const char *text)
+int UiManager::getListBoxHighlightedItemIndex(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	return listBox.highlightedItemIndex;
+}
+
+void UiManager::setListBoxItemTextAtColumn(UiElementInstanceID elementInstID, int index, int column, const char *text)
 {
 	UiElement &element = this->elements.get(elementInstID);
 
@@ -702,9 +736,15 @@ void UiManager::setListBoxItemText(UiElementInstanceID elementInstID, int index,
 
 	DebugAssertIndex(listBox.items, index);
 	UiListBoxItem &item = listBox.items[index];
-	item.text = std::string(text);
+	DebugAssertIndex(item.textColumns, column);
+	item.textColumns[column] = std::string(text);
 
 	listBox.dirty = true;
+}
+
+void UiManager::setListBoxItemText(UiElementInstanceID elementInstID, int index, const char *text)
+{
+	this->setListBoxItemTextAtColumn(elementInstID, index, 0, text);
 }
 
 void UiManager::setListBoxItemColorOverride(UiElementInstanceID elementInstID, int index, const std::optional<Color> &color)
@@ -796,6 +836,12 @@ void UiManager::eraseListBoxItem(UiElementInstanceID elementInstID, int index)
 	DebugAssert(index < listBox.items.size());
 	listBox.items.erase(listBox.items.begin() + index);
 	listBox.dirty = true;
+
+	const int newItemsCount = static_cast<int>(listBox.items.size());
+	if (listBox.highlightedItemIndex == newItemsCount)
+	{
+		listBox.highlightedItemIndex = std::max(listBox.highlightedItemIndex - 1, 0);
+	}
 }
 
 void UiManager::clearListBox(UiElementInstanceID elementInstID)
@@ -806,6 +852,37 @@ void UiManager::clearListBox(UiElementInstanceID elementInstID)
 	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
 	listBox.items.clear();
 	listBox.dirty = true;
+}
+
+void UiManager::selectListBoxItem(UiElementInstanceID elementInstID, int index, MouseButtonType mouseButtonType)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	listBox.dirty = true; // Always set dirty in case callback modifies this list box.
+
+	if (listBox.isHighlightEnabled)
+	{
+		if (index != listBox.highlightedItemIndex)
+		{
+			listBox.highlightedItemIndex = index;
+			return;
+		}
+	}
+
+	DebugAssertIndex(listBox.items, index);
+	const UiListBoxItemCallback &callback = listBox.items[index].callback;
+	callback(mouseButtonType);
+
+	if (listBox.isHighlightEnabled)
+	{
+		const int newItemsCount = static_cast<int>(listBox.items.size());
+		if (listBox.highlightedItemIndex == newItemsCount)
+		{
+			listBox.highlightedItemIndex = std::max(listBox.highlightedItemIndex - 1, 0);
+		}
+	}
 }
 
 void UiManager::scrollListBoxDown(UiElementInstanceID elementInstID)
@@ -1085,6 +1162,8 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		initInfo.itemPixelSpacing = def.itemPixelSpacing;
 		initInfo.fontName = def.fontName;
 		initInfo.defaultTextColor = def.defaultTextColor;
+		initInfo.isHighlightEnabled = def.isHighlightEnabled;
+		initInfo.highlightedTextColor = def.highlightedTextColor;
 		initInfo.mouseButtonFlags = def.buttonFlags;
 		initInfo.scrollDeltaScale = def.scrollDeltaScale;
 		return initInfo;
@@ -1504,17 +1583,29 @@ void UiManager::update(double dt, Game &game)
 		for (int i = 0; i < static_cast<int>(listBox.items.size()); i++)
 		{
 			const UiListBoxItem &item = listBox.items[i];
-			const double itemCurrentLocalY = listBox.getItemCurrentLocalY(i);
-			const Rect itemLocalRect(
-				0,
-				static_cast<int>(itemCurrentLocalY),
-				listBox.textureWidth,
-				itemHeight);
+			const int listBoxColumnCount = static_cast<int>(listBox.columnPixelXOffsets.size());
 
-			const Color itemColor = item.overrideColor.value_or(listBox.defaultTextColor);
-			const Palette *tabColorPalette = nullptr; // No tab colors supported in list box text.
-			constexpr TextRenderShadowInfo *shadowInfo = nullptr;
-			TextRenderUtils::drawTextLine(item.text, fontDef, itemLocalRect.getLeft(), itemLocalRect.getTop(), itemColor, tabColorPalette, shadowInfo, texels);
+			for (int columnIndex = 0; columnIndex < listBoxColumnCount; columnIndex++)
+			{
+				const std::string &itemColumnText = item.textColumns[columnIndex];
+				const int itemColumnX = listBox.columnPixelXOffsets[columnIndex];
+				const double itemCurrentLocalY = listBox.getItemCurrentLocalY(i);
+				const Rect itemLocalRect(
+					itemColumnX,
+					static_cast<int>(itemCurrentLocalY),
+					listBox.textureWidth - itemColumnX,
+					itemHeight);
+
+				Color itemColor = item.overrideColor.value_or(listBox.defaultTextColor);
+				if ((i == listBox.highlightedItemIndex) && listBox.highlightedTextColor.has_value())
+				{
+					itemColor = *listBox.highlightedTextColor;
+				}
+
+				const Palette *tabColorPalette = nullptr; // No tab colors supported in list box text.
+				constexpr TextRenderShadowInfo *shadowInfo = nullptr;
+				TextRenderUtils::drawTextLine(itemColumnText, fontDef, itemLocalRect.getLeft(), itemLocalRect.getTop(), itemColor, tabColorPalette, shadowInfo, texels);
+			}
 		}
 
 		renderer.unlockUiTexture(listBoxTextureID);

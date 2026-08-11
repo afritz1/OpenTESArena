@@ -82,6 +82,14 @@ EquipmentPrefixes=0x364D1
 EquipmentSuffixes=0x3659E
 MagesGuildMenuName=0x42567
 
+[Dialogue]
+NeighborWarPeace=0x3990C
+SubjectPronouns=0x39AA5
+ObjectPronouns=0x39AAF
+PossessivePronouns=0x39ABA
+CardinalDirections=0x39AC6
+DirectionIsCityOnly=0x43AF6
+
 [Entities]
 AttributeNames=0x40C29
 CreatureNames=0x36BBE
@@ -193,6 +201,7 @@ EnhancementItemAttributePrices=0x3D7B7
 ArmorClassItemMaterialChances=0x3D7CF
 ArmorClassItemMaterialPriceMultipliers=0x3D7D4
 PotionNames=0x3DFC9
+PotionGoldPrices=0x3E11C
 UnidentifiedPotionName=0x4148C
 BodyPartNames=0x3DB8D
 WeaponAnimationFilenames=0x41DAC
@@ -204,6 +213,15 @@ DropItemRequiredByQuest=0x38053
 AlreadyEquippedItem=0x37FD4
 UnequippableItem=0x37FF0
 ClassForbiddenItem=0x3614B
+ItemDetailWeight=0x39223
+ItemDetailCondition=0x3922B
+ItemDetailWeapon=0x3923A
+ItemDetailArmor=0x39254
+ItemDetailArmorNoWeight=0x39287
+ItemDetailChargesLeft=0x39269
+ItemDetailStatBonus=0x3927C
+ItemDetailUsesLeft=0x392A0
+ItemDetailPotion=0x392B3
 StaffPieceCount=0x38096
 
 [Items]
@@ -221,6 +239,7 @@ ProvinceNames=0x392F8
 CharCreationProvinceNames=0x3E602
 ProvinceImgFilenames=0x3FDFA
 LocationTypes=0x3D0C3
+LocationTypesLowercase=0x44077
 MenuMifPrefixes=0x43DCA
 CenterProvinceCityMifName=0x3FF81
 StartDungeonName=0x402A1
@@ -232,6 +251,7 @@ WeatherTable=0x3EC60
 ClimateSpeedTables=0x3EB96
 WeatherSpeedTables=0x3EBEA
 RulerTitles=0x3EAC7
+CenterProvinceRulerName=0x4406A
 DistantMountainFilenames=0x3F9A4
 AnimDistantMountainFilenames=0x43229
 CloudFilename=0x3F9C8
@@ -298,6 +318,7 @@ TavernModalSneakIntoARoom=0x428D5
 TavernModalRumors=0x428EC
 TavernModalExit=0x428F8
 TavernDrinks=0x3D80E
+TavernDrinkGoldPrices=0x3D8E4
 TavernRoomTypes=0x3DF8E
 TavernRoomsAvailable=0x429A7
 TavernSneakIntoRoomUnsuccessful=0x429B7
@@ -332,6 +353,7 @@ CitizenRumorsModalWorkAskOutside=0x43C05
 CitizenRumorsModalWorkAskInTown=0x43B0C
 CitizenWhereIsOptionsCity=0x43C2F
 CitizenWhereIsOptionsWilderness=0x43C91
+PlayerGoldRemaining=0x401D4
 
 [Status]
 PopUp=0x411D7

@@ -55,6 +55,7 @@ namespace
 		{ Options::Key_Misc_ArenaPaths, Options::OptionType_Misc_ArenaPaths },
 		{ Options::Key_Misc_ArenaSavesPath, Options::OptionType_Misc_ArenaSavesPath },
 		{ Options::Key_Misc_GhostMode, Options::OptionType_Misc_GhostMode },
+		{ Options::Key_Misc_ImmuneToDamage, Options::OptionType_Misc_ImmuneToDamage },
 		{ Options::Key_Misc_ProfilerLevel, Options::OptionType_Misc_ProfilerLevel },
 		{ Options::Key_Misc_ShowIntro, Options::OptionType_Misc_ShowIntro },
 		{ Options::Key_Misc_ShowCompass, Options::OptionType_Misc_ShowCompass },

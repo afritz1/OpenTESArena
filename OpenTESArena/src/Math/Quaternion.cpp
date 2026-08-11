@@ -4,6 +4,8 @@
 #include "Constants.h"
 #include "Quaternion.h"
 
+#include "components/utilities/String.h"
+
 Quaternion::Quaternion(double x, double y, double z, double w)
 {
 	this->x = x;
@@ -59,9 +61,7 @@ Quaternion Quaternion::operator*(const Quaternion &q) const
 
 std::string Quaternion::toString() const
 {
-	char buffer[128];
-	std::snprintf(buffer, std::size(buffer), "%.2f, %.2f, %.2f, %.2f", this->x, this->y, this->z, this->w);
-	return std::string(buffer);
+	return String::format("%.2f, %.2f, %.2f, %.2f", this->x, this->y, this->z, this->w);
 }
 
 double Quaternion::length() const

@@ -25,7 +25,6 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 
 	if (type == UiTexturePatternType::Parchment)
 	{
-		// Minimum dimensions of parchment pop-up.
 		DebugAssert(width >= 40);
 		DebugAssert(height >= 40);
 
@@ -146,7 +145,6 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 	}
 	else if (type == UiTexturePatternType::Dark)
 	{
-		// Minimum dimensions of dark pop-up.
 		DebugAssert(width >= 4);
 		DebugAssert(height >= 4);
 
@@ -159,35 +157,34 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 		const uint32_t topRightColor = surface.mapRGBA(69, 85, 89, 255);
 		const uint32_t bottomRightColor = surface.mapRGBA(36, 36, 48, 255);
 
-		// Fill with dark-bluish color.
 		surface.fill(fillColor);
 
 		// Color edges.
-		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
+		Span2D<uint32_t> dstPixels = surface.getPixels();
 		for (int x = 0; x < surface.getWidth(); x++)
 		{
-			pixels[x] = topColor;
-			pixels[x + surface.getWidth()] = topColor;
-			pixels[x + ((surface.getHeight() - 2) * surface.getWidth())] = bottomColor;
-			pixels[x + ((surface.getHeight() - 1) * surface.getWidth())] = bottomColor;
+			dstPixels.set(x, 0, topColor);
+			dstPixels.set(x, 1, topColor);
+			dstPixels.set(x, surface.getHeight() - 2, bottomColor);
+			dstPixels.set(x, surface.getHeight() - 1, bottomColor);
 		}
 
 		for (int y = 0; y < surface.getHeight(); y++)
 		{
-			pixels[y * surface.getWidth()] = leftColor;
-			pixels[1 + (y * surface.getWidth())] = leftColor;
-			pixels[(surface.getWidth() - 2) + (y * surface.getWidth())] = rightColor;
-			pixels[(surface.getWidth() - 1) + (y * surface.getWidth())] = rightColor;
+			dstPixels.set(0, y, leftColor);
+			dstPixels.set(1, y, leftColor);
+			dstPixels.set(surface.getWidth() - 2, y, rightColor);
+			dstPixels.set(surface.getWidth() - 1, y, rightColor);
 		}
 
 		// Color corners.
-		pixels[1] = topColor;
-		pixels[surface.getWidth() - 2] = topColor;
-		pixels[surface.getWidth() - 1] = topRightColor;
-		pixels[(surface.getWidth() - 2) + surface.getWidth()] = topRightColor;
-		pixels[(surface.getWidth() - 2) + ((surface.getHeight() - 2) * surface.getWidth())] = bottomRightColor;
-		pixels[(surface.getWidth() - 2) + ((surface.getHeight() - 1) * surface.getWidth())] = bottomColor;
-		pixels[(surface.getWidth() - 1) + ((surface.getHeight() - 1) * surface.getWidth())] = bottomRightColor;
+		dstPixels.set(1, 0, topColor);
+		dstPixels.set(surface.getWidth() - 2, 0, topColor);
+		dstPixels.set(surface.getWidth() - 1, 0, topRightColor);
+		dstPixels.set(surface.getWidth() - 2, 1, topRightColor);
+		dstPixels.set(surface.getWidth() - 2, surface.getHeight() - 2, bottomRightColor);
+		dstPixels.set(surface.getWidth() - 2, surface.getHeight() - 1, bottomColor);
+		dstPixels.set(surface.getWidth() - 1, surface.getHeight() - 1, bottomRightColor);
 	}
 	else if (type == UiTexturePatternType::ShopkeeperTitle)
 	{
@@ -256,11 +253,29 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 				dstPixels.set(rightRect.x + x, y, srcColorRGBA);
 			}
 		}
+	}
+	else if (type == UiTexturePatternType::PlayerInventoryHighlight)
+	{
+		DebugAssert(width >= 2);
+		DebugAssert(height >= 2);
 
+		const uint32_t highlightColor = surface.mapRGBA(199, 32, 0, 255);
+
+		Span2D<uint32_t> dstPixels = surface.getPixels();
+		for (int x = 0; x < width; x++)
+		{
+			dstPixels.set(x, 0, highlightColor);
+			dstPixels.set(x, height - 1, highlightColor);
+		}
+
+		for (int y = 0; y < height; y++)
+		{
+			dstPixels.set(0, y, highlightColor);
+			dstPixels.set(width - 1, y, highlightColor);
+		}
 	}
 	else if (type == UiTexturePatternType::Custom1)
 	{
-		// Minimum dimensions of light-gray pattern.
 		DebugAssert(width >= 3);
 		DebugAssert(height >= 3);
 
@@ -268,26 +283,25 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 		const uint32_t lightBorder = surface.mapRGBA(125, 125, 145, 255);
 		const uint32_t darkBorder = surface.mapRGBA(40, 40, 48, 255);
 
-		// Fill with light gray color.
 		surface.fill(fillColor);
 
 		// Color edges.
-		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
+		Span2D<uint32_t> dstPixels = surface.getPixels();
 		for (int x = 0; x < surface.getWidth(); x++)
 		{
-			pixels[x] = lightBorder;
-			pixels[x + ((surface.getHeight() - 1) * surface.getWidth())] = darkBorder;
+			dstPixels.set(x, 0, lightBorder);
+			dstPixels.set(x, surface.getHeight() - 1, darkBorder);
 		}
 
 		for (int y = 0; y < surface.getHeight(); y++)
 		{
-			pixels[y * surface.getWidth()] = darkBorder;
-			pixels[(surface.getWidth() - 1) + (y * surface.getWidth())] = lightBorder;
+			dstPixels.set(0, y, darkBorder);
+			dstPixels.set(surface.getWidth() - 1, y, lightBorder);
 		}
 
 		// Color corners.
-		pixels[0] = fillColor;
-		pixels[(surface.getWidth() - 1) + ((surface.getHeight() - 1) * surface.getWidth())] = fillColor;
+		dstPixels.set(0, 0, fillColor);
+		dstPixels.set(surface.getWidth() - 1, surface.getHeight() - 1, fillColor);
 	}
 	else
 	{

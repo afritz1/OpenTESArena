@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "../Input/PointerTypes.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
@@ -19,6 +20,8 @@ namespace CommonUiView
 	constexpr UiPivotType DefaultCursorPivotType = UiPivotType::TopLeft;
 
 	UiTextureID allocDefaultCursorTexture(TextureManager &textureManager, Renderer &renderer);
+
+	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	const std::string DebugInfoFontName = ArenaFontName::Arena;
 	Color getDebugInfoTextBoxColor();

@@ -684,7 +684,7 @@ namespace PlayerLogic
 					if (interactionType == GameWorldInteractionType::Default)
 					{
 						const StaticNpcEntityDefinition &staticNpcDef = entityDef.staticNpc;
-						GameWorldUiController::onStaticNpcInteracted(game, entityInstID, staticNpcDef.personalityType);
+						GameWorldUiController::onStaticNpcInteracted(game, entityInstID, staticNpcDef.type);
 					}
 					else
 					{
@@ -1159,24 +1159,24 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 			for (const WorldInt3 hitWorldVoxel : hitSearchResult.getVoxels())
 			{
-				gameState.addCombatVoxelResult(hitWorldVoxel, anyWeaponEquipped);
+				gameState.addCombatVoxelResult(hitWorldVoxel, CombatResultSourceType::PlayerMeleeAttack);
 			}
 
 			for (const EntityInstanceID hitEntityInstID : hitSearchResult.getEntities())
 			{
-				constexpr bool isFromMeleeWeapon = true;
-				gameState.addCombatEntityResult(hitEntityInstID, isFromMeleeWeapon);
+				constexpr EntityInstanceID sourceEntityInstID = -1;
+				gameState.addCombatEntityResult(hitEntityInstID, CombatResultSourceType::PlayerMeleeAttack, sourceEntityInstID);
 			}
 		}
 	}
 	else
 	{
 		bool isAttack = false;
-		Double2 projectileDirection;
+		Double3 projectileDirection;
 		if (isModernInterface)
 		{
 			isAttack = isAttackMouseButtonDown;
-			projectileDirection = player.getGroundDirectionXZ();
+			projectileDirection = player.forward;
 		}
 		else
 		{
@@ -1195,7 +1195,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			const int originalCursorY = window.nativeToOriginal(mousePosition).y;
 			const bool isCursorInSceneView = originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight);
 			isAttack = isAttackMouseButtonDown && isCursorInSceneView;
-			projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition).getXZ().normalized();
+			projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition);
 		}
 
 		if (isAttack)
@@ -1204,7 +1204,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::ArrowFire;
 
-			CombatLogic::spawnBowProjectile(player.getEyePosition(), projectileDirection, entityChunkManager, random, game.physicsSystem, renderer);
+			const EntityInitInfo bowProjectileEntityInitInfo = CombatLogic::getBowProjectileEntityInitInfo(player.getEyePosition(), projectileDirection);
+			gameState.queueEntityInstantiate(bowProjectileEntityInitInfo);
 		}
 	}
 

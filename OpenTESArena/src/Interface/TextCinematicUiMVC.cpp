@@ -43,10 +43,7 @@ std::string TextCinematicSpeechState::getVoiceFilename(int voiceIndex) const
 {
 	const int index = voiceIndex / 2;
 	const char letter = TextCinematicSpeechState::isBeginningOfNewPage(voiceIndex) ? 'A' : 'B';
-
-	char filename[32];
-	std::snprintf(filename, sizeof(filename), "SPEECH/%d_%02d%c.VOC", this->templateDatKey, index, letter);
-	return std::string(filename);
+	return String::format("SPEECH/%d_%02d%c.VOC", this->templateDatKey, index, letter);
 }
 
 void TextCinematicSpeechState::incrementVoiceIndex()

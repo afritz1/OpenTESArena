@@ -12,6 +12,7 @@
 #include "../Weather/WeatherDefinition.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 std::string ArenaWildUtils::generateInfName(ArenaClimateType climateType, WeatherType weatherType)
 {
@@ -63,9 +64,7 @@ std::string ArenaWildUtils::generateInfName(ArenaClimateType climateType, Weathe
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(weatherType)));
 	}
 
-	char buffer[16];
-	std::snprintf(buffer, sizeof(buffer), "%c%c%c.INF", climateLetter, locationLetter, weatherLetter);
-	return std::string(buffer);
+	return String::format("%c%c%c.INF", climateLetter, locationLetter, weatherLetter);
 }
 
 uint32_t ArenaWildUtils::makeWildChunkSeed(int wildX, int wildY)

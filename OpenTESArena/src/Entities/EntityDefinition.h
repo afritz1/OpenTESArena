@@ -18,7 +18,7 @@ enum class EntityDefinitionType
 	StaticNPC, // Bartenders, priests, etc..
 	Item, // Keys, tablets, staff pieces, etc..
 	Container, // Chests, loot piles, etc..
-	Vfx, // Spell projectile, explosion, or melee strike
+	Vfx, // Spell projectile, explosion, or physical hit.
 	Transition, // Wilderness den.
 	Decoration // Trees, chairs, streetlights, etc..
 };
@@ -69,30 +69,48 @@ struct CitizenEntityDefinition
 	bool operator==(const CitizenEntityDefinition &other) const;
 };
 
-enum class StaticNpcPersonalityType
+enum class StaticNpcEntityDefinitionType
 {
-	Shopkeeper,
-	Beggar,
-	Firebreather,
-	Prostitute,
-	Jester,
-	StreetVendor,
-	Musician,
-	Priest,
-	Thief,
-	SnakeCharmer,
-	StreetVendorAlchemist,
-	Wizard,
-	TavernPatron
+	General, // Talks about themselves, gives directions, rumors.
+	Shopkeeper, // Provides services.
+	TavernPatron, // Single pop-up dialogue messages.
+	Ruler
+};
+
+struct StaticNpcGeneralEntityDefinition
+{
+	ArenaNpcPersonalityType type;
+
+	StaticNpcGeneralEntityDefinition();
+
+	void init(ArenaNpcPersonalityType type);
+};
+
+struct StaticNpcShopkeeperEntityDefinition
+{
+	ArenaShopkeeperType type;
+
+	StaticNpcShopkeeperEntityDefinition();
+
+	void init(ArenaShopkeeperType type);
 };
 
 struct StaticNpcEntityDefinition
 {
-	StaticNpcPersonalityType personalityType;
+	StaticNpcEntityDefinitionType type;
+
+	union
+	{
+		StaticNpcGeneralEntityDefinition general;
+		StaticNpcShopkeeperEntityDefinition shopkeeper;
+	};
 
 	StaticNpcEntityDefinition();
 
-	void init(StaticNpcPersonalityType personalityType);
+	void initGeneral(ArenaNpcPersonalityType personalityType);
+	void initShopkeeper(ArenaShopkeeperType shopkeeperType);
+	void initTavernPatron();
+	void initRuler();
 
 	bool operator==(const StaticNpcEntityDefinition &other) const;
 };
@@ -136,7 +154,7 @@ struct ItemEntityDefinition
 enum class ContainerEntityDefinitionType
 {
 	Holder, // Can be opened/closed.
-	Pile // Loose on the ground.
+	Pile // Loose on the ground. Also used with player item drops.
 };
 
 struct ContainerEntityDefinition
@@ -144,7 +162,6 @@ struct ContainerEntityDefinition
 	struct HolderDefinition
 	{
 		bool locked;
-		// @todo: loot table ID?
 
 		HolderDefinition();
 
@@ -155,7 +172,11 @@ struct ContainerEntityDefinition
 
 	struct PileDefinition
 	{
-		// @todo: loot table ID?
+		bool allowsLootGeneration;
+
+		PileDefinition();
+
+		void init(bool allowsLootGeneration);
 
 		bool operator==(const PileDefinition &other) const;
 	};
@@ -171,7 +192,7 @@ struct ContainerEntityDefinition
 	ContainerEntityDefinition();
 
 	void initHolder(bool locked);
-	void initPile();
+	void initPile(bool allowsLootGeneration);
 
 	bool operator==(const ContainerEntityDefinition &other) const;
 };
@@ -180,7 +201,7 @@ enum class VfxEntityAnimationType
 {
 	SpellProjectile,
 	SpellExplosion,
-	MeleeStrike,
+	PhysicalHit,
 	BowProjectile
 };
 
@@ -258,13 +279,16 @@ struct EntityDefinition
 
 	void initCitizen(bool male, ArenaClimateType climateType, EntityAnimationDefinition &&animDef);
 
-	void initStaticNpc(StaticNpcPersonalityType type, EntityAnimationDefinition &&animDef);
+	void initStaticNpcGeneral(ArenaNpcPersonalityType personalityType, EntityAnimationDefinition &&animDef);
+	void initStaticNpcShopkeeper(ArenaShopkeeperType shopkeeperType, EntityAnimationDefinition &&animDef);
+	void initStaticNpcTavernPatron(EntityAnimationDefinition &&animDef);
+	void initStaticNpcRuler(EntityAnimationDefinition &&animDef);
 
 	void initItemKey(EntityAnimationDefinition &&animDef);
 	void initItemQuestItem(int yOffset, EntityAnimationDefinition &&animDef);
 
 	void initContainerHolder(bool locked, EntityAnimationDefinition &&animDef);
-	void initContainerPile(EntityAnimationDefinition &&animDef);
+	void initContainerPile(bool allowsLootGeneration, EntityAnimationDefinition &&animDef);
 	
 	void initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef);
 

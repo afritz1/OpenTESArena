@@ -212,10 +212,19 @@ void VoxelBoxCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 		}
 	}
 
-	// Sort dirty positions lexicographically to remove duplicates.
+	// Sort by distance to origin so the combining algorithm has the best chance to generate big boxes
+	// since it works along positive axes. Also remove duplicates.
 	std::sort(this->dirtyEntryPositions.begin(), this->dirtyEntryPositions.end(),
 		[](const VoxelInt3 a, const VoxelInt3 b)
 	{
+		const int aLengthSqr = (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
+		const int bLengthSqr = (b.x * b.x) + (b.y * b.y) + (b.z * b.z);
+		if (aLengthSqr != bLengthSqr)
+		{
+			return aLengthSqr < bLengthSqr;
+		}
+
+		// Lexicographical sort in case two voxels have the same distance to origin.
 		if (a.x != b.x)
 		{
 			return a.x < b.x;
@@ -231,17 +240,6 @@ void VoxelBoxCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 	});
 
 	const auto uniqueDirtyPositionsEnd = std::unique(this->dirtyEntryPositions.begin(), this->dirtyEntryPositions.end());
-
-	// Now sort by distance to origin so the combining algorithm has the best chance to generate big boxes
-	// since it works along positive axes.
-	std::sort(this->dirtyEntryPositions.begin(), uniqueDirtyPositionsEnd,
-		[](const VoxelInt3 a, const VoxelInt3 b)
-	{
-		const int aLengthSqr = (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
-		const int bLengthSqr = (b.x * b.x) + (b.y * b.y) + (b.z * b.z);
-		return aLengthSqr < bLengthSqr;
-	});
-
 	const int uniqueDirtyPositionCount = static_cast<int>(std::distance(this->dirtyEntryPositions.begin(), uniqueDirtyPositionsEnd));
 
 	// Combine dirty boxes together where possible.

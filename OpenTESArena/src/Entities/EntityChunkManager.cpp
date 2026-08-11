@@ -6,7 +6,6 @@
 #include "ArenaCitizenUtils.h"
 #include "ArenaEntityUtils.h"
 #include "EntityChunkManager.h"
-#include "EntityDefinitionLibrary.h"
 #include "EntityObservedResult.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -16,7 +15,7 @@
 #include "../Audio/AudioManager.h"
 #include "../Collision/PhysicsLayer.h"
 #include "../Combat/CombatLogic.h"
-#include "../Interface/GameWorldUiState.h"
+#include "../Game/Game.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/RandomUtils.h"
@@ -40,10 +39,16 @@
 
 namespace
 {
-	constexpr double EnemyToPlayerDetectionDistance = 4.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
-	constexpr double EnemyToPlayerMeleeAttackDistance = 1.0; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
+	constexpr double EnemyToPlayerDetectionMinDistance = 4.0;
+	constexpr double EnemyToPlayerDetectionMinDistanceSqr = EnemyToPlayerDetectionMinDistance * EnemyToPlayerDetectionMinDistance;
+	constexpr double EnemyToPlayerDetectionMaxDistance = 6.0;
+	constexpr double EnemyToPlayerDetectionMaxDistanceSqr = EnemyToPlayerDetectionMaxDistance * EnemyToPlayerDetectionMaxDistance;
+	constexpr double EnemyToPlayerMeleeAttackMinDistance = 1.0;
+	constexpr double EnemyToPlayerMeleeAttackMinDistanceSqr = EnemyToPlayerMeleeAttackMinDistance * EnemyToPlayerMeleeAttackMinDistance;
+	constexpr double EnemyToPlayerMeleeAttackMaxDistance = 1.15;
+	constexpr double EnemyToPlayerMeleeAttackMaxDistanceSqr = EnemyToPlayerMeleeAttackMaxDistance * EnemyToPlayerMeleeAttackMaxDistance;
 
-	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isCharacter, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isTransformStatic, bool hasBehavior, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -70,18 +75,32 @@ namespace
 			static_cast<float>(feetPosition.y + capsuleHalfTotalHeight),
 			static_cast<float>(feetPosition.z));
 		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
+		
+		JPH::EMotionType motionType = JPH::EMotionType::Kinematic;
+		if (isTransformStatic)
+		{
+			motionType = JPH::EMotionType::Static;
+		}
+		else if (hasBehavior)
+		{
+			motionType = JPH::EMotionType::Dynamic;
+		}
+
 		const JPH::ObjectLayer capsuleObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::MOVING;
-		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, capsuleObjectLayer);
+		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, motionType, capsuleObjectLayer);
 		capsuleSettings.mIsSensor = isSensor;
 
-		if (isCharacter) // Enemies.
+		if (hasBehavior) // Enemies/citizens.
 		{
-			capsuleSettings.mMotionType = JPH::EMotionType::Dynamic;
 			capsuleSettings.mAllowedDOFs = JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationZ; // Constant Y position.
 			capsuleSettings.mAllowSleeping = false;
 			capsuleSettings.mFriction = 1.0f;
 			capsuleSettings.mLinearDamping = 10.0f; // Avoid sliding.
 			capsuleSettings.mGravityFactor = 0.0f;
+		}
+		else
+		{
+			capsuleSettings.mLinearDamping = 0.0f; // Keep projectiles from slowing down due to air resistance.
 		}
 
 		const JPH::Body *capsule = bodyInterface.CreateBody(capsuleSettings);
@@ -146,6 +165,31 @@ namespace
 		return MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}
 
+	// For NPC name generation.
+	bool GetStaticNpcPersonalityIsMale(ArenaNpcPersonalityType personalityType)
+	{
+		DebugAssert(personalityType != ArenaNpcPersonalityType::Citizen);
+
+		switch (personalityType)
+		{
+		case ArenaNpcPersonalityType::Prostitute:
+		case ArenaNpcPersonalityType::Prostitute2:
+			return false;
+		case ArenaNpcPersonalityType::Jester:
+		case ArenaNpcPersonalityType::Firebreather:
+		case ArenaNpcPersonalityType::SnakeCharmer:
+		case ArenaNpcPersonalityType::Beggar:
+		case ArenaNpcPersonalityType::StreetVendor:
+		case ArenaNpcPersonalityType::StreetVendor2:
+		case ArenaNpcPersonalityType::Thief:
+		case ArenaNpcPersonalityType::Wizard:
+		case ArenaNpcPersonalityType::Priest:
+		case ArenaNpcPersonalityType::Musician:
+		default:
+			return true;
+		}
+	}
+
 	double GetEnemyNextWeaponSwingSeconds(Random &random)
 	{
 		// Arbitrary timing, tbd difficulty settings
@@ -153,12 +197,12 @@ namespace
 	}
 }
 
-EntityCitizenName::EntityCitizenName(const char *name)
+EntityNpcName::EntityNpcName(const char *name)
 {
 	std::snprintf(this->name, std::size(this->name), "%s", name);
 }
 
-EntityCitizenName::EntityCitizenName()
+EntityNpcName::EntityNpcName()
 {
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
 }
@@ -232,6 +276,7 @@ EntityCombatState::EntityCombatState()
 	this->isDying = false;
 	this->isDead = false;
 	this->hasBeenLootedBefore = false;
+	this->health = 0.0;
 }
 
 bool EntityCombatState::isInDeathState() const
@@ -239,33 +284,44 @@ bool EntityCombatState::isInDeathState() const
 	return this->isDying || this->isDead;
 }
 
+EntitySpellState::EntitySpellState()
+{
+	this->spellIndex = -1;
+}
+
+EntityDialogueState::EntityDialogueState()
+{
+	this->isMale = false;
+	this->hasBeenIntroduced = false;
+}
+
 EntityLockState::EntityLockState()
 {
 	this->isLocked = false;
 }
 
-EntityTransferResult::EntityTransferResult()
-{
-	this->id = -1;
-}
-
-EntityOccupiedVoxelState::EntityOccupiedVoxelState()
-{
-	this->id = -1;
-}
-
 const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID) const
 {
-	const EntityDefinitionLibrary &defLibrary = EntityDefinitionLibrary::getInstance();
 	const auto iter = this->entityDefs.find(defID);
-	if (iter != this->entityDefs.end())
+	if (iter == this->entityDefs.end())
 	{
-		return iter->second;
+		return EntityDefinitionLibrary::getInstance().getDefinition(defID);
 	}
-	else
+
+	return iter->second;
+}
+
+EntityDefID EntityChunkManager::findEntityDefIdIf(const EntityDefinitionPredicate &predicate) const
+{
+	for (const std::pair<EntityDefID, EntityDefinition> &pair : this->entityDefs)
 	{
-		return defLibrary.getDefinition(defID);
+		if (predicate(pair.second))
+		{
+			return pair.first;
+		}
 	}
+
+	return EntityDefinitionLibrary::getInstance().findDefinitionIdIf(predicate);
 }
 
 EntityDefID EntityChunkManager::addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary)
@@ -374,8 +430,9 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	animInst.setStateIndex(initInfo.initialAnimStateIndex);
 
+	const bool isTransformStatic = !initInfo.direction.has_value();
 	const bool hasBehavior = initInfo.canBeKilled;
-	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, hasBehavior, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, isTransformStatic, hasBehavior, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 	{
 		DebugLogError("Couldn't allocate entity Jolt physics body.");
 	}
@@ -407,19 +464,32 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 	}
 
 	int combatLevel = 0;
-	if (initInfo.humanEnemyLevel > 0)
+	int health = 0;
+	if (entityDef.type == EntityDefinitionType::Enemy)
 	{
-		combatLevel = initInfo.humanEnemyLevel;
-	}
-	else if (initInfo.hasCreatureSound)
-	{
-		DebugAssert(entityDef.type == EntityDefinitionType::Enemy);
 		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
 
-		DebugAssert(enemyDef.type == EnemyEntityDefinitionType::Creature);
-		const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
-		const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
-		combatLevel = creatureDef.level;
+		if (initInfo.humanEnemyLevel > 0)
+		{
+			combatLevel = initInfo.humanEnemyLevel;
+
+			const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
+			const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+			const CharacterClassDefinition &humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+			health = random.next(initInfo.humanEnemyLevel + 1) + (random.next(humanEnemyCharClassDef.healthDie + 1) * initInfo.humanEnemyLevel);
+		}
+		else if (initInfo.hasCreatureSound)
+		{
+			DebugAssert(enemyDef.type == EnemyEntityDefinitionType::Creature);
+			const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+			const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
+			combatLevel = creatureDef.level;
+			health = creatureDef.minHP + random.next(creatureDef.maxHP - creatureDef.minHP + 1);
+		}
+	}
+	else if (entityDef.type == EntityDefinitionType::Citizen)
+	{
+		health = 1;
 	}
 
 	if (initInfo.canBeKilled)
@@ -435,6 +505,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		combatState.isDying = false;
 		combatState.isDead = false;
 		combatState.hasBeenLootedBefore = false;
+		combatState.health = health;
 	}
 
 	if (initInfo.direction.has_value())
@@ -445,39 +516,69 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			DebugLogError("Couldn't allocate EntityDirectionID.");
 		}
 
-		const Double2 &direction = *initInfo.direction;
+		const Double3 &direction = *initInfo.direction;
 		this->directions.get(entityInst.directionID) = direction;
+	}
+
+	if (initInfo.spellIndex.has_value())
+	{
+		entityInst.spellStateID = this->spellStates.alloc();
+		if (entityInst.spellStateID < 0)
+		{
+			DebugCrash("Couldn't allocate EntitySpellStateID.");
+		}
+
+		EntitySpellState &spellState = this->spellStates.get(entityInst.spellStateID);
+		spellState.spellIndex = *initInfo.spellIndex;
 	}
 
 	if (entityDef.type == EntityDefinitionType::Vfx)
 	{
-		if (entityDef.vfx.type == VfxEntityAnimationType::BowProjectile)
-		{
-			constexpr double bowProjectileSpeed = 3.0;
-			const Double3 bowProjectileDirection(initInfo.direction->x, 0.0, initInfo.direction->y);
-			const Double3 bowProjectileVelocity = bowProjectileDirection * bowProjectileSpeed;
-			const JPH::Vec3 bowProjectilePhysicsVelocity(
-				static_cast<float>(bowProjectileVelocity.x),
-				static_cast<float>(bowProjectileVelocity.y),
-				static_cast<float>(bowProjectileVelocity.z));
+		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-			JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
-			bodyInterface.SetLinearVelocity(entityInst.physicsBodyID, bowProjectilePhysicsVelocity);
+		double projectileSpeed = 0.0;
+		Double3 projectileDirection;
+		Double3 projectileVelocity;
+		double projectileGravity = 0.0;
+
+		const VfxEntityAnimationType vfxEntityAnimType = entityDef.vfx.type;
+		if (vfxEntityAnimType == VfxEntityAnimationType::BowProjectile)
+		{
+			projectileSpeed = 3.0;
+			projectileDirection = *initInfo.direction;
+			projectileVelocity = projectileDirection * projectileSpeed;
+			projectileGravity = 0.02;
+		}
+		else if (vfxEntityAnimType == VfxEntityAnimationType::SpellProjectile)
+		{
+			projectileSpeed = 2.5;
+			projectileDirection = *initInfo.direction;
+			projectileVelocity = projectileDirection * projectileSpeed;
+		}
+
+		if (projectileSpeed > 0.0)
+		{
+			const JPH::Vec3 projectilePhysicsVelocity(
+				static_cast<float>(projectileVelocity.x),
+				static_cast<float>(projectileVelocity.y),
+				static_cast<float>(projectileVelocity.z));
+
+			bodyInterface.SetLinearVelocity(entityInst.physicsBodyID, projectilePhysicsVelocity);
 			bodyInterface.SetMotionType(entityInst.physicsBodyID, JPH::EMotionType::Dynamic, JPH::EActivation::Activate);
-			bodyInterface.SetGravityFactor(entityInst.physicsBodyID, 0.02f);
+			bodyInterface.SetGravityFactor(entityInst.physicsBodyID, static_cast<float>(projectileGravity));
 		}
 	}
 
-	if (initInfo.citizenName.has_value())
+	if (initInfo.npcName.has_value())
 	{
-		entityInst.citizenNameID = this->citizenNames.alloc();
-		if (entityInst.citizenNameID < 0)
+		entityInst.npcNameID = this->npcNames.alloc();
+		if (entityInst.npcNameID < 0)
 		{
-			DebugLogError("Couldn't allocate EntityCitizenNameID.");
+			DebugLogError("Couldn't allocate EntityNpcNameID.");
 		}
 
-		const EntityCitizenName &citizenName = *initInfo.citizenName;
-		this->citizenNames.get(entityInst.citizenNameID) = citizenName;
+		const EntityNpcName &npcName = *initInfo.npcName;
+		this->npcNames.get(entityInst.npcNameID) = npcName;
 	}
 
 	if (initInfo.citizenColorSeed.has_value())
@@ -496,6 +597,19 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		paletteIndices = ArenaAnimUtils::transformCitizenColors(*initInfo.raceID, citizenColorSeed, binaryAssetLibrary.getExeData());
 	}
 
+	if (initInfo.dialogueGenderIsMale.has_value())
+	{
+		entityInst.dialogueStateID = this->dialogueStates.alloc();
+		if (entityInst.dialogueStateID < 0)
+		{
+			DebugCrash("Couldn't allocate EntityDialogueStateID.");
+		}
+
+		EntityDialogueState &dialogueState = this->dialogueStates.get(entityInst.dialogueStateID);
+		dialogueState.isMale = *initInfo.dialogueGenderIsMale;
+		dialogueState.hasBeenIntroduced = false;
+	}
+
 	if (initInfo.hasInventory)
 	{
 		entityInst.itemInventoryInstID = this->itemInventories.alloc();
@@ -508,6 +622,15 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+		bool allowsLootGeneration = true;
+		if (entityDef.type == EntityDefinitionType::Container)
+		{
+			if (entityDef.container.type == ContainerEntityDefinitionType::Pile)
+			{
+				allowsLootGeneration = entityDef.container.pile.allowsLootGeneration; // Disable loot generation for player item drop container.
+			}
+		}
 
 		if (entityDef.type == EntityDefinitionType::Enemy)
 		{
@@ -756,7 +879,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				DebugNotImplementedMsg(std::to_string(static_cast<int>(enemyDef.type)));
 			}
 		}
-		else
+		else if (allowsLootGeneration)
 		{
 			const ArenaInteriorType interiorType = initInfo.interiorType;
 			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(interiorType);
@@ -993,7 +1116,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			if (isDynamicEntity)
 			{
-				initInfo.direction = CardinalDirection::North;
+				initInfo.direction = CardinalDirection::North3D;
 				
 				if (entityDefType == EntityDefinitionType::Enemy)
 				{
@@ -1007,6 +1130,33 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 					}
 
 					initInfo.hasCreatureSound = enemyDef.type == EnemyEntityDefinitionType::Creature;
+				}
+			}
+
+			if (entityDefType == EntityDefinitionType::StaticNPC)
+			{
+				const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
+				const StaticNpcEntityDefinitionType staticNpcEntityDefType = staticNpcEntityDef.type;
+				const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+				const bool raceID = entityGenInfo.provinceID;
+
+				bool isMale = true;
+				std::string npcName;
+				if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::General)
+				{
+					const StaticNpcGeneralEntityDefinition &staticNpcGeneralEntityDef = staticNpcEntityDef.general;
+					isMale = GetStaticNpcPersonalityIsMale(staticNpcGeneralEntityDef.type);
+					npcName = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
+				}
+				else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper)
+				{
+					npcName = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
+				}
+
+				if (!npcName.empty())
+				{
+					initInfo.npcName = EntityNpcName(npcName.c_str());
+					initInfo.dialogueGenderIsMale = isMale;
 				}
 			}
 
@@ -1062,8 +1212,10 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
 
-		const int currentCitizenCount = CitizenUtils::getCitizenCount(*this);
-		const int targetCitizensToSpawn = std::min(CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
+		const int activeChunkCount = static_cast<int>(this->activeChunks.size());
+		const int maxCitizenCountInScene = CitizenUtils::getMaxCitizenCountForScene(activeChunkCount);
+		const int currentCitizenCount = static_cast<int>(this->citizenEntityInstIDs.size());
+		const int targetCitizensToSpawn = std::min(maxCitizenCountInScene - currentCitizenCount, CitizenUtils::MAX_CITIZENS_PER_CHUNK);
 		const int remainingMaleCitizensToSpawn = targetCitizensToSpawn / 2;
 		const int remainingFemaleCitizensToSpawn = targetCitizensToSpawn - remainingMaleCitizensToSpawn;
 		const int citizenRaceID = citizenGenInfo->raceID;
@@ -1101,12 +1253,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
 
-				const std::string citizenNameStr = textAssetLibrary.generateNpcName(citizenRaceID, isMale, arenaRandom);
-				citizenInitInfo.citizenName = EntityCitizenName(citizenNameStr.c_str());
+				const std::string npcNameStr = textAssetLibrary.generateNpcName(citizenRaceID, isMale, arenaRandom);
+				citizenInitInfo.npcName = EntityNpcName(npcNameStr.c_str());
 
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);
 				citizenInitInfo.citizenColorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
 				citizenInitInfo.raceID = citizenRaceID;
+				citizenInitInfo.dialogueGenderIsMale = isMale;
 				citizenInitInfo.canBeKilled = true;
 				citizenInitInfo.hasInventory = false;
 				citizenInitInfo.hasCreatureSound = false;
@@ -1132,12 +1285,13 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef,
 	const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
-	TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, Random &random, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = entityChunk.position;
 	const SNInt levelWidth = levelDef.getWidth();
 	const WEInt levelDepth = levelDef.getDepth();
+
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
 	// Populate all or part of the chunk from a level definition depending on the map type.
 	const MapType mapType = mapSubDef.type;
@@ -1178,41 +1332,6 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	}
 }
 
-void EntityChunkManager::queueEntityTransfer(EntityInstanceID entityInstID, ChunkInt2 prevChunkPos, ChunkInt2 newChunkPos)
-{
-	EntityChunk *prevEntityChunk = this->findChunkAtPosition(prevChunkPos); // Entity may have crossed chunk boundary same frame as player.
-	if (prevEntityChunk != nullptr)
-	{
-		std::vector<EntityInstanceID> &prevEntityChunkIDs = prevEntityChunk->entityIDs;
-		for (int entityIndex = 0; entityIndex < static_cast<int>(prevEntityChunkIDs.size()); entityIndex++)
-		{
-			const EntityInstanceID prevEntityChunkInstID = prevEntityChunkIDs[entityIndex];
-			if (prevEntityChunkInstID == entityInstID)
-			{
-				prevEntityChunkIDs.erase(prevEntityChunkIDs.begin() + entityIndex);
-				break;
-			}
-		}
-	}
-
-	EntityChunk *curEntityChunk = this->findChunkAtPosition(newChunkPos);
-	if (curEntityChunk != nullptr)
-	{
-		const auto destroyedIter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
-		const bool isEntityDestroyedThisFrame = destroyedIter != this->destroyedEntityIDs.end();
-		if (!isEntityDestroyedThisFrame)
-		{
-			curEntityChunk->entityIDs.emplace_back(entityInstID);
-
-			EntityTransferResult transferResult;
-			transferResult.id = entityInstID;
-			transferResult.oldChunkPos = prevChunkPos;
-			transferResult.newChunkPos = newChunkPos;
-			this->transferResults.emplace_back(std::move(transferResult));
-		}
-	}
-}
-
 void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 	Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
 {
@@ -1223,8 +1342,9 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
-		const double distToPlayerSqr = dirToPlayer.lengthSquared();
+		const Double2 dirToPlayerXZ = playerPositionXZ - entityPositionXZ;
+		const Double3 dirToPlayer(dirToPlayerXZ.x, 0.0, dirToPlayerXZ.y);
+		const double distToPlayerSqr = dirToPlayerXZ.lengthSquared();
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
@@ -1241,7 +1361,7 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 			DebugCrash("Couldn't get citizen walk state index.");
 		}
 
-		Double2 &entityDir = this->directions.get(entityInst.directionID);
+		Double3 &entityDir = this->directions.get(entityInst.directionID);
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
 		DebugAssert(behaviorState.type == EntityBehaviorStateType::Citizen);
@@ -1282,14 +1402,14 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 		const int curAnimStateIndex = animInst.currentStateIndex;
 		if (curAnimStateIndex == *walkStateIndex)
 		{
-			auto getVoxelAtDistance = [&entityPositionXZ](VoxelDouble2 checkDist) -> WorldInt2
+			auto getVoxelAtDistance = [&entityPositionXZ](Double2 checkDist) -> WorldInt2
 			{
 				const WorldDouble2 worldPosition = entityPositionXZ + checkDist;
 				return VoxelUtils::pointToVoxel(worldPosition);
 			};
 
 			const WorldInt2 curWorldVoxel = VoxelUtils::pointToVoxel(entityPositionXZ);
-			const WorldInt2 nextWorldVoxel = getVoxelAtDistance(entityDir * 0.50);
+			const WorldInt2 nextWorldVoxel = getVoxelAtDistance(entityDir.getXZ() * 0.50);
 
 			if (nextWorldVoxel != curWorldVoxel)
 			{
@@ -1322,16 +1442,15 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 						return false;
 					}
 
-					const auto occupiedVoxelIter = std::find_if(this->occupiedVoxelStates.begin(), this->occupiedVoxelStates.end(),
-						[worldVoxel, entityInstID](const EntityOccupiedVoxelState &occupiedVoxelState)
-					{
-						return (occupiedVoxelState.voxel == worldVoxel) && (occupiedVoxelState.id != entityInstID);
-					});
-
-					const bool isOccupiedVoxel = occupiedVoxelIter != this->occupiedVoxelStates.end();
+					const auto occupiedVoxelIter = this->occupiedVoxels.find(worldVoxel);
+					const bool isOccupiedVoxel = occupiedVoxelIter != this->occupiedVoxels.end();
 					if (isOccupiedVoxel)
 					{
-						return false;
+						const bool isOccupiedByOtherEntity = occupiedVoxelIter->second != entityInstID;
+						if (isOccupiedByOtherEntity)
+						{
+							return false;
+						}
 					}
 
 					return true;
@@ -1339,9 +1458,8 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 
 				if (!isSuitableVoxel(nextWorldVoxel))
 				{
-					// Need to change walking direction. Determine another safe route, or if
-					// none exist, then stop walking.
-					const CardinalDirectionName curDirectionName = CardinalDirection::getDirectionName(entityDir);
+					// Need to change walking direction. Determine another safe route, or if none exist, then stop walking.
+					const CardinalDirectionName curDirectionName = CardinalDirection::getDirectionName(entityDir.getXZ());
 
 					// Shuffle citizen direction indices so they don't all switch to the same direction every time.
 					constexpr auto &dirIndices = ArenaCitizenUtils::DIRECTION_INDICES;
@@ -1358,8 +1476,8 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 						const CardinalDirectionName cardinalDirectionName = CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
 						if (cardinalDirectionName != curDirectionName)
 						{
-							const WorldDouble2 &possibleDirection = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
-							const WorldInt2 possibleVoxel = getVoxelAtDistance(possibleDirection * 0.50);
+							const Double3 possibleDirection = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
+							const WorldInt2 possibleVoxel = getVoxelAtDistance(possibleDirection.getXZ() * 0.50);
 							if (isSuitableVoxel(possibleVoxel))
 							{
 								return true;
@@ -1381,16 +1499,18 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 				}
 			}
 
-			const Double2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
+			const Double2 entityVelocity = entityDir.getXZ() * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
 			const JPH::Vec3 newEntityPhysicsVelocity(static_cast<float>(entityVelocity.x), 0.0f, static_cast<float>(entityVelocity.y));
 			bodyInterface.SetLinearVelocity(physicsBodyID, newEntityPhysicsVelocity);
 		}
 	}
 }
 
-void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Random &random,
-	JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager)
+void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Game &game)
 {
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+	Random &random = game.random;
+	JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
 	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
@@ -1409,15 +1529,17 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 		const double distToPlayerXZSqr = entityToPlayerDiffXZ.lengthSquared();
 		const double distToPlayerYSqr = entityToPlayerDiff.y * entityToPlayerDiff.y;
 		
-		Double2 dirToPlayer;
+		Double2 dirToPlayerXZ;
 		if (distToPlayerXZSqr >= Constants::Epsilon)
 		{
-			dirToPlayer = entityToPlayerDiff.getXZ().normalized();
+			dirToPlayerXZ = entityToPlayerDiff.getXZ().normalized();
 		}
 		else
 		{
-			dirToPlayer = CardinalDirection::North; // In case player is standing on top of them
+			dirToPlayerXZ = CardinalDirection::North2D; // In case player is standing on top of them
 		}
+
+		const Double3 dirToPlayer(dirToPlayerXZ.x, 0.0, dirToPlayerXZ.y);
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
@@ -1442,21 +1564,21 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 			DebugCrash("Couldn't get enemy attack state index.");
 		}
 
-		Double2 &entityDir = this->directions.get(entityInst.directionID);
+		Double3 &entityDir = this->directions.get(entityInst.directionID);
 		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
 		DebugAssert(behaviorState.type == EntityBehaviorStateType::Enemy);
 		EntityEnemyBehaviorState &enemyBehaviorState = behaviorState.enemy;
 		const EntityEnemyBehaviorStateType prevEnemyBehaviorStateType = enemyBehaviorState.type;
 
 		// Treat XZ and Y distances separately so the enemy doesn't move closer if the player jumps.
-		constexpr double detectionDistanceSqr = EnemyToPlayerDetectionDistance * EnemyToPlayerDetectionDistance;
-		constexpr double attackDistanceSqr = EnemyToPlayerMeleeAttackDistance * EnemyToPlayerMeleeAttackDistance;
-		const bool isCloseEnoughToDetectPlayer = (distToPlayerXZSqr <= detectionDistanceSqr) && (distToPlayerYSqr <= (detectionDistanceSqr * 2.0)); // @todo add "isFarEnoughToStopDetectPlayer"
-		const bool isCloseEnoughToAttackPlayer = (distToPlayerXZSqr <= attackDistanceSqr) && (distToPlayerYSqr <= (attackDistanceSqr * 2.0)); // @todo add "isFarEnoughToStopAttackPlayer"
+		const bool isCloseEnoughToStartDetectPlayer = (distToPlayerXZSqr <= EnemyToPlayerDetectionMinDistanceSqr) && (distToPlayerYSqr <= (EnemyToPlayerDetectionMinDistanceSqr * 2.0));
+		const bool isFarEnoughToStopDetectPlayer = (distToPlayerXZSqr > EnemyToPlayerDetectionMaxDistanceSqr) || (distToPlayerYSqr > (EnemyToPlayerDetectionMaxDistanceSqr * 2.0));
+		const bool isCloseEnoughToStartAttackPlayer = (distToPlayerXZSqr <= EnemyToPlayerMeleeAttackMinDistanceSqr) && (distToPlayerYSqr <= (EnemyToPlayerMeleeAttackMinDistanceSqr * 2.0));
+		const bool isFarEnoughToStopAttackPlayer = (distToPlayerXZSqr > EnemyToPlayerMeleeAttackMaxDistanceSqr) || (distToPlayerYSqr > (EnemyToPlayerMeleeAttackMaxDistanceSqr * 2.0));
 
 		if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::Idle)
 		{
-			if (!isCloseEnoughToDetectPlayer)
+			if (!isCloseEnoughToStartDetectPlayer)
 			{
 				continue;
 			}
@@ -1471,7 +1593,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 			DebugAssert(!physicsBodyID.IsInvalid());
 
-			if (!isCloseEnoughToDetectPlayer)
+			if (isFarEnoughToStopDetectPlayer)
 			{
 				enemyBehaviorState.type = EntityEnemyBehaviorStateType::Idle;
 				animInst.setStateIndex(*idleStateIndex);
@@ -1479,10 +1601,10 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 				continue;
 			}
 
-			if (!isCloseEnoughToAttackPlayer)
+			if (!isCloseEnoughToStartAttackPlayer)
 			{
 				constexpr double entityMoveSpeed = 1.50;
-				const Double2 entityVelocity = entityDir * entityMoveSpeed;
+				const Double2 entityVelocity = entityDir.getXZ() * entityMoveSpeed;
 
 				const WorldDouble2 attemptedNextPosition = entityPositionXZ + (entityVelocity * dt);
 				const CoordDouble2 attemptedNextCoord = VoxelUtils::worldPointToCoord(attemptedNextPosition);
@@ -1523,7 +1645,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 
 			if (currentAnimStateIndex != *attackStateIndex)
 			{
-				if (!isCloseEnoughToAttackPlayer)
+				if (isFarEnoughToStopAttackPlayer)
 				{
 					enemyBehaviorState.secondsTillNextAttack = 0.0;
 					enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
@@ -1548,83 +1670,9 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 			{
 				enemyBehaviorState.hasAttemptedHit = true;
 
-				if (isCloseEnoughToAttackPlayer)
+				if (!isFarEnoughToStopAttackPlayer)
 				{
-					const bool isPlayerHit = random.nextBool(); // @todo proper accuracy calculation
-
-					if (isPlayerHit)
-					{
-						double damageAmount = 0.0;
-
-						const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-						if (enemyDef.type == EnemyEntityDefinitionType::Human)
-						{
-							DebugAssert(entityInst.hasInventory());
-							const ItemInventory &humanEnemyItemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
-							
-							int humanEnemyEquippedWeaponInventorySlotIndex;
-							const bool humanEnemyHasWeaponEquipped = humanEnemyItemInventory.findFirstSlotIf(
-								[](const ItemDefinition &itemDef)
-							{
-								return itemDef.type == ItemType::Weapon;
-							}, &humanEnemyEquippedWeaponInventorySlotIndex);
-
-							if (humanEnemyHasWeaponEquipped)
-							{
-								const ItemDefinitionID humanEnemyEquippedWeaponItemDefID = humanEnemyItemInventory.getSlot(humanEnemyEquippedWeaponInventorySlotIndex).defID;
-								const ItemDefinition &humanEnemyEquippedWeaponItemDef = ItemLibrary::getInstance().getDefinition(humanEnemyEquippedWeaponItemDefID);
-								const WeaponItemDefinition &humanEnemyEquippedWeaponDef = humanEnemyEquippedWeaponItemDef.weapon;
-								damageAmount = static_cast<double>(humanEnemyEquippedWeaponDef.damageMin + random.next(humanEnemyEquippedWeaponDef.damageMax - humanEnemyEquippedWeaponDef.damageMin + 1));
-							}
-							else
-							{
-								damageAmount = 1.0 + (random.next() * 5.0); // Arbitrary fists damage. @todo get original fists damage
-							}
-
-							//@todo: Chance for critical strike
-						}
-						else
-						{
-							const CreatureDefinition &creatureDef = CreatureDefinitionLibrary::getInstance().getDefinition(enemyDef.creatureDefID);
-							damageAmount = static_cast<double>(creatureDef.minDamage + random.next(creatureDef.maxDamage - creatureDef.minDamage + 1));
-
-							const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
-							const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
-							const int originalPlayerClassIndex = playerCharClassDef.originalClassIndex;
-
-							//@todo: Pass in real values for the saving throw and resistance effect
-							const bool isPlayerPoisonResistEffectActive = false;
-							const int playerPoisonSavingThrow = 90;
-
-							ArenaRandom arenaRandom(random.next());
-							const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-							int diseaseID;
-							double diseaseSecondsRemaining;
-							double paralysisSecondsRemaining;
-							ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, originalPlayerClassIndex, isPlayerPoisonResistEffectActive,
-								playerPoisonSavingThrow, arenaRandom, exeData, &diseaseID, &diseaseSecondsRemaining, &paralysisSecondsRemaining);
-
-							if (diseaseID >= 0)
-							{
-								player.effectsState.applyDisease(diseaseID, diseaseSecondsRemaining);
-							}
-
-							if (paralysisSecondsRemaining > 0.0)
-							{
-								player.effectsState.applyParalysis(paralysisSecondsRemaining);
-							}
-						}
-
-						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
-
-						audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);
-						GameWorldUI::showPlayerHurt();
-					}
-					else
-					{
-						audioManager.playSoundOneShot(ArenaSoundName::Clank);
-					}
+					CombatLogic::onPlayerHitByEntity(entityInstID, game);
 				}
 			}
 
@@ -1634,7 +1682,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 				continue;
 			}
 
-			if (!isCloseEnoughToAttackPlayer)
+			if (isFarEnoughToStopAttackPlayer)
 			{
 				enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
 				enemyBehaviorState.hasAttemptedHit = false;
@@ -1692,94 +1740,6 @@ EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID body
 	return -1;
 }
 
-int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
-{
-	const int chunkIndex = this->findChunkIndex(chunkPos);
-	if (chunkIndex < 0)
-	{
-		DebugLogWarningFormat("Missing chunk (%s) for counting entities with direction.", chunkPos.toString().c_str());
-		return 0;
-	}
-
-	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
-
-	int count = 0;
-	for (const EntityInstanceID entityInstID : chunk.entityIDs)
-	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.directionID >= 0)
-		{
-			count++;
-		}
-	}
-
-	return count;
-}
-
-int EntityChunkManager::getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const
-{
-	const int chunkIndex = this->findChunkIndex(chunkPos);
-	if (chunkIndex < 0)
-	{
-		DebugLogWarningFormat("Missing chunk (%s) for counting entities with creature sound.", chunkPos.toString().c_str());
-		return 0;
-	}
-
-	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
-
-	int count = 0;
-	for (const EntityInstanceID entityInstID : chunk.entityIDs)
-	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.behaviorStateID < 0)
-		{
-			continue;
-		}
-
-		const EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
-		if (!behaviorState.isCreature())
-		{
-			continue;
-		}
-
-		count++;
-	}
-
-	return count;
-}
-
-int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const
-{
-	const int chunkIndex = this->findChunkIndex(chunkPos);
-	if (chunkIndex < 0)
-	{
-		DebugLogWarningFormat("Missing chunk (%s) for counting entities with citizen direction.", chunkPos.toString().c_str());
-		return 0;
-	}
-
-	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
-
-	int count = 0;
-	for (const EntityInstanceID entityInstID : chunk.entityIDs)
-	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.behaviorStateID < 0)
-		{
-			continue;
-		}
-
-		const EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
-		if (behaviorState.type != EntityBehaviorStateType::Citizen)
-		{
-			continue;
-		}
-
-		count++;
-	}
-
-	return count;
-}
-
 void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const
 {
 	const EntityInstance &entityInst = this->entities.get(id);
@@ -1801,9 +1761,9 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 	Radians animAngle = 0.0;
 	if (!entityInst.isTransformStatic())
 	{
-		const Double2 &entityDir = this->directions.get(entityInst.directionID);
+		const Double3 &entityDir = this->directions.get(entityInst.directionID);
 		const Double2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
-		const Radians entityAngle = MathUtils::fullAtan2(entityDir);
+		const Radians entityAngle = MathUtils::fullAtan2(entityDir.getXZ());
 		const Radians diffAngle = MathUtils::fullAtan2(diffDir);
 		const Radians relativeAngle = Constants::TwoPi + (entityAngle - diffAngle);
 
@@ -1995,7 +1955,7 @@ void EntityChunkManager::updateDeathStates(JPH::PhysicsSystem &physicsSystem, Au
 	}
 }
 
-void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager &voxelChunkManager)
+void EntityChunkManager::updateVfx(WorldDouble3 playerPosition, double ceilingScale, const VoxelChunkManager &voxelChunkManager)
 {
 	std::vector<EntityInstanceID> vfxEntitiesToDestroy;
 	for (const EntityInstanceID entityInstID : this->vfxEntityInstIDs)
@@ -2008,17 +1968,33 @@ void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager 
 			continue;
 		}
 
+		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const VfxEntityDefinition &vfxEntityDef = entityDef.vfx;
+
+		bool isProjectileOutsidePlayArea = false;
 		if (vfxEntityDef.type == VfxEntityAnimationType::BowProjectile)
 		{
-			const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 			if (entityPosition.y < 0.0)
 			{
-				// Outside play area.
-				vfxEntitiesToDestroy.emplace_back(entityInstID);
-				continue;
+				isProjectileOutsidePlayArea = true;
 			}
+		}
+		else if (vfxEntityDef.type == VfxEntityAnimationType::SpellProjectile)
+		{
+			constexpr double maxSpellProjectileDistance = 100.0;
+			constexpr double maxSpellProjectileDistanceSqr = maxSpellProjectileDistance * maxSpellProjectileDistance;
+
+			const double spellProjectileDistanceSqr = (entityPosition - playerPosition).lengthSquared();
+			if (spellProjectileDistanceSqr > maxSpellProjectileDistanceSqr)
+			{
+				isProjectileOutsidePlayArea = true;
+			}
+		}
+
+		if (isProjectileOutsidePlayArea)
+		{
+			vfxEntitiesToDestroy.emplace_back(entityInstID);
 		}
 	}
 
@@ -2149,10 +2125,14 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	Span<const ChunkInt2> freedChunkPositions, Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs, Span<const int> levelInfoDefIndices,
 	Span<const LevelInfoDefinition> levelInfoDefs, const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem,
-	TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, Game &game)
 {
-	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+	JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	AudioManager &audioManager = game.audioManager;
+	Random &random = game.random;
 
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
@@ -2187,8 +2167,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 			levelInfoDefPtr = &levelInfoDefs[levelInfoDefIndex];
 		}
 
-		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef, entityGenInfo, citizenGenInfo,
-			ceilingScale, random, entityDefLibrary, physicsSystem, textureManager, renderer);
+		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef, entityGenInfo, citizenGenInfo, ceilingScale, random, physicsSystem, textureManager, renderer);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
@@ -2223,10 +2202,9 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 		animInst.update(dt);
 	}
 
-	this->occupiedVoxelStates.clear();
-	for (const EntityInstanceID entityInstID : this->entities.keys)
+	this->occupiedVoxels.clear();
+	for (const EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const bool canOccupyVoxel = entityDef.type != EntityDefinitionType::Vfx;
 		if (!canOccupyVoxel)
@@ -2236,19 +2214,15 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 
 		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		const WorldInt2 entityWorldVoxel = VoxelUtils::pointToVoxel(entityPositionXZ);
-
-		EntityOccupiedVoxelState occupiedVoxelState;
-		occupiedVoxelState.voxel = entityWorldVoxel;
-		occupiedVoxelState.id = entityInstID;
-		this->occupiedVoxelStates.emplace_back(std::move(occupiedVoxelState));
+		const WorldInt2 entityWorldVoxelXZ = VoxelUtils::pointToVoxel(entityPositionXZ);
+		this->occupiedVoxels.emplace(entityWorldVoxelXZ, entityInst.instanceID);
 	}
 
 	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
-	this->updateEnemyBehaviors(dt, playerPosition, player, random, physicsSystem, audioManager, voxelChunkManager);
+	this->updateEnemyBehaviors(dt, playerPosition, player, game);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
-	this->updateVfx(ceilingScale, voxelChunkManager);
+	this->updateVfx(playerPosition, ceilingScale, voxelChunkManager);
 }
 
 void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem)
@@ -2300,16 +2274,6 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 				static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
 				static_cast<WEDouble>(physicsPosition.GetZ()));
 			entityPosition = newPosition;
-
-			const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
-			const WorldDouble2 newPositionXZ = newPosition.getXZ();
-
-			const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
-			const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
-			if (curEntityChunkPos != prevEntityChunkPos)
-			{
-				this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
-			}
 		}
 	}
 
@@ -2330,16 +2294,6 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 			static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
 			static_cast<WEDouble>(physicsPosition.GetZ()));
 		entityPosition = newPosition;
-
-		const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
-		const WorldDouble2 newPositionXZ = newPosition.getXZ();
-
-		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
-		const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
-		if (curEntityChunkPos != prevEntityChunkPos)
-		{
-			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
-		}
 	};
 
 	for (const EntityInstanceID entityInstID : this->citizenEntityInstIDs)
@@ -2351,47 +2305,83 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 	{
 		updateEntityPositionToPhysicsPosition(entityInstID);
 	}
+
+	// Refresh entity chunk caches. Doing it this way because managing transfer results was annoying.
+	for (ChunkPtr &chunkPtr : this->activeChunks)
+	{
+		chunkPtr->entityIDs.clear();
+	}
+
+	EntityChunk *currentEntityChunk = nullptr;
+	for (const EntityInstance &entityInst : this->entities.values)
+	{
+		if (entityInst.isQueuedForDestroy)
+		{
+			continue;
+		}
+
+		const EntityInstanceID entityInstID = entityInst.instanceID;
+		const WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		const ChunkInt2 entityChunkPos = VoxelUtils::worldPointToChunk(entityPosition);
+		if ((currentEntityChunk == nullptr) || (currentEntityChunk->position != entityChunkPos))
+		{
+			currentEntityChunk = this->findChunkAtPosition(entityChunkPos);
+			if (currentEntityChunk == nullptr)
+			{
+				continue;
+			}
+		}
+
+		currentEntityChunk->entityIDs.emplace_back(entityInstID);
+	}
 }
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)
 {
-	const auto iter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
-	if (iter == this->destroyedEntityIDs.end())
+	EntityInstance &entityInst = this->entities.get(entityInstID);
+	if (entityInst.isQueuedForDestroy)
 	{
-		this->destroyedEntityIDs.emplace_back(entityInstID);
+		return;
+	}
 
-		if (chunkToNotify != nullptr)
-		{
-			EntityChunk &entityChunk = this->getChunkAtPosition(*chunkToNotify);
-			const auto iter = std::find(entityChunk.entityIDs.begin(), entityChunk.entityIDs.end(), entityInstID);
-			DebugAssert(iter != entityChunk.entityIDs.end());
-			entityChunk.entityIDs.erase(iter);
-		}
+	entityInst.isQueuedForDestroy = true;
+	this->destroyedEntityIDs.emplace_back(entityInstID);
 
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityDefinitionType entityDefType = entityDef.type;
+	if (chunkToNotify != nullptr)
+	{
+		EntityChunk *entityChunk = this->findChunkAtPosition(*chunkToNotify);
+		if (entityChunk != nullptr)
+		{
+			const auto cacheIter = std::find(entityChunk->entityIDs.begin(), entityChunk->entityIDs.end(), entityInstID);
+			if (cacheIter != entityChunk->entityIDs.end())
+			{
+				entityChunk->entityIDs.erase(cacheIter);
+			}
+		}
+	}
 
-		std::vector<EntityInstanceID> *entityInstIDsToUpdate = nullptr;
-		if (entityDefType == EntityDefinitionType::Enemy)
-		{
-			entityInstIDsToUpdate = &this->enemyEntityInstIDs;
-		}
-		else if (entityDefType == EntityDefinitionType::Citizen)
-		{
-			entityInstIDsToUpdate = &this->citizenEntityInstIDs;
-		}
-		else if (entityDefType == EntityDefinitionType::Vfx)
-		{
-			entityInstIDsToUpdate = &this->vfxEntityInstIDs;
-		}
+	const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+	const EntityDefinitionType entityDefType = entityDef.type;
 
-		if (entityInstIDsToUpdate != nullptr)
-		{
-			const auto idIter = std::find(entityInstIDsToUpdate->begin(), entityInstIDsToUpdate->end(), entityInstID);
-			DebugAssert(idIter != entityInstIDsToUpdate->end());
-			entityInstIDsToUpdate->erase(idIter);
-		}
+	std::vector<EntityInstanceID> *entityInstIDsToUpdate = nullptr;
+	if (entityDefType == EntityDefinitionType::Enemy)
+	{
+		entityInstIDsToUpdate = &this->enemyEntityInstIDs;
+	}
+	else if (entityDefType == EntityDefinitionType::Citizen)
+	{
+		entityInstIDsToUpdate = &this->citizenEntityInstIDs;
+	}
+	else if (entityDefType == EntityDefinitionType::Vfx)
+	{
+		entityInstIDsToUpdate = &this->vfxEntityInstIDs;
+	}
+
+	if (entityInstIDsToUpdate != nullptr)
+	{
+		const auto idIter = std::find(entityInstIDsToUpdate->begin(), entityInstIDsToUpdate->end(), entityInstID);
+		DebugAssert(idIter != entityInstIDsToUpdate->end());
+		entityInstIDsToUpdate->erase(idIter);
 	}
 }
 
@@ -2409,6 +2399,17 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool 
 	}
 
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
+}
+
+void EntityChunkManager::queueEntitiesDestroyIf(const EntityInstancePredicate &predicate)
+{
+	for (const EntityInstance &entityInst : this->entities.values)
+	{
+		if (predicate(entityInst))
+		{
+			this->queueEntityDestroy(entityInst.instanceID, true);
+		}
+	}
 }
 
 void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
@@ -2449,9 +2450,19 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 			this->combatStates.free(entityInst.combatStateID);
 		}
 
-		if (entityInst.citizenNameID >= 0)
+		if (entityInst.spellStateID >= 0)
 		{
-			this->citizenNames.free(entityInst.citizenNameID);
+			this->spellStates.free(entityInst.spellStateID);
+		}
+
+		if (entityInst.npcNameID >= 0)
+		{
+			this->npcNames.free(entityInst.npcNameID);
+		}
+
+		if (entityInst.dialogueStateID >= 0)
+		{
+			this->dialogueStates.free(entityInst.dialogueStateID);
 		}
 
 		if (entityInst.paletteIndicesInstID >= 0)
@@ -2486,7 +2497,6 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 	}
 
 	this->destroyedEntityIDs.clear();
-	this->transferResults.clear();
 }
 
 void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)

@@ -223,12 +223,12 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 
 	auto graphicsApiOption = std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::GRAPHICS_API_NAME,
-		"Determines the 3D renderer to use. Changes are applied on next\napplication start.\n\nSoftware\nVulkan",
+		"Determines the 3D renderer to use. Changes are applied on next\napplication start.\n\nVulkan\nSoftware",
 		options.getGraphics_GraphicsAPI(),
 		1,
 		Options::MIN_GRAPHICS_API,
 		Options::MAX_GRAPHICS_API,
-		std::vector<std::string> { "Software", "Vulkan" },
+		std::vector<std::string> { "Vulkan", "Software" },
 		[&game](int value)
 	{
 		auto &options = game.options;
@@ -604,6 +604,16 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 		player.setGhostModeActive(value, game.physicsSystem);
 	});
 
+	auto immuneToDamageOption = std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::IMMUNE_TO_DAMAGE_NAME,
+		"Prevents damage to the player.",
+		options.getMisc_ImmuneToDamage(),
+		[&game](bool value)
+	{
+		auto &options = game.options;
+		options.setMisc_ImmuneToDamage(value);
+	});
+
 	auto profilerLevelOption = std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::PROFILER_LEVEL_NAME,
 		"Displays varying levels of profiler information in the game world.",
@@ -629,6 +639,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 
 	OptionGroup group;
 	group.emplace_back(std::move(ghostModeOption));
+	group.emplace_back(std::move(immuneToDamageOption));
 	group.emplace_back(std::move(profilerLevelOption));
 	group.emplace_back(std::move(enableValidationLayersOption));
 	return group;
@@ -682,8 +693,10 @@ UiTextureID OptionsUiView::allocBackgroundTexture(Renderer &renderer)
 
 UiTextureID OptionsUiView::allocHighlightTexture(Renderer &renderer)
 {
-	const int width = 254;
-	const int height = 9;
+	// @todo can't provide this the list box item dimensions during UI create() because the transform size hasn't updated yet :/
+	constexpr int width = 240;
+	constexpr int height = 9;
+
 	const UiTextureID textureID = renderer.createUiTexture(width, height);
 	if (textureID < 0)
 	{

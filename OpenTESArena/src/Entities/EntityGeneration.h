@@ -15,7 +15,9 @@ struct EntityGenInfo
 	ArenaInteriorType interiorType;
 	int interiorLevelIndex;
 
+	int provinceID;
+
 	EntityGenInfo();
 
-	void init(int playerLevel, bool nightLightsAreActive, ArenaCityType cityType, ArenaInteriorType interiorType, int interiorLevelIndex);
+	void init(int playerLevel, bool nightLightsAreActive, ArenaCityType cityType, ArenaInteriorType interiorType, int interiorLevelIndex, int provinceID);
 };

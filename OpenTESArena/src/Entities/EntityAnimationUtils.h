@@ -17,5 +17,5 @@ namespace EntityAnimationUtils
 	constexpr int NAME_LENGTH = 32;
 
 	constexpr int SPELL_TYPE_COUNT = 12;
-	constexpr int MELEE_VFX_COUNT = 3;
+	constexpr int PHYSICAL_HIT_VFX_COUNT = 3;
 }

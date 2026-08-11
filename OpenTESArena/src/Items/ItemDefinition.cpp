@@ -4,6 +4,7 @@
 #include "ItemDefinition.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 namespace
 {
@@ -90,47 +91,71 @@ void ItemMaterialDefinition::init(const char *name, int ratingMultiplier, int co
 	this->weightMultiplier = weightMultiplier;
 }
 
-void AccessoryItemDefinition::init(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice)
+void AccessoryItemDefinition::initAttribute(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, int basePrice, PrimaryAttributeID attributeID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 	this->materialDefID = materialDefID;
-	this->attributeID = attributeID;
 	this->basePrice = basePrice;
+	this->attributeID = attributeID;
+	this->armorClass = -1;
 }
 
-void ArmorItemDefinition::initLeather(const char *name, ArenaArmorTypeID typeID, double weight)
+void AccessoryItemDefinition::initArmor(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, int basePrice, int armorClass)
+{
+	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
+	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
+	this->materialDefID = materialDefID;
+	this->basePrice = basePrice;
+	this->attributeID = -1;
+	this->armorClass = armorClass;
+}
+
+bool AccessoryItemDefinition::isAttributeEnhancing() const
+{
+	return this->attributeID >= 0;
+}
+
+void ArmorItemDefinition::initLeather(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
 	this->weight = weight;
 	this->materialType = ArenaArmorMaterialType::Leather;
+	this->armorClass = armorClass;
+	this->basePrice = basePrice;
 	this->plateMaterialDefID = -1;
 }
 
-void ArmorItemDefinition::initChain(const char *name, ArenaArmorTypeID typeID, double weight)
+void ArmorItemDefinition::initChain(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
 	this->weight = weight;
 	this->materialType = ArenaArmorMaterialType::Chain;
+	this->armorClass = armorClass;
+	this->basePrice = basePrice;
 	this->plateMaterialDefID = -1;
 }
 
-void ArmorItemDefinition::initPlate(const char *name, ArenaArmorTypeID typeID, double weight, ItemMaterialDefinitionID materialDefID)
+void ArmorItemDefinition::initPlate(const char *name, ArenaArmorTypeID typeID, double weight, int armorClass, int basePrice, ItemMaterialDefinitionID materialDefID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
 	this->weight = weight;
 	this->materialType = ArenaArmorMaterialType::Plate;
+	this->armorClass = armorClass;
+	this->basePrice = basePrice;
 	this->plateMaterialDefID = materialDefID;
 }
 
-void ConsumableItemDefinition::init(const char *name, ArenaConsumableTypeID typeID, const char *unidentifiedName)
+void ConsumableItemDefinition::init(const char *name, ArenaConsumableTypeID typeID, int basePrice, const char *unidentifiedName)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
+	this->basePrice = basePrice;
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 }
 
@@ -146,17 +171,20 @@ void MiscItemDefinition::init(const char *name, ArenaMiscTypeID typeID)
 	this->typeID = typeID;
 }
 
-void ShieldItemDefinition::init(const char *name, ArenaArmorTypeID armorTypeID, double weight)
+void ShieldItemDefinition::init(const char *name, ArenaArmorTypeID armorTypeID, double weight, int armorClass, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->armorTypeID = armorTypeID;
 	this->weight = weight;
+	this->armorClass = armorClass;
+	this->basePrice = basePrice;
 }
 
-void TrinketItemDefinition::init(const char *name, ArenaTrinketTypeID typeID, const char *unidentifiedName, SpellID spellID)
+void TrinketItemDefinition::init(const char *name, ArenaTrinketTypeID typeID, int basePrice, const char *unidentifiedName, SpellID spellID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->typeID = typeID;
+	this->basePrice = basePrice;
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 	this->spellID = spellID;
 }
@@ -224,7 +252,7 @@ void ItemDefinition::init(ItemType type)
 	this->isArtifact = false;
 }
 
-std::string ItemDefinition::getDisplayName(int stackAmount) const
+std::string ItemDefinition::getDisplayNameWithQty(int stackAmount) const
 {
 	// @todo eventually this will need stack counts from ItemInstance, so may as well move this there sometime
 
@@ -235,11 +263,7 @@ std::string ItemDefinition::getDisplayName(int stackAmount) const
 	case ItemType::Armor:
 		return this->armor.name;
 	case ItemType::Consumable:
-	{
-		char displayName[64];
-		std::snprintf(displayName, sizeof(displayName), "%s (%d)", this->consumable.name, stackAmount);		
-		return displayName;
-	}
+		return String::format("%s (%d)", this->consumable.name, stackAmount);
 	case ItemType::Gold:
 		return (stackAmount == 1) ? this->gold.nameSingular : this->gold.namePlural;
 	case ItemType::Misc:
@@ -250,6 +274,25 @@ std::string ItemDefinition::getDisplayName(int stackAmount) const
 		return this->trinket.name;
 	case ItemType::Weapon:
 		return this->weapon.name;
+	default:
+		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
+std::string ItemDefinition::getDisplayNameWithoutQty() const
+{
+	switch (this->type)
+	{
+	case ItemType::Accessory:
+	case ItemType::Armor:
+	case ItemType::Gold:
+	case ItemType::Misc:
+	case ItemType::Shield:
+	case ItemType::Trinket:
+	case ItemType::Weapon:
+		return this->getDisplayNameWithQty(1);
+	case ItemType::Consumable:
+		return this->consumable.name;
 	default:
 		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(this->type)));
 	}
@@ -275,6 +318,31 @@ double ItemDefinition::getWeight() const
 		return 0.0;
 	case ItemType::Weapon:
 		return this->weapon.weight;
+	default:
+		DebugUnhandledReturnMsg(double, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
+int ItemDefinition::getGoldValue() const
+{
+	switch (this->type)
+	{
+	case ItemType::Accessory:
+		return this->accessory.basePrice;
+	case ItemType::Armor:
+		return this->armor.basePrice;
+	case ItemType::Consumable:
+		return this->consumable.basePrice;
+	case ItemType::Gold:
+		return 1;
+	case ItemType::Misc:
+		return 1; // @todo
+	case ItemType::Shield:
+		return this->shield.basePrice;
+	case ItemType::Trinket:
+		return this->trinket.basePrice;
+	case ItemType::Weapon:
+		return this->weapon.basePrice;
 	default:
 		DebugUnhandledReturnMsg(double, std::to_string(static_cast<int>(this->type)));
 	}

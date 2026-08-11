@@ -28,14 +28,19 @@ bool EntityInstance::isTransformStatic() const
 	return this->directionID < 0;
 }
 
+bool EntityInstance::canBeKilledInCombat() const
+{
+	return this->combatStateID >= 0;
+}
+
 bool EntityInstance::canAcceptCombatHits() const
 {
 	return this->canBeKilledInCombat() || this->canBeLocked();
 }
 
-bool EntityInstance::canBeKilledInCombat() const
+bool EntityInstance::isSpell() const
 {
-	return this->combatStateID >= 0;
+	return this->spellStateID >= 0;
 }
 
 bool EntityInstance::canUseElevatedPlatforms() const
@@ -63,11 +68,14 @@ void EntityInstance::clear()
 	this->animInstID = -1;
 	this->behaviorStateID = -1;
 	this->combatStateID = -1;
-	this->citizenNameID = -1;
+	this->spellStateID = -1;
+	this->npcNameID = -1;
+	this->dialogueStateID = -1;
 	this->paletteIndicesInstID = -1;
 	this->itemInventoryInstID = -1;
 	this->lockStateID = -1;
 	this->physicsBodyID = JPH::BodyID();
 	this->transformHeapIndex = -1;
 	this->transformIndex = -1;
+	this->isQueuedForDestroy = false;
 }

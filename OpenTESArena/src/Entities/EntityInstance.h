@@ -12,7 +12,9 @@ using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
 using EntityBehaviorStateID = int;
 using EntityCombatStateID = int;
-using EntityCitizenNameID = int;
+using EntitySpellStateID = int;
+using EntityNpcNameID = int;
+using EntityDialogueStateID = int;
 using EntityPaletteIndicesInstanceID = int;
 using EntityItemInventoryInstanceID = int;
 using EntityLockStateID = int;
@@ -27,13 +29,16 @@ struct EntityInstance
 	EntityAnimationInstanceID animInstID;
 	EntityBehaviorStateID behaviorStateID;
 	EntityCombatStateID combatStateID;
-	EntityCitizenNameID citizenNameID;
+	EntitySpellStateID spellStateID;
+	EntityNpcNameID npcNameID;
+	EntityDialogueStateID dialogueStateID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;
 	EntityLockStateID lockStateID;
 	JPH::BodyID physicsBodyID;
 	int transformHeapIndex;
 	int transformIndex;
+	bool isQueuedForDestroy;
 
 	EntityInstance();
 
@@ -43,8 +48,10 @@ struct EntityInstance
 	// Whether the entity is capable of moving and looking.
 	bool isTransformStatic() const;
 
-	bool canAcceptCombatHits() const;
 	bool canBeKilledInCombat() const;
+	bool canAcceptCombatHits() const;
+
+	bool isSpell() const;
 
 	// Whether the entity can be placed on raised platforms.
 	bool canUseElevatedPlatforms() const;

@@ -6,7 +6,8 @@
 #include "ItemDefinition.h"
 #include "ItemInstance.h"
 
-using ItemInventoryPredicate = std::function<bool(const ItemDefinition&)>;
+using ItemDefinitionPredicate = std::function<bool(const ItemDefinition&)>;
+using ItemInstancePredicate = std::function<bool(const ItemInstance&)>;
 
 class ItemInventory
 {
@@ -22,10 +23,12 @@ public:
 	double getWeight() const;
 
 	int getCountOf(ItemDefinitionID defID) const;
+	int getValidSlotCountBeforeIndex(int index) const;
 
 	bool findFirstEmptySlot(int *outIndex) const;
 	bool findFirstSlot(ItemDefinitionID defID, int *outIndex) const;
-	bool findFirstSlotIf(const ItemInventoryPredicate &predicate, int *outIndex) const;
+	bool findFirstValidSlotIf(const ItemInstancePredicate &predicate, int *outIndex) const;
+	bool findFirstValidSlotDefIf(const ItemDefinitionPredicate &predicate, int *outIndex) const;
 	bool findLastSlot(ItemDefinitionID defID, int *outIndex) const;
 
 	void insert(ItemDefinitionID defID, int stackAmount = 1);
