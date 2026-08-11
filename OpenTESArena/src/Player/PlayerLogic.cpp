@@ -425,7 +425,7 @@ namespace PlayerLogic
 
 							if (isLocked)
 							{
-								const bool isLockpickingSuccessful = ArenaPlayerUtils::attemptThieving(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom, nullptr);
+								const bool isLockpickingSuccessful = ArenaPlayerUtils::attemptThieving(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 								if (!isLockpickingSuccessful)
 								{
 									GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());

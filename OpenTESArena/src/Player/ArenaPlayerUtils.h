@@ -4,6 +4,7 @@ class ArenaRandom;
 class Random;
 
 enum class ArenaCityType;
+
 struct ExeData;
 struct Player;
 struct PrimaryAttributes;

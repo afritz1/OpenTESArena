@@ -2,8 +2,8 @@
 #include <cmath>
 
 #include "ArenaPlayerUtils.h"
-#include "../Entities/ArenaEntityUtils.h"
 #include "../Assets/ExeData.h"
+#include "../Entities/ArenaEntityUtils.h"
 #include "../Math/Random.h"
 #include "../Player/Player.h"
 #include "../Stats/ArenaStatUtils.h"
@@ -208,16 +208,17 @@ bool ArenaPlayerUtils::attemptThieving(int difficultyLevel, int thievingDivisor,
 
 bool ArenaPlayerUtils::attemptPickpocket(ArenaCityType cityType, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, ArenaRandom &random, const ExeData &exeData, int *outTemplateIndex, int *outGoldAmount, bool *outGuardsAppear)
 {
-	constexpr int goldTemplateIndexStart = 1379;
-	constexpr int junkTemplateIndex = 1384;
-	const int difficultyLevel = 4 - static_cast<int>(cityType);
-	int thievingChance;
 	*outGoldAmount = 0;
 	*outGuardsAppear = false;
 
-	const bool result = ArenaPlayerUtils::attemptThieving(difficultyLevel, thievingDivisor, playerLevel, attributes, random, &thievingChance);
-	if (result)
+	const int difficultyLevel = 4 - static_cast<int>(cityType);
+	int thievingChance;
+	const bool success = ArenaPlayerUtils::attemptThieving(difficultyLevel, thievingDivisor, playerLevel, attributes, random, &thievingChance);
+	if (success)
 	{
+		constexpr int goldTemplateIndexStart = 1379;
+		constexpr int junkTemplateIndex = 1384;
+
 		const int randomValue = random.next();
 		if (randomValue < exeData.thieving.thievingPickpocketJunkThreshold)
 		{
@@ -235,7 +236,7 @@ bool ArenaPlayerUtils::attemptPickpocket(ArenaCityType cityType, int thievingDiv
 		*outGuardsAppear = ArenaEntityUtils::doGuardsAppearForTheft(thievingChance, random);
 	}
 
-	return result;
+	return success;
 }
 
 int ArenaPlayerUtils::getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData, ArenaRandom &random)
