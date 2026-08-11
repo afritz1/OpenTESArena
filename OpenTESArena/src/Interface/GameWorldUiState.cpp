@@ -2897,7 +2897,7 @@ void GameWorldUI::onPlayerStealItemFailure()
 		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
 
 		GameState &gameState = game.gameState;
-		gameState.queueCityGuardEncounter(game);
+		gameState.queueCityGuardEncounter(game, false);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment, callback);
@@ -3828,7 +3828,7 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 		{
 			uiManager.disableTopMostContext();
 			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
-			gameState.queueCityGuardEncounter(game);
+			gameState.queueCityGuardEncounter(game, false);
 		};
 	}
 
