@@ -568,6 +568,9 @@ namespace PlayerLogic
 		Player &player = game.player;
 		const bool canPlayerMoveAndTurn = game.canPlayerMoveAndTurn();
 
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
+
 		Random &random = game.random;
 		ArenaRandom &arenaRandom = game.arenaRandom;
 
@@ -641,8 +644,6 @@ namespace PlayerLogic
 						const LocationDefinition &locationDef = gameState.getLocationDefinition();
 						const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 						const ArenaCityType cityType = cityDef.type;
-						const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-						const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
 						int pickpocketGoldAmount;
 						int pickpocketResultTemplateDatIndex;
 						bool guardsAppear;
@@ -776,7 +777,8 @@ namespace PlayerLogic
 							const bool canAttemptLockpicking = lockState.isLocked;
 							if (canAttemptLockpicking)
 							{
-								const bool isLockpickingSuccessful = random.nextBool(); // @todo use original chances
+								const int lockLevel = 5; // @todo get original chest lock level
+								const bool isLockpickingSuccessful = ArenaPlayerUtils::attemptThieving(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 								if (isLockpickingSuccessful)
 								{
 									lockState.isLocked = false;
