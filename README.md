@@ -6,7 +6,7 @@
 [![Discord](https://img.shields.io/discord/395739926831824908.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/DgHe2jG)
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCJpmkgtHRIxR7aOpi909GKw)](https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw)
 
-This is an in-progress modern open-source engine for the 1994 DOS game [*The Elder Scrolls: Arena*](https://en.wikipedia.org/wiki/The_Elder_Scrolls:_Arena) by Bethesda Softworks. The goal is to replicate all aspects of the original game with a clean-room approach while making quality-of-life changes along the way. Details on Arena's inner-workings can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). No game assets are distributed.
+This is a modern open-source engine being written from scratch for the 1994 DOS game [*The Elder Scrolls: Arena*](https://en.wikipedia.org/wiki/The_Elder_Scrolls:_Arena) by Bethesda Softworks. The goal is to replicate all aspects of the original game with a clean-room approach while making quality-of-life changes along the way. Details on Arena's inner-workings can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). No game assets are distributed.
 
 <br/>
 
@@ -15,7 +15,9 @@ This is an in-progress modern open-source engine for the 1994 DOS game [*The Eld
 
 ## Current status
 
-Player movement is nearly feature-complete - currently you can jump, climb out of chasms, and swim, but stairsteps are unsolved. Enemies can be killed but their AI is not yet implemented. Items in containers can be picked up and found in the player's inventory but cannot be equipped yet. All world map locations are implemented and the player can fast travel to them. Citizens wander around and have their names generated but conversations are not yet implemented. Character creation is mostly implemented except for class generation questions.
+Enemies attack the player and give loot and experience when defeated. Items can be picked up, equipped, and dropped. Shopkeepers provide services like buying/selling items, renting tavern rooms, and curing diseases. Citizens wander around and can provide directions and talk about rumors. The player can fast travel to any world map location. Character creation is implemented except for class generation questions.
+
+Plate item materials (Dwarven, etc.), potions/on-use items, quests, spells, and loading/saving are not yet implemented.
 
 ### Controls
 - Move
@@ -40,6 +42,9 @@ Player movement is nearly feature-complete - currently you can jump, climb out o
 - Character status - V
 - World map - M
 - Local map - N
+- Thieving - P
+- Cast Spell (unfinished) - C
+- Camp - R
 - Logbook - L
 - Player position - F2
 - Debug display - F4
@@ -181,10 +186,10 @@ cd ..
 
 ### For the best experience
 1. Navigate to options menu in pause menu
-2. Set Graphics API to Vulkan
-3. Set FPS Limit to your monitor's refresh rate
-4. Change dithering mode to Modern
-5. Restart game
+2. On Graphics tab:
+   - Set Graphics API to Vulkan
+   - Set FPS Limit to your monitor's refresh rate
+3. Restart game
 
 ### Options files
 `options-changes.txt` is created in your user prefs folder the first time OpenTESArena runs and stores values that differ from the ones in `options-default.txt`.
@@ -200,7 +205,7 @@ cd ..
 - [SDL 2.0.12](https://github.com/libsdl-org/SDL/releases)
 - [OpenAL Soft 1.19.1](https://openal-soft.org/#download)
 - [Vulkan 1.3.280](https://vulkan.lunarg.com/)
-- [WildMIDI 0.4.4](https://github.com/Mindwerks/wildmidi/releases) (required for music)
+- [WildMIDI 0.5.0](https://github.com/Mindwerks/wildmidi/releases) (required for music)
 
 <details>
 <summary>Linux (Debian-based)</summary>
@@ -264,5 +269,3 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to assist with d
 - [Unofficial Elder Scrolls Pages](https://en.uesp.net/wiki/Arena:Arena) - a great resource for information about Arena
 - [Various tools](https://en.uesp.net/wiki/Arena:Files#Misc_Utilities) like WinArena and BSATool for browsing Arena's assets
 - The Elder Scrolls: Arena [manual](https://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities)
-
-
