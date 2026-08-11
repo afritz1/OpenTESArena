@@ -168,6 +168,9 @@ namespace MapGeneration
 		MapType mapType, const ExeData &exeData)
 	{
 		const OriginalInt2 originalPos = VoxelUtils::worldVoxelToOriginalVoxel(WorldInt2(position.x, position.z));
+
+		const uint16_t doorVoxelOffset = ArenaLevelUtils::getDoorVoxelOffset(originalPos.x, originalPos.y);
+
 		std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(originalPos.x, originalPos.y, menuID,
 			rulerSeed, palaceIsMainQuestDungeon, cityType, mapType, exeData);
 
@@ -180,7 +183,7 @@ namespace MapGeneration
 		const std::string interiorDisplayName; // Provided later in generation due to circular dependency between transitions and building names :/
 
 		MapGenerationInteriorInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(mifName, revisedInteriorType, rulerIsMale, interiorDisplayName);
+		interiorGenInfo.initPrefab(mifName, revisedInteriorType, rulerIsMale, interiorDisplayName, doorVoxelOffset);
 		return interiorGenInfo;
 	}
 
@@ -2372,12 +2375,13 @@ namespace MapGeneration
 }
 
 void MapGenerationInteriorPrefabInfo::init(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale,
-	const std::string &displayName)
+	const std::string &displayName, const std::optional<uint16_t> &doorVoxelOffset)
 {
 	this->mifName = mifName;
 	this->interiorType = interiorType;
 	this->rulerIsMale = rulerIsMale;
 	this->displayName = displayName;
+	this->doorVoxelOffset = doorVoxelOffset;
 }
 
 void MapGenerationInteriorDungeonInfo::init(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
@@ -2393,11 +2397,11 @@ MapGenerationInteriorInfo::MapGenerationInteriorInfo()
 }
 
 void MapGenerationInteriorInfo::initPrefab(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale,
-	const std::string &displayName)
+	const std::string &displayName, const std::optional<uint16_t> &doorVoxelOffset)
 {
 	this->type = MapGenerationInteriorType::Prefab;
 	this->interiorType = interiorType;
-	this->prefab.init(mifName, interiorType, rulerIsMale, displayName);
+	this->prefab.init(mifName, interiorType, rulerIsMale, displayName, doorVoxelOffset);
 }
 
 void MapGenerationInteriorInfo::initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)

@@ -103,3 +103,47 @@ bool ArenaInteriorUtils::isPlayerTrespassing(ArenaBuildingType buildingType, boo
 
 	return false;
 }
+
+int ArenaInteriorUtils::getServiceQuality(uint16_t doorVoxelOffset, ArenaCityType cityType, const ExeData &exeData, ArenaRandom &random)
+{
+	const Span<const uint8_t> serviceQualityChances = exeData.services.serviceQualityChances;
+	const Span<const std::pair<uint8_t, uint8_t>> cityStateServiceQualities = exeData.services.cityStateServiceQualities;
+	const Span<const std::pair<uint8_t, uint8_t>> townServiceQualities = exeData.services.townServiceQualities;
+	const Span<const std::pair<uint8_t, uint8_t>> villageServiceQualities = exeData.services.villageServiceQualities;
+	const uint32_t savedSeed = random.getSeed();
+
+	uint32_t seed = (doorVoxelOffset & 0xFF00) | ((doorVoxelOffset & 0x00FF) >> 1);
+	random.srand(seed);
+	const int roll = random.next(101);
+
+	int serviceQualityIndex = 0;
+	while (serviceQualityChances[serviceQualityIndex] < roll)
+	{
+		serviceQualityIndex++;
+		DebugAssertIndex(serviceQualityChances, serviceQualityIndex);
+	}
+
+	int min;
+	int max;
+
+	if (cityType == ArenaCityType::CityState)
+	{
+		min = cityStateServiceQualities[serviceQualityIndex].first;
+		max = cityStateServiceQualities[serviceQualityIndex].second;
+	}
+	else if (cityType == ArenaCityType::Town)
+	{
+		min = townServiceQualities[serviceQualityIndex].first;
+		max = townServiceQualities[serviceQualityIndex].second;
+	}
+	else
+	{
+		min = villageServiceQualities[serviceQualityIndex].first;
+		max = villageServiceQualities[serviceQualityIndex].second;
+	}
+
+	const int result = min + random.next(max - min);
+	random.srand(savedSeed);
+
+	return result;
+}

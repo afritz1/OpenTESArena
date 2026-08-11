@@ -57,6 +57,9 @@ namespace ArenaLevelUtils
 	// (.MIF name, lock level).
 	uint16_t getDoorVoxelOffset(WEInt x, SNInt y);
 
+	// Gets the RNG seed to determine a chest's lock level.
+	uint16_t getChestLockLevelSeed(WEInt x, SNInt y);
+
 	// Gets the .MIF name for a door voxel in a city or the wilderness.
 	std::string getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
 		bool palaceIsMainQuestDungeon, ArenaCityType cityType, MapType mapType,
@@ -64,6 +67,9 @@ namespace ArenaLevelUtils
 
 	// Gets the lock level for a door voxel at the given XY coordinate.
 	int getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random);
+
+	// Gets the lock level for a chest voxel at the given XY coordinate.
+	int getChestVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random, const ExeData &exeData);
 
 	// Gets the '#' number used in IN#.0x and RE#.0x save files.
 	int getServiceSaveFileNumber(WEInt doorX, SNInt doorY);

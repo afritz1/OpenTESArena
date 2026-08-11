@@ -86,6 +86,11 @@ uint16_t ArenaLevelUtils::getDoorVoxelOffset(WEInt x, SNInt y)
 	return (y << 8) + (x << 1);
 }
 
+uint16_t ArenaLevelUtils::getChestLockLevelSeed(WEInt x, SNInt y)
+{
+	return ((static_cast<uint16_t>((x >> 7) & 0xFF) << 8) | (static_cast<uint16_t>(((y >> 7) << 1) & 0xFF)));
+}
+
 std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
 	bool palaceIsMainQuestDungeon, ArenaCityType cityType, MapType mapType, const ExeData &exeData)
 {
@@ -226,7 +231,17 @@ int ArenaLevelUtils::getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random
 	const uint16_t offset = ArenaLevelUtils::getDoorVoxelOffset(x, y);
 	const uint32_t lockLevelSeed = offset + (offset << 16);
 	random.srand(lockLevelSeed);
-	int lockLevel = random.next(10) + 1; // 0..9 + 1.
+	const int lockLevel = random.next(10) + 1; // 0..9 + 1.
+	random.srand(savedSeed);
+	return lockLevel;
+}
+
+int ArenaLevelUtils::getChestVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random, const ExeData &exeData)
+{
+	const uint32_t savedSeed = random.getSeed();
+	const uint32_t lockLevelSeed = ArenaLevelUtils::getChestLockLevelSeed(x, y);
+	random.srand(lockLevelSeed);
+	const int lockLevel = random.next(exeData.thieving.thievingChestMaxLockLevel) + 1;
 	random.srand(savedSeed);
 	return lockLevel;
 }

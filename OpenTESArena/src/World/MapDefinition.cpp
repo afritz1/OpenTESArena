@@ -35,6 +35,11 @@ void MapDefinitionInterior::init(ArenaInteriorType interiorType, const std::stri
 	this->displayName = displayName;
 }
 
+const std::optional<uint16_t> &MapDefinitionInterior::getDoorVoxelOffset() const
+{
+	return this->doorVoxelOffset;
+}
+
 void MapDefinitionInterior::clear()
 {
 	this->interiorType = static_cast<ArenaInteriorType>(-1);
@@ -446,6 +451,7 @@ bool MapDefinition::initInterior(const MapGenerationInteriorInfo &generationInfo
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 		this->initStartPoints(mif);
 		this->startLevelIndex = mif.getStartingLevelIndex();
+		this->subDefinition.interior.doorVoxelOffset = generationInfo.prefab.doorVoxelOffset;
 	}
 	else if (interiorType == MapGenerationInteriorType::Dungeon)
 	{

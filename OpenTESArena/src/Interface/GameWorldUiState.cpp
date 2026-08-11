@@ -2511,6 +2511,31 @@ void GameWorldUI::showShopkeeperBackground(const char *titleText)
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, true);
 }
 
+int GameWorldUI::getCurrentServiceQuality(const ExeData &exeData , ArenaRandom &arenaRandom)
+{
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
+	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const ArenaCityType cityType = cityDef.type;
+
+	const MapDefinitionInterior &mapDefinitionInterior = gameState.getActiveMapDef().getSubDefinition().interior;
+	const std::optional<uint16_t> &doorVoxelOffset = mapDefinitionInterior.getDoorVoxelOffset();
+
+	uint16_t doorVoxelOffsetForServiceQuality = 0;
+	if (doorVoxelOffset.has_value())
+	{
+		doorVoxelOffsetForServiceQuality = *doorVoxelOffset;
+	}
+	else
+	{
+		DebugLog("No door voxel offset; using default of 0 to get service quality.");
+	}
+
+	return ArenaInteriorUtils::getServiceQuality(doorVoxelOffsetForServiceQuality, cityType, exeData, arenaRandom);
+}
+
 GameWorldPopUpClosedCallback GameWorldUI::makeReturnToMessageBoxCallback(ConversationMessageBoxType messageBoxType)
 {
 	return [messageBoxType]()
@@ -3592,10 +3617,12 @@ void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonT
 	uiManager.disableTopMostContext();
 
 	ArenaRandom &arenaRandom = game.arenaRandom;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const int serviceQuality = getCurrentServiceQuality(exeData, arenaRandom);
 
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
-	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(5, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(serviceQuality, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
@@ -3733,10 +3760,12 @@ void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mous
 	uiManager.disableTopMostContext();
 
 	ArenaRandom &arenaRandom = game.arenaRandom;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const int serviceQuality = getCurrentServiceQuality(exeData, arenaRandom);
 
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
-	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(3, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(serviceQuality, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
@@ -3760,10 +3789,12 @@ void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType m
 	uiManager.disableTopMostContext();
 
 	ArenaRandom &arenaRandom = game.arenaRandom;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const int serviceQuality = getCurrentServiceQuality(exeData, arenaRandom);
 
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
-	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(6, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(serviceQuality, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
@@ -3808,10 +3839,11 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 	Random &random = game.random;
 	ArenaRandom &arenaRandom = game.arenaRandom;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const int serviceQuality = getCurrentServiceQuality(exeData, arenaRandom);
 
 	const Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
-	const bool isSneakingSuccessful = ArenaPlayerUtils::attemptThieving(1, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
+	const bool isSneakingSuccessful = ArenaPlayerUtils::attemptThieving(serviceQuality, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 
 	std::string text;
 	std::string fontName;

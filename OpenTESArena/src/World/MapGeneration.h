@@ -47,8 +47,9 @@ struct MapGenerationInteriorPrefabInfo
 	ArenaInteriorType interiorType;
 	std::optional<bool> rulerIsMale;
 	std::string displayName;
+	std::optional<uint16_t> doorVoxelOffset;
 
-	void init(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale, const std::string &displayName);
+	void init(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale, const std::string &displayName, const std::optional<uint16_t> &doorVoxelOffset);
 };
 
 // Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
@@ -71,7 +72,7 @@ struct MapGenerationInteriorInfo
 
 	MapGenerationInteriorInfo();
 
-	void initPrefab(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale, const std::string &displayName);
+	void initPrefab(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale, const std::string &displayName, const std::optional<uint16_t> &doorVoxelOffset);
 	void initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon);
 };
 

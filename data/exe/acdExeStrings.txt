@@ -354,6 +354,10 @@ CitizenRumorsModalWorkAskInTown=0x43EB0
 CitizenWhereIsOptionsCity=0x43FD3
 CitizenWhereIsOptionsWilderness=0x44035
 PlayerGoldRemaining=0x4050E
+ServiceQualityChances=0x40572
+CityStateServiceQualities=0x40576
+TownServiceQualities=0x4057E
+VillageServiceQualities=0x40586
 
 [Status]
 PopUp=0x4157B
@@ -387,6 +391,7 @@ ThievingEntranceNoGuardsChance=0x40B0
 ThievingPickpocketJunkThreshold=0x200CF
 ThievingPickpocketMaxGold=0x200DE
 ThievingMagicallyHeldLockDifficultyThreshold=0x237AB
+ThievingChestMaxLockLevel=0x299FE
 
 [Travel]
 LocationFormatTexts=0x376AD

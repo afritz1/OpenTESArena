@@ -829,7 +829,7 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			const std::string interiorDisplayName; // Unused.
 
 			MapGenerationInteriorInfo interiorGenInfo;
-			interiorGenInfo.initPrefab(mifName, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName);
+			interiorGenInfo.initPrefab(mifName, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName, std::nullopt);
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 

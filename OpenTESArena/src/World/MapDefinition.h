@@ -34,9 +34,13 @@ struct MapDefinitionInterior
 	// - probably store the music filename here, or make it retrievable by the interior type
 	std::string displayName;
 
+	std::optional<uint16_t> doorVoxelOffset;
+
 	MapDefinitionInterior();
 
 	void init(ArenaInteriorType interiorType, const std::string &displayName);
+
+	const std::optional<uint16_t> &getDoorVoxelOffset() const;
 
 	void clear();
 };
