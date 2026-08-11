@@ -3795,9 +3795,12 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 
 	GameState &gameState = game.gameState;
 	Random &random = game.random;
+	ArenaRandom &arenaRandom = game.arenaRandom;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
-	const bool isSneakingSuccessful = random.nextReal() <= 0.70; // Arbitrary
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isSneakingSuccessful = ArenaPlayerUtils::attemptThieving(1, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 
 	std::string text;
 	std::string fontName;
