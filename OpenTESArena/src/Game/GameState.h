@@ -46,6 +46,7 @@ struct GuardSpawnState
 struct EntityEncounterSpawnInfo
 {
 	int guardType; // Non-negative if for city guards.
+	bool isResponseToViolence;
 	int level;
 	int count;
 	EntityDefinitionPredicate entityDefPredicate; // Filters to matching definitions from library.
@@ -53,7 +54,7 @@ struct EntityEncounterSpawnInfo
 	EntityEncounterSpawnInfo();
 
 	void initCreaturesOrHumans(int spawnID, int level, int count);
-	void initCityGuards(int guardType, int level, int count);
+	void initCityGuards(int guardType, bool isResponseToViolence, int level, int count);
 
 	bool isCityGuards() const;
 };
@@ -244,7 +245,7 @@ public:
 	void addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon);
 
 	void spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
-	void queueCityGuardEncounter(Game &game);
+	void queueCityGuardEncounter(Game &game, bool isViolence);
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
 	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);

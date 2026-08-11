@@ -429,10 +429,7 @@ namespace PlayerLogic
 								if (!isLockpickingSuccessful)
 								{
 									GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
-									if (ArenaEntityUtils::doGuardsAppearForTheft(exeData.thieving.thievingEntranceNoGuardsChance, arenaRandom))
-									{
-										gameState.queueCityGuardEncounter(game);
-									}
+									gameState.queueCityGuardEncounter(game, false);
 									return;
 								}
 
@@ -659,11 +656,12 @@ namespace PlayerLogic
 						}
 						else
 						{
+							GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
+
 							if (guardsAppear)
 							{
-								gameState.queueCityGuardEncounter(game);
+								gameState.queueCityGuardEncounter(game, false);
 							}
-							GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
 						}
 
 						if (pickpocketResultTemplateDatEntry != nullptr)

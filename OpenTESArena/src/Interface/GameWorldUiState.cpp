@@ -2817,7 +2817,7 @@ void GameWorldUI::onPlayerStealItemFailure()
 		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
 
 		GameState &gameState = game.gameState;
-		gameState.queueCityGuardEncounter(game);
+		gameState.queueCityGuardEncounter(game, false);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment, callback);

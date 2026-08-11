@@ -287,7 +287,7 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, bool isF
 			if (hitEntityBehaviorState.isCitizen())
 			{
 				GameWorldUiController::onCitizenKilled(game);
-				gameState.queueCityGuardEncounter(game);
+				gameState.queueCityGuardEncounter(game, true);
 			}
 			else if (hitEntityBehaviorState.isCreature())
 			{

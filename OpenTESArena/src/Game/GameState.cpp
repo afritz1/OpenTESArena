@@ -125,6 +125,7 @@ void GuardSpawnState::clearQueue()
 EntityEncounterSpawnInfo::EntityEncounterSpawnInfo()
 {
 	this->guardType = -1;
+	this->isResponseToViolence = false;
 	this->level = 0;
 	this->count = 0;
 }
@@ -137,9 +138,10 @@ void EntityEncounterSpawnInfo::initCreaturesOrHumans(int spawnID, int level, int
 	this->entityDefPredicate = MakeOriginalSpawnEntityDefinitionPredicate(spawnID);
 }
 
-void EntityEncounterSpawnInfo::initCityGuards(int guardType, int level, int count)
+void EntityEncounterSpawnInfo::initCityGuards(int guardType, bool isResponseToViolence, int level, int count)
 {
 	this->guardType = guardType;
+	this->isResponseToViolence = isResponseToViolence;
 	this->level = level;
 	this->count = count;
 	this->entityDefPredicate = CityGuardEntityDefinitionPredicate;
@@ -847,10 +849,11 @@ void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo
 			const bool isFirstSpawnedGuard = actualSpawnCount == 0;
 			if (isFirstSpawnedGuard)
 			{
+				const char *guardSpawnSfxName = spawnInfo.isResponseToViolence ? ArenaSoundName::Halt : ArenaSoundName::StopThief;
 				const WorldDouble3 spawnSoundPosition = VoxelUtils::getVoxelCenter(spawnWorldVoxel, ceilingScale);
 
 				AudioManager &audioManager = game.audioManager;
-				audioManager.playSoundOneShot(ArenaSoundName::Halt, spawnSoundPosition);
+				audioManager.playSoundOneShot(guardSpawnSfxName, spawnSoundPosition);
 			}
 		}
 
@@ -858,7 +861,7 @@ void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo
 	}
 }
 
-void GameState::queueCityGuardEncounter(Game &game)
+void GameState::queueCityGuardEncounter(Game &game, bool isViolence)
 {
 	if (this->guardSpawnState.isQueued())
 	{
@@ -870,7 +873,7 @@ void GameState::queueCityGuardEncounter(Game &game)
 	constexpr double originalSecondsTillGuardSpawn = originalSecondsPerFrame * static_cast<double>(originalGameUpdatesTillGuardSpawn);
 	this->guardSpawnState.secondsTillSpawn = originalSecondsTillGuardSpawn;
 
-	this->guardSpawnState.spawnFunc = [this, &game]()
+	this->guardSpawnState.spawnFunc = [this, &game, isViolence]()
 	{
 		const Player &player = game.player;
 		const WorldDouble3 playerPosition = player.getEyePosition();
@@ -881,14 +884,26 @@ void GameState::queueCityGuardEncounter(Game &game)
 			return;
 		}
 
-		ArenaRandom &arenaRandom = game.arenaRandom;
-		if (!ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
-		{
-			DebugLog("Not spawning guards because of random chance.");
-			return;
-		}
-
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		ArenaRandom &arenaRandom = game.arenaRandom;
+
+		if (isViolence)
+		{
+			if (!ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
+			{
+				DebugLog("Not spawning guards for violence because of random chance.");
+				return;
+			}
+		}
+		else
+		{
+			if (!ArenaEntityUtils::doGuardsAppearForTheft(exeData.thieving.thievingEntranceNoGuardsChance, arenaRandom))
+			{
+				DebugLog("Not spawning guards for theft because of random chance.");
+				return;
+			}
+		}		
+
 		const LocationDefinition &locationDef = this->getLocationDefinition();
 		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 		const ArenaCityType cityType = cityDef.type;
@@ -897,7 +912,7 @@ void GameState::queueCityGuardEncounter(Game &game)
 		const int guardCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
 
 		EntityEncounterSpawnInfo encounterSpawnInfo;
-		encounterSpawnInfo.initCityGuards(guardType, guardLevel, guardCount);
+		encounterSpawnInfo.initCityGuards(guardType, isViolence, guardLevel, guardCount);
 		this->spawnEncounterEnemies(game, encounterSpawnInfo);
 	};
 }
