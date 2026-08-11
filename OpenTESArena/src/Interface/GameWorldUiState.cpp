@@ -519,13 +519,15 @@ void GameWorldUI::create(Game &game)
 	const Int2 effectTextBoxPosition = GameWorldUiView::getEffectTextPosition(game, ArenaRenderUtils::SCENE_UI_HEIGHT);
 	uiManager.setTransformPosition(effectTextBoxElementInstID, effectTextBoxPosition);
 
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isNoMagicIconVisible = !isModernInterface && !charClassDef.castsMagic;
+	const UiElementInstanceID noMagicImageElementInstID = uiManager.getElementByName(NoMagicImageElementName);
+	uiManager.setElementActive(noMagicImageElementInstID, isNoMagicIconVisible);
+
 	if (isModernInterface)
 	{
 		const UiElementInstanceID interfaceImageElementInstID = uiManager.getElementByName(InterfaceImageElementName);
 		uiManager.setElementActive(interfaceImageElementInstID, false);
-
-		const UiElementInstanceID noMagicImageElementInstID = uiManager.getElementByName(NoMagicImageElementName);
-		uiManager.setElementActive(noMagicImageElementInstID, false);
 
 		const UiElementInstanceID statusGradientImageElementInstID = uiManager.getElementByName(StatusGradientImageElementName);
 		uiManager.setElementActive(statusGradientImageElementInstID, false);

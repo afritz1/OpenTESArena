@@ -12,6 +12,7 @@
 #include "../Audio/MusicLibrary.h"
 #include "../Game/Game.h"
 #include "../Player/Player.h"
+#include "../Stats/CharacterClassLibrary.h"
 
 namespace
 {
@@ -105,6 +106,11 @@ void PauseMenuUI::create(Game &game)
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
 	const UiElementInstanceID playerNameTextBoxElementInstID = uiManager.getElementByName(NameTextBoxElementName);
 	uiManager.setTextBoxText(playerNameTextBoxElementInstID, playerNameText.c_str());
+
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isNoMagicIconVisible = !options.getGraphics_ModernInterface() && !charClassDef.castsMagic;
+	const UiElementInstanceID noMagicImageElementInstID = uiManager.getElementByName(NoMagicImageElementName);
+	uiManager.setElementActive(noMagicImageElementInstID, isNoMagicIconVisible);
 
 	GameWorldUiView::updateStatusBarsTexture(state.statusBarsTextureID, game.player, renderer);
 
