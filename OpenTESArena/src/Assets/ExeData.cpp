@@ -1259,12 +1259,20 @@ bool ExeDataThieving::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int thievingSuccessChestOffset = GetExeAddress(*section, "ThievingSuccessChest");
 	const int thievingFailureOffset = GetExeAddress(*section, "ThievingFailure");
 	const int thievingFailureChestOffset = GetExeAddress(*section, "ThievingFailureChest");
+	const int thievingEntranceNoGuardsChanceOffset = GetExeAddress(*section, "ThievingEntranceNoGuardsChance");
+	const int thievingPickpocketJunkThresholdOffset = GetExeAddress(*section, "ThievingPickpocketJunkThreshold");
+	const int thievingPickpocketMaxGoldOffset = GetExeAddress(*section, "ThievingPickpocketMaxGold");
+	const int thievingMagicallyHeldLockDifficultyThresholdOffset = GetExeAddress(*section, "ThievingMagicallyHeldLockDifficultyThreshold");
 
 	this->thievingInteractionType = GetExeStringNullTerminated(exeBytes, thievingInteractionTypeOffset);
 	this->thievingSuccess = GetExeStringNullTerminated(exeBytes, thievingSuccessOffset);
 	this->thievingSuccessChest = GetExeStringNullTerminated(exeBytes, thievingSuccessChestOffset);
 	this->thievingFailure = GetExeStringNullTerminated(exeBytes, thievingFailureOffset);
 	this->thievingFailureChest = GetExeStringNullTerminated(exeBytes, thievingFailureChestOffset);
+	this->thievingEntranceNoGuardsChance = static_cast<uint8_t>(exeBytes[thievingEntranceNoGuardsChanceOffset]);
+	this->thievingPickpocketJunkThreshold = Bytes::getLE16(reinterpret_cast<const uint8_t*>(exeBytes.begin() + thievingPickpocketJunkThresholdOffset));
+	this->thievingPickpocketMaxGold = static_cast<uint8_t>(exeBytes[thievingPickpocketMaxGoldOffset]);
+	this->thievingMagicallyHeldLockDifficultyThreshold = static_cast<uint8_t>(exeBytes[thievingMagicallyHeldLockDifficultyThresholdOffset]);
 
 	return true;
 }

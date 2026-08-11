@@ -111,7 +111,7 @@ namespace ArenaEntityUtils
 	std::string getWeaponNameFromItemID(int itemID, const ExeData &exeData);
 
 	bool doGuardsAppearForViolence(int playerLevel, ArenaRandom &random);
-	bool doGuardsAppearForTheft(int thievingSkill, ArenaRandom &random);
+	bool doGuardsAppearForTheft(int chance, ArenaRandom &random);
 	int getGuardType(const ExeData &exeData, ArenaRandom &random);
 	int getGuardLevel(ArenaCityType cityType, int tierBonus, const ExeData &exeData, ArenaRandom &random);
 	int getNumberOfGuardsToSpawn(ArenaRandom &random);

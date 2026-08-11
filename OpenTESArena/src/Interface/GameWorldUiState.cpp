@@ -2897,7 +2897,7 @@ void GameWorldUI::onPlayerStealItemFailure()
 		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
 
 		GameState &gameState = game.gameState;
-		gameState.queueCityGuardEncounter(game);
+		gameState.queueCityGuardEncounter(game, false);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment, callback);
@@ -3589,8 +3589,11 @@ void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonT
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	Random &random = game.random;
-	const bool isStealSuccessful = random.nextBool();
+	ArenaRandom &arenaRandom = game.arenaRandom;
+
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(5, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
@@ -3727,8 +3730,11 @@ void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mous
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	Random &random = game.random;
-	const bool isStealSuccessful = random.nextBool();
+	ArenaRandom &arenaRandom = game.arenaRandom;
+
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(3, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
@@ -3751,8 +3757,11 @@ void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType m
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	Random &random = game.random;
-	const bool isStealSuccessful = random.nextBool();
+	ArenaRandom &arenaRandom = game.arenaRandom;
+
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isStealSuccessful = ArenaPlayerUtils::attemptThieving(6, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 	if (isStealSuccessful)
 	{
 		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
@@ -3795,9 +3804,12 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 
 	GameState &gameState = game.gameState;
 	Random &random = game.random;
+	ArenaRandom &arenaRandom = game.arenaRandom;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
-	const bool isSneakingSuccessful = random.nextReal() <= 0.70; // Arbitrary
+	const Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isSneakingSuccessful = ArenaPlayerUtils::attemptThieving(1, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 
 	std::string text;
 	std::string fontName;
@@ -3828,7 +3840,7 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 		{
 			uiManager.disableTopMostContext();
 			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Left);
-			gameState.queueCityGuardEncounter(game);
+			gameState.queueCityGuardEncounter(game, false);
 		};
 	}
 

@@ -222,10 +222,13 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 
 int ArenaLevelUtils::getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random)
 {
+	const uint32_t savedSeed = random.getSeed();
 	const uint16_t offset = ArenaLevelUtils::getDoorVoxelOffset(x, y);
-	const uint32_t seed = offset + (offset << 16);
-	random.srand(seed);
-	return random.next(10) + 1; // 0..9 + 1.
+	const uint32_t lockLevelSeed = offset + (offset << 16);
+	random.srand(lockLevelSeed);
+	int lockLevel = random.next(10) + 1; // 0..9 + 1.
+	random.srand(savedSeed);
+	return lockLevel;
 }
 
 int ArenaLevelUtils::getServiceSaveFileNumber(WEInt doorX, SNInt doorY)

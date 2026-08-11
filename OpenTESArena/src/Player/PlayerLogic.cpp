@@ -410,7 +410,7 @@ namespace PlayerLogic
 						{
 							if (isLocked)
 							{
-								const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
+								const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData, arenaRandom);
 								const std::string lockDifficultyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
 								GameWorldUI::setActionText(lockDifficultyMsg.c_str());
 							}
@@ -425,11 +425,11 @@ namespace PlayerLogic
 
 							if (isLocked)
 							{
-								const bool isLockpickingSuccessful = random.nextBool(); // @todo use original chances
+								const bool isLockpickingSuccessful = ArenaPlayerUtils::attemptThieving(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 								if (!isLockpickingSuccessful)
 								{
 									GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
-									gameState.queueCityGuardEncounter(game);
+									gameState.queueCityGuardEncounter(game, false);
 									return;
 								}
 
@@ -508,7 +508,7 @@ namespace PlayerLogic
 						if (!isApplyingDoorKeyToLock && interactionType == GameWorldInteractionType::Thieving)
 						{
 							isAttemptingLockpick = true;
-							isLockpickingSuccessful = random.nextBool(); // @todo original chances
+							isLockpickingSuccessful = ArenaPlayerUtils::attemptThieving(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom, nullptr);
 							canDoorBeOpened = isLockpickingSuccessful;
 						}
 					}
@@ -531,7 +531,7 @@ namespace PlayerLogic
 				}
 				else
 				{
-					const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
+					const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData, arenaRandom);
 					const std::string lockDifficultyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
 					GameWorldUI::setActionText(lockDifficultyMsg.c_str());
 				}
@@ -568,7 +568,11 @@ namespace PlayerLogic
 		Player &player = game.player;
 		const bool canPlayerMoveAndTurn = game.canPlayerMoveAndTurn();
 
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
+
 		Random &random = game.random;
+		ArenaRandom &arenaRandom = game.arenaRandom;
 
 		if (isPrimaryInteraction)
 		{
@@ -637,21 +641,28 @@ namespace PlayerLogic
 
 						const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;
 
-						constexpr double pickpocketGoldChance = 0.20; // @todo original chances
-						constexpr double pickpocketJunkChance = 0.90;
-						const double pickpocketTypeRoll = random.nextReal();
+						const LocationDefinition &locationDef = gameState.getLocationDefinition();
+						const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+						const ArenaCityType cityType = cityDef.type;
+						int pickpocketGoldAmount;
+						int pickpocketResultTemplateDatIndex;
+						bool guardsAppear;
+
+						bool pickPocketSuccess = ArenaPlayerUtils::attemptPickpocket(cityType, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom, exeData, &pickpocketResultTemplateDatIndex, &pickpocketGoldAmount, &guardsAppear);
 						const ArenaTemplateDatEntry *pickpocketResultTemplateDatEntry = nullptr;
-						if (pickpocketTypeRoll <= pickpocketGoldChance)
+						if (pickPocketSuccess)
 						{
-							constexpr int pickpocketGoldMin = 1;
-							constexpr int pickpocketGoldMax = 5;
-							const int pickpocketGoldAmount = pickpocketGoldMin + random.next(pickpocketGoldMax);
-							pickpocketResultTemplateDatEntry = &templateDat.getEntry(1379 + (pickpocketGoldAmount - 1));
+							pickpocketResultTemplateDatEntry = &templateDat.getEntry(pickpocketResultTemplateDatIndex);
 							player.gold += pickpocketGoldAmount;
 						}
-						else if (pickpocketTypeRoll <= pickpocketJunkChance)
+						else
 						{
-							pickpocketResultTemplateDatEntry = &templateDat.getEntry(1384);
+							GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
+
+							if (guardsAppear)
+							{
+								gameState.queueCityGuardEncounter(game, false);
+							}
 						}
 
 						if (pickpocketResultTemplateDatEntry != nullptr)
@@ -661,11 +672,6 @@ namespace PlayerLogic
 							std::string pickpocketResultString = pickpocketResultTemplateDatEntry->values[entryVariantIndex];
 							pickpocketResultString = String::distributeNewlines(pickpocketResultString, 60);
 							GameWorldUI::showTextPopUp(pickpocketResultString.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
-						}
-						else
-						{
-							gameState.queueCityGuardEncounter(game);
-							GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
 						}
 					}
 				}
@@ -771,7 +777,8 @@ namespace PlayerLogic
 							const bool canAttemptLockpicking = lockState.isLocked;
 							if (canAttemptLockpicking)
 							{
-								const bool isLockpickingSuccessful = random.nextBool(); // @todo use original chances
+								const int lockLevel = 5; // @todo get original chest lock level
+								const bool isLockpickingSuccessful = ArenaPlayerUtils::attemptThieving(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, arenaRandom);
 								if (isLockpickingSuccessful)
 								{
 									lockState.isLocked = false;

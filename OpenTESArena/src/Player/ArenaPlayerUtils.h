@@ -1,6 +1,9 @@
 #pragma once
 
+class ArenaRandom;
 class Random;
+
+enum class ArenaCityType;
 
 struct ExeData;
 struct Player;
@@ -56,9 +59,9 @@ namespace ArenaPlayerUtils
 	DerivedAttributes calculatePersonalityDerivedBonuses(int personality);
 	DerivedAttributes calculateTotalDerivedBonuses(const PrimaryAttributes &attributes);
 
-	int getThievingChance(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes);
-	bool attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random);
-	int getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData);
+	bool attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, ArenaRandom &random, int *outThievingChance = nullptr);
+	bool attemptPickpocket(ArenaCityType cityType, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, ArenaRandom &random, const ExeData &exeData, int *outTemplateIndex, int *outGoldAmount, bool *outGuardsAppear);
+	int getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData, ArenaRandom &random);
 
 	constexpr int DoorBashMinDamageRequired = 6;
 
