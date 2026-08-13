@@ -629,12 +629,17 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 			if (repairIter != mVocRepairEntries.end())
 			{
 				const Span<const VocRepairSpan> repairSpans = repairIter->spans;
-				for (const VocRepairSpan span : repairSpans)
+				for (const VocRepairSpan repairSpan : repairSpans)
 				{
-					uint8_t *spanBegin = pcmSamples.begin() + span.startIndex;
-					uint8_t *spanEnd = spanBegin + span.count;
-					DebugAssert(spanEnd <= pcmSamples.end());
-					std::fill(spanBegin, spanEnd, span.replacementSample);
+					uint8_t *spanBegin = pcmSamples.begin() + repairSpan.startIndex;
+					uint8_t *spanEnd = spanBegin + repairSpan.count;
+					if (spanEnd > pcmSamples.end())
+					{
+						DebugLogErrorFormat("Invalid repair span for %s (byte index: %d, count: %d, byte: %d, .VOC size: %d).", repairIter->filename.c_str(), repairSpan.startIndex, repairSpan.count, repairSpan.replacementSample, pcmSamples.getCount());
+						continue;
+					}
+					
+					std::fill(spanBegin, spanEnd, repairSpan.replacementSample);
 				}
 			}
 
