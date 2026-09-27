@@ -1,14 +1,17 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 #include "Buffer.h"
 #include "Span.h"
+#include "../debug/Debug.h"
 
 // Various string operations and conversions.
 namespace String
@@ -184,3 +187,110 @@ namespace String
 	// the entire source string was copied.
 	bool tryCopy(const char *src, char *dst, size_t dstSize);
 }
+
+template<int Length>
+struct StringFixed
+{
+	static_assert(Length > 0);
+
+	char str[Length];
+	int count;
+
+	constexpr StringFixed()
+		: str{}, count(0) // Value-initialized (all zeroes) for c_str().
+	{
+	}
+
+	constexpr StringFixed(const std::string_view other)
+		: StringFixed()
+	{
+		const int otherLength = static_cast<int>(other.size());
+		const int otherCopyableLength = std::min<int>(Length - 1, otherLength);
+		const char *srcBegin = other.data();
+		const char *srcEnd = srcBegin + otherCopyableLength;
+		std::copy(srcBegin, srcEnd, this->str);
+
+		const int lastCharIndex = otherCopyableLength;
+		this->str[lastCharIndex] = '\0';
+
+		this->count = otherCopyableLength;
+	}
+
+	constexpr StringFixed(const char *other)
+		: StringFixed(std::string_view(other))
+	{
+	}
+
+	StringFixed(const std::string &other)
+		: StringFixed(std::string_view(other))
+	{
+	}
+
+	operator std::string() const
+	{
+		return std::string(this->str, this->count);
+	}
+
+	operator std::string_view()
+	{
+		return std::string_view(this->str, this->count);
+	}
+
+	operator std::string_view() const
+	{
+		return std::string_view(this->str, this->count);
+	}
+
+	char &operator[](int index)
+	{
+		DebugAssertIndex(this->str, index);
+		return this->str[index];
+	}
+
+	const char &operator[](int index) const
+	{
+		DebugAssertIndex(this->str, index);
+		return this->str[index];
+	}
+
+	constexpr const char *c_str() const
+	{
+		return this->str;
+	}
+
+	constexpr const char *begin() const
+	{
+		return this->str;
+	}
+
+	constexpr const char *end() const
+	{
+		return this->str + this->count;
+	}
+
+	constexpr int compare(const char *other) const
+	{
+		const std::string_view a = *this;
+		const std::string_view b = other;
+		return a.compare(b);
+	}
+
+	constexpr int compare(const StringFixed<Length> &other) const
+	{
+		const std::string_view a = *this;
+		const std::string_view b = other;
+		return a.compare(b);
+	}
+
+	void clear()
+	{
+		this->str[0] = '\0';
+		this->count = 0;
+	}
+};
+
+using String16 = StringFixed<16>;
+using String32 = StringFixed<32>;
+using String64 = StringFixed<64>;
+using String256 = StringFixed<256>;
+using String1024 = StringFixed<1024>;
