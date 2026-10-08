@@ -26,7 +26,6 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Span.h"
 #include "components/utilities/String.h"
-#include "components/utilities/StringView.h"
 #include "components/utilities/TextLinesFile.h"
 #include "components/vfs/manager.hpp"
 

@@ -29,7 +29,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
 #include "components/utilities/File.h"
-#include "components/utilities/StringView.h"
+#include "components/utilities/String.h"
 
 #ifdef HAVE_VULKAN
 

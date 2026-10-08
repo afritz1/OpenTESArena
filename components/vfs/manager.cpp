@@ -11,7 +11,7 @@
 #include "../debug/Debug.h"
 #include "../utilities/Directory.h"
 #include "../utilities/Span.h"
-#include "../utilities/StringView.h"
+#include "../utilities/String.h"
 
 namespace
 {

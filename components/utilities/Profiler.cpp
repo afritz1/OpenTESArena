@@ -6,7 +6,6 @@
 
 #include "Profiler.h"
 #include "String.h"
-#include "StringView.h"
 #include "../debug/Debug.h"
 
 namespace

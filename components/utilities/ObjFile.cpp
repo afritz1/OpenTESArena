@@ -5,7 +5,6 @@
 #include "ObjFile.h"
 #include "Span.h"
 #include "String.h"
-#include "StringView.h"
 
 namespace
 {

@@ -4,7 +4,7 @@
 #include "WeaponAnimationUtils.h"
 #include "../Math/MathUtils.h"
 
-#include "components/utilities/StringView.h"
+#include "components/utilities/String.h"
 
 bool WeaponAnimationUtils::isSheathed(const WeaponAnimationDefinitionState &state)
 {

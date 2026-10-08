@@ -50,8 +50,6 @@ SET(COMP_UTILITIES
 	"utilities/StaticVector.h"
 	"utilities/String.cpp"
 	"utilities/String.h"
-	"utilities/StringView.cpp"
-	"utilities/StringView.h"
 	"utilities/TextLinesFile.cpp"
 	"utilities/TextLinesFile.h"
 	"utilities/VirtualHeap.cpp"

@@ -10,8 +10,6 @@
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
-#include "components/utilities/StringView.h"
-
 int ArenaPlayerUtils::getBaseSpeed(int speedAttribute, int encumbranceMod)
 {
 	return ((((speedAttribute * 20) / 256) * (256 - encumbranceMod)) / 256) + 20;

@@ -3,7 +3,6 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
-#include "components/utilities/StringView.h"
 
 bool FontLibrary::init()
 {

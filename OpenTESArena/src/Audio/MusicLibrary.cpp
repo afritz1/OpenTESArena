@@ -12,7 +12,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/File.h"
 #include "components/utilities/KeyValueFile.h"
-#include "components/utilities/StringView.h"
+#include "components/utilities/String.h"
 
 #define MAKE_NAME_TYPE_PAIR(type, name) { #name, type::name }
 

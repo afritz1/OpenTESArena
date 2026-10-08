@@ -2,7 +2,7 @@
 #include <filesystem>
 
 #include "Directory.h"
-#include "StringView.h"
+#include "String.h"
 
 #include "../debug/Debug.h"
 

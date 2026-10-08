@@ -6,7 +6,6 @@
 #include "File.h"
 #include "KeyValueFile.h"
 #include "String.h"
-#include "StringView.h"
 #include "../debug/Debug.h"
 
 void KeyValueFileSection::init(const std::string &name)

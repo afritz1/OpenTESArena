@@ -30,7 +30,6 @@
 #include "../World/MapType.h"
 
 #include "components/utilities/String.h"
-#include "components/utilities/StringView.h"
 
 namespace
 {

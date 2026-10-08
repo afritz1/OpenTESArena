@@ -5,7 +5,7 @@
 #include "../Player/CharacterClassGeneration.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/StringView.h"
+#include "components/utilities/String.h"
 
 void CharacterClassLibrary::init(const ExeData &exeData)
 {
