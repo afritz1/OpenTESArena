@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "Clock.h"
 
 #include "components/debug/Debug.h"
@@ -86,9 +88,12 @@ void Clock::incrementTime(double dt)
 {
 	this->currentSecond += dt;
 
-	while (this->currentSecond >= 1.0)
+	const double accumulatedWholeSecondsReal = std::floor(this->currentSecond);
+	const int accumulatedWholeSeconds = static_cast<int>(accumulatedWholeSecondsReal);
+	for (int i = 0; i < accumulatedWholeSeconds; i++)
 	{
 		this->incrementSecond();
-		this->currentSecond -= 1.0;
 	}
+
+	this->currentSecond = std::max(this->currentSecond - accumulatedWholeSecondsReal, 0.0);
 }
