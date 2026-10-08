@@ -16,7 +16,6 @@
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer2D.h"
 #include "components/utilities/Span.h"
 
 class ArenaRandom;

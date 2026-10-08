@@ -5,7 +5,7 @@
 #include "VoxelUtils.h"
 #include "../World/Chunk.h"
 
-#include "components/utilities/Buffer3D.h"
+#include "components/utilities/Buffer.h"
 #include "components/utilities/KeyValuePool.h"
 #include "components/utilities/Span.h"
 

@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer2D.h"
 
 // A .CFA file is for creatures and spell animations.
 class CFAFile

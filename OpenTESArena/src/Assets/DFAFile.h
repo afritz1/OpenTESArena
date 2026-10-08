@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer2D.h"
 
 // A .DFA file contains images for entities that animate but don't move in the world, 
 // like shopkeepers, tavern folk, lamps, fountains, staff pieces, and torches.

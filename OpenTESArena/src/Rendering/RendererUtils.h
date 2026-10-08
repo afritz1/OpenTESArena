@@ -11,7 +11,7 @@
 #include "../Utilities/Palette.h"
 #include "../Voxels/VoxelUtils.h"
 
-#include "components/utilities/Buffer3D.h"
+#include "components/utilities/Buffer.h"
 
 class Renderer;
 

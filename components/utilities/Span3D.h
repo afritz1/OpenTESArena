@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "Buffer3D.h"
+#include "Buffer.h"
 #include "../debug/Debug.h"
 
 // Non-owning view of a 3D range of data stored in memory as a 1D array. More sophisticated than 2D span due

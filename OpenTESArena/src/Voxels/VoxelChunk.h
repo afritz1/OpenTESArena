@@ -26,7 +26,7 @@
 #include "../World/LockDefinition.h"
 #include "../World/TransitionDefinition.h"
 
-#include "components/utilities/Buffer3D.h"
+#include "components/utilities/Buffer.h"
 
 class AudioManager;
 

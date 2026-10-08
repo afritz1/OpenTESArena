@@ -7,7 +7,7 @@
 
 #include "../Utilities/Palette.h"
 
-#include "components/utilities/Buffer2D.h"
+#include "components/utilities/Buffer.h"
 
 // An .FLC file is a video file. .CEL files are nearly identical to .FLCs, though with an extra chunk
 // of header data which can probably be skipped. I'm fairly certain now after looking into it, that

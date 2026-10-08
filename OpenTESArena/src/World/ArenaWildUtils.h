@@ -9,7 +9,7 @@
 #include "../Weather/WeatherDefinition.h"
 #include "../WorldMap/LocationDefinition.h"
 
-#include "components/utilities/Buffer2D.h"
+#include "components/utilities/Buffer.h"
 
 class BinaryAssetLibrary;
 

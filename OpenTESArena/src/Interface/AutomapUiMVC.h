@@ -12,7 +12,7 @@
 #include "../Utilities/Color.h"
 #include "../World/Coord.h"
 
-#include "components/utilities/Buffer2D.h"
+#include "components/utilities/Buffer.h"
 
 class Game;
 class GameState;

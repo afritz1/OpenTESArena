@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer2D.h"
 
 using FontDefinitionPixel = bool;
 using FontDefinitionCharacter = Buffer2D<FontDefinitionPixel>;

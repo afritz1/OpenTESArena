@@ -11,7 +11,6 @@
 #include "../Utilities/Palette.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer2D.h"
 #include "components/utilities/Span.h"
 #include "components/utilities/Span2D.h"
 

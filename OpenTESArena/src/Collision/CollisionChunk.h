@@ -11,7 +11,7 @@
 #include "../Voxels/VoxelChunk.h"
 #include "../World/Chunk.h"
 
-#include "components/utilities/Buffer3D.h"
+#include "components/utilities/Buffer.h"
 
 using CollisionShapeDefID = int;
 

@@ -7,7 +7,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Voxels/VoxelUtils.h"
 
-#include "components/utilities/Buffer3D.h"
+#include "components/utilities/Buffer.h"
 
 // Points to various definitions in a level info definition.
 using LevelVoxelShapeDefID = int;

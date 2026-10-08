@@ -6,7 +6,7 @@
 #include "../Math/Vector2.h"
 #include "../Utilities/Palette.h"
 
-#include "components/utilities/Buffer2D.h"
+#include "components/utilities/Buffer.h"
 
 // An .IMG file can have one of a few formats; either with a header that determines
 // properties, or without a header (either raw or a wall). Some .IMGs also have a

@@ -4,7 +4,7 @@
 #include "../Rendering/VisibilityType.h"
 #include "../World/Chunk.h"
 
-#include "components/utilities/Buffer3D.h"
+#include "components/utilities/Buffer.h"
 
 struct RenderCamera;
 

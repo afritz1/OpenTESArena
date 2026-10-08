@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer2D.h"
 
 // A .SET file is packed with some uncompressed 64x64 wall .IMGs. Its size should
 // be a multiple of 4096 bytes.

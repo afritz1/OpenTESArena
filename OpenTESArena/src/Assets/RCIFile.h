@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer2D.h"
 
 // An .RCI file is for screen-space animations like water and lava. It is packed 
 // with five uncompressed 320x100 images.

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "components/utilities/Buffer2D.h"
+#include "components/utilities/Buffer.h"
 
 // Despite being called a .TXT file, this is a texture format used only in one place (FOG.TXT) for the
 // screen-space fog effect.
