@@ -3,7 +3,7 @@
 #include "VoxelBoxCombineChunk.h"
 #include "VoxelChunk.h"
 
-#include "components/utilities/Span3D.h"
+#include "components/utilities/Span.h"
 
 namespace
 {

@@ -34,7 +34,7 @@
 #include "../WorldMap/ProvinceDefinition.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/Span2D.h"
+#include "components/utilities/Span.h"
 #include "components/utilities/String.h"
 
 namespace

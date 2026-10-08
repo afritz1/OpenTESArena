@@ -7,7 +7,7 @@
 #include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Span2D.h"
+#include "components/utilities/Span.h"
 
 // Wilderness map data.
 class RMDFile

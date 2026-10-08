@@ -12,7 +12,6 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Span.h"
-#include "components/utilities/Span2D.h"
 
 enum class TextAlignment;
 

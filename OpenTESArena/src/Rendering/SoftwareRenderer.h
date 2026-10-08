@@ -14,8 +14,6 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/KeyValuePool.h"
 #include "components/utilities/Span.h"
-#include "components/utilities/Span2D.h"
-#include "components/utilities/Span3D.h"
 
 struct RendererProfilerData3D;
 

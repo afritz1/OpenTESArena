@@ -4,7 +4,6 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Span.h"
-#include "components/utilities/Span2D.h"
 
 // Light level file, contains 13 light palettes for shading/transparencies. In some foggy dungeons,
 // the game seems to use fog distance for determining light level (FOG.LGT).

@@ -5,8 +5,6 @@
 #include "VoxelFaceEnableChunk.h"
 #include "VoxelFacing.h"
 
-#include "components/utilities/Span3D.h"
-
 namespace
 {
 	bool IsAdjacentFaceCombinable(const VoxelInt3 &voxel, const VoxelInt3 &direction, VoxelFacing3D facing, Span3D<const VoxelFacesEntry> facesEntry,

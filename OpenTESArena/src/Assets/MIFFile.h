@@ -11,7 +11,6 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Span.h"
-#include "components/utilities/Span2D.h"
 
 // A .MIF file contains a map header and an array of levels. It defines the dimensions of
 // a particular area and which voxels have which IDs, as well as some other data. It is normally

@@ -14,7 +14,6 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/FlatMap.h"
 #include "components/utilities/Span.h"
-#include "components/utilities/Span3D.h"
 
 class Renderer;
 class TextureManager;

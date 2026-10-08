@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "components/utilities/Span2D.h"
+#include "components/utilities/Span.h"
 
 struct Rect;
 struct SDL_Surface;

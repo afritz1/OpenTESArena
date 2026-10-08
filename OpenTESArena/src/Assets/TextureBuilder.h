@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Span2D.h"
+#include "components/utilities/Span.h"
 
 // Intermediate texture for initializing other renderer-specific textures for the game world or UI.
 struct TextureBuilder

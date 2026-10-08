@@ -4,7 +4,7 @@
 #include "Coord.h"
 #include "../Math/MathUtils.h"
 
-#include "components/utilities/Span3D.h"
+#include "components/utilities/Span.h"
 
 // Base type for all chunks in the game world occupying 64x64 voxels.
 struct Chunk

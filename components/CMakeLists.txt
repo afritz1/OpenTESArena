@@ -47,8 +47,6 @@ SET(COMP_UTILITIES
 	"utilities/Profiler.h"
 	"utilities/Singleton.h"
 	"utilities/Span.h"
-	"utilities/Span2D.h"
-	"utilities/Span3D.h"
 	"utilities/StaticVector.h"
 	"utilities/String.cpp"
 	"utilities/String.h"

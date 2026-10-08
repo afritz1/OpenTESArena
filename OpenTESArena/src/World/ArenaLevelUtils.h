@@ -12,7 +12,7 @@
 #include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 
-#include "components/utilities/Span2D.h"
+#include "components/utilities/Span.h"
 
 class ArenaRandom;
 class Renderer;

@@ -4,7 +4,6 @@
 
 #include "components/utilities/KeyValuePool.h"
 #include "components/utilities/Span.h"
-#include "components/utilities/Span2D.h"
 
 struct Rect;
 struct RenderElement2D;

@@ -21,7 +21,6 @@
 #include "../Utilities/Palette.h"
 
 #include "components/utilities/Span.h"
-#include "components/utilities/Span2D.h"
 
 class RenderBackend;
 class Surface;

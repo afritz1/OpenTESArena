@@ -6,7 +6,7 @@
 #include "../Assets/MIFUtils.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Span2D.h"
+#include "components/utilities/Span.h"
 
 class Random;
 class TextureManager;

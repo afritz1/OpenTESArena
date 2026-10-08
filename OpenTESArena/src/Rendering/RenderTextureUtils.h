@@ -7,7 +7,6 @@
 
 #include "../Math/Vector2.h"
 #include "components/utilities/Span.h"
-#include "components/utilities/Span2D.h"
 
 // Handles to allocated textures in internal renderer format.
 using ObjectTextureID = int; // For scene geometry (voxels/entities/sky/particles).
