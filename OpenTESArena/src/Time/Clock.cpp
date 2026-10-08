@@ -4,7 +4,7 @@
 
 #include "components/debug/Debug.h"
 
-void Clock::init(int hours, int minutes, int seconds, double currentSecond)
+void Clock::init(int hours, int minutes, int seconds, double fractionalSecond)
 {
 	DebugAssert(hours >= 0);
 	DebugAssert(hours < 24);
@@ -12,12 +12,12 @@ void Clock::init(int hours, int minutes, int seconds, double currentSecond)
 	DebugAssert(minutes < 60);
 	DebugAssert(seconds >= 0);
 	DebugAssert(seconds < 60);
-	DebugAssert(currentSecond >= 0.0);
+	DebugAssert(fractionalSecond >= 0.0);
 
 	this->hours = hours;
 	this->minutes = minutes;
 	this->seconds = seconds;
-	this->currentSecond = currentSecond;
+	this->fractionalSecond = fractionalSecond;
 }
 
 void Clock::init(int hours, int minutes, int seconds)
@@ -39,7 +39,7 @@ int Clock::getHours12() const
 double Clock::getTotalSeconds() const
 {
 	const int seconds = (this->hours * 3600) + (this->minutes * 60) + this->seconds;
-	return static_cast<double>(seconds) + this->currentSecond;
+	return static_cast<double>(seconds) + this->fractionalSecond;
 }
 
 double Clock::getDayPercent() const
@@ -55,9 +55,11 @@ bool Clock::isAM() const
 void Clock::incrementHour()
 {
 	this->hours++;
+	this->isHourChanged = true;
 
 	if (this->hours == 24)
 	{
+		this->isDayChanged = true;
 		this->hours = 0;
 	}
 }
@@ -65,6 +67,7 @@ void Clock::incrementHour()
 void Clock::incrementMinute()
 {
 	this->minutes++;
+	this->isMinuteChanged = true;
 
 	if (this->minutes == 60)
 	{
@@ -76,6 +79,7 @@ void Clock::incrementMinute()
 void Clock::incrementSecond()
 {
 	this->seconds++;
+	this->isSecondChanged = true;
 
 	if (this->seconds == 60)
 	{
@@ -86,14 +90,19 @@ void Clock::incrementSecond()
 
 void Clock::incrementTime(double dt)
 {
-	this->currentSecond += dt;
+	this->isDayChanged = false;
+	this->isHourChanged = false;
+	this->isMinuteChanged = false;
+	this->isSecondChanged = false;
 
-	const double accumulatedWholeSecondsReal = std::floor(this->currentSecond);
+	this->fractionalSecond += dt;
+
+	const double accumulatedWholeSecondsReal = std::floor(this->fractionalSecond);
 	const int accumulatedWholeSeconds = static_cast<int>(accumulatedWholeSecondsReal);
 	for (int i = 0; i < accumulatedWholeSeconds; i++)
 	{
 		this->incrementSecond();
 	}
 
-	this->currentSecond = std::max(this->currentSecond - accumulatedWholeSecondsReal, 0.0);
+	this->fractionalSecond = std::max(this->fractionalSecond - accumulatedWholeSecondsReal, 0.0);
 }

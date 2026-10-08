@@ -1249,8 +1249,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;
 
-	// Check if the clock hour looped back around.
-	if (newHour < prevHour)
+	if (this->clock.isDayChanged)
 	{
 		this->date.incrementDay();
 	}
@@ -1268,7 +1267,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	ArenaRandom &arenaRandom = game.arenaRandom;
 
 	bool canAttemptEnemyEncounterThisHour = false;
-	if (newHour != prevHour)
+	if (this->clock.isHourChanged)
 	{
 		canAttemptEnemyEncounterThisHour = ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(environmentType, isPlayerCamping, player.groundState.onRaisedPlatform);
 
@@ -1293,10 +1292,8 @@ void GameState::tickGameClock(double dt, Game &game)
 		}
 	}
 
-	const int prevMinutes = prevClock.minutes;
-	const int newMinutes = this->clock.minutes;
 	bool canAttemptEnemyEncounterThisMinute = false;
-	if (newMinutes != prevMinutes)
+	if (this->clock.isMinuteChanged)
 	{
 		const bool areCitizensPresent = !isNightForEncounters || entityChunkManager.anyCitizensNearby(playerPosition);
 		canAttemptEnemyEncounterThisMinute = ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(environmentType, areCitizensPresent, isPlayerCamping, player.groundState.onRaisedPlatform);

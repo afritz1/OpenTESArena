@@ -62,8 +62,7 @@ namespace
 	std::string GetStatusTimeString(const Clock &clock, const ExeData &exeData)
 	{
 		const int hours12 = clock.getHours12();
-		const int minutes = clock.minutes;
-		const std::string clockTimeString = std::to_string(hours12) + ":" + ((minutes < 10) ? "0" : "") + std::to_string(minutes);
+		const std::string clockTimeString = String::format("%d:%02d", hours12, clock.minutes);
 
 		// Reverse iterate, checking which range the active clock is in.
 		const auto pairIter = std::find_if(std::rbegin(TimeOfDayIndices), std::rend(TimeOfDayIndices),

@@ -6,7 +6,12 @@ struct Clock
 	int hours; // 0 to 23
 	int minutes; // 0 to 59
 	int seconds; // 0 to 59
-	double currentSecond; // 0 to 1
+	double fractionalSecond; // 0 to 1
+
+	bool isDayChanged;
+	bool isHourChanged;
+	bool isMinuteChanged;
+	bool isSecondChanged;
 
 	static constexpr int SECONDS_IN_A_DAY = 86400;
 
@@ -15,12 +20,16 @@ struct Clock
 		this->hours = hours;
 		this->minutes = minutes;
 		this->seconds = seconds;
-		this->currentSecond = 0.0;
+		this->fractionalSecond = 0.0;
+		this->isDayChanged = false;
+		this->isHourChanged = false;
+		this->isMinuteChanged = false;
+		this->isSecondChanged = false;
 	}
 
 	constexpr Clock() : Clock(0, 0, 0) { }
 
-	void init(int hours, int minutes, int seconds, double currentSecond);
+	void init(int hours, int minutes, int seconds, double fractionalSecond);
 	void init(int hours, int minutes, int seconds);
 	void clear();
 
