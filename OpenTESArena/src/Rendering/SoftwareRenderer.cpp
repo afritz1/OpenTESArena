@@ -2857,7 +2857,7 @@ namespace
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							pixelCenterX[i] = static_cast<double>(frameBufferPixelX[i] + 0.50);
+							pixelCenterX[i] = static_cast<double>(frameBufferPixelX[i]) + 0.50;
 						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
