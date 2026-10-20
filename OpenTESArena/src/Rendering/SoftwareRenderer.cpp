@@ -2747,6 +2747,7 @@ namespace
 			{
 				// Column slice setup.
 				int frameBufferPixelY[TYPICAL_LOOP_UNROLL];
+				double pixelCenterY[TYPICAL_LOOP_UNROLL];
 				double frameBufferPercentY[TYPICAL_LOOP_UNROLL];
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -2756,11 +2757,15 @@ namespace
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
-					frameBufferPercentY[i] = (static_cast<double>(frameBufferPixelY[i]) + 0.50) * g_frameBufferHeightRealRecip;
+					pixelCenterY[i] = static_cast<double>(frameBufferPixelY[i]) + 0.50;
+				}
+				
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					frameBufferPercentY[i] = pixelCenterY[i] * g_frameBufferHeightRealRecip;
 				}
 
 				// Column pixel coverage test components.
-				double pixelCenterY[TYPICAL_LOOP_UNROLL];
 				double pixelCenterPlane0DiffY[TYPICAL_LOOP_UNROLL];
 				double pixelCenterPlane1DiffY[TYPICAL_LOOP_UNROLL];
 				double pixelCenterPlane2DiffY[TYPICAL_LOOP_UNROLL];
@@ -2770,11 +2775,6 @@ namespace
 				double screenSpace0CurrentY[TYPICAL_LOOP_UNROLL];
 				double barycentricDot20Y[TYPICAL_LOOP_UNROLL];
 				double barycentricDot21Y[TYPICAL_LOOP_UNROLL];
-
-				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-				{
-					pixelCenterY[i] = frameBufferPercentY[i] * g_frameBufferHeightReal;
-				}
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
@@ -2852,9 +2852,20 @@ namespace
 						double *depthBufferSlice = g_depthBuffer + frameBufferSlicePixelIndex;
 						uint32_t *colorBufferSlice = g_colorBuffer + frameBufferSlicePixelIndex;
 
-						// Coverage test (is pixel center in triangle?).
-						double frameBufferPercentX[TYPICAL_LOOP_UNROLL];
 						double pixelCenterX[TYPICAL_LOOP_UNROLL];
+						double frameBufferPercentX[TYPICAL_LOOP_UNROLL];
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCenterX[i] = static_cast<double>(frameBufferPixelX[i] + 0.50);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							frameBufferPercentX[i] = pixelCenterX[i] * g_frameBufferWidthRealRecip;
+						}
+
+						// Coverage test (is pixel center in triangle?).
 						double pixelCenterPlane0DiffX[TYPICAL_LOOP_UNROLL];
 						double pixelCenterPlane1DiffX[TYPICAL_LOOP_UNROLL];
 						double pixelCenterPlane2DiffX[TYPICAL_LOOP_UNROLL];
@@ -2868,16 +2879,6 @@ namespace
 						bool isPixelCenterIn1[TYPICAL_LOOP_UNROLL];
 						bool isPixelCenterIn2[TYPICAL_LOOP_UNROLL];
 						bool isPixelCenterCovered[TYPICAL_LOOP_UNROLL];
-
-						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-						{
-							frameBufferPercentX[i] = (static_cast<double>(frameBufferPixelX[i]) + 0.50) * g_frameBufferWidthRealRecip;
-						}
-
-						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-						{
-							pixelCenterX[i] = frameBufferPercentX[i] * g_frameBufferWidthReal;
-						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
