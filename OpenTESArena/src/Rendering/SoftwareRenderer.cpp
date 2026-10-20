@@ -3116,7 +3116,7 @@ namespace
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							shaderClipSpacePointZ[i] = (ndc0Z * u[i]) + (ndc1Z * v[i]) + (ndc2Z * w[i]);
+							shaderClipSpacePointZ[i] = ndcZDepth[i];
 						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
