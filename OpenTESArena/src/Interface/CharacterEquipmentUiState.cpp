@@ -137,7 +137,10 @@ namespace
 				case ItemType::Accessory:
 					break;
 				case ItemType::Armor:
-					unequipItemsIf([&itemDef](const ItemDefinition &def) { return (def.type == ItemType::Armor) && (def.armor.typeID == itemDef.armor.typeID); });
+					unequipItemsIf([&itemDef](const ItemDefinition &def)
+					{
+						return (def.type == ItemType::Armor) && (def.armor.typeID == itemDef.armor.typeID);
+					});
 					break;
 				case ItemType::Shield:
 					unequipItemsIf([](const ItemDefinition &def)
@@ -159,7 +162,6 @@ namespace
 				case ItemType::Trinket:
 					break;
 				case ItemType::Weapon:
-				{
 					unequipItemsIf([&itemDef](const ItemDefinition &def)
 					{
 						if (def.type == ItemType::Shield)
@@ -174,18 +176,20 @@ namespace
 						{
 							return false;
 						}
-					});
-
-					const ItemDefinitionID equippedItemDefID = player.getEquippedWeaponItemDefID();
-					player.setWeaponAnimationFromItem(equippedItemDefID); // Resets to sheathed animation state.
+					});					
 					break;
-				}
 				default:
 					DebugNotImplementedMsg(std::to_string(static_cast<int>(itemType)));
 					break;
 				}
 
 				itemInst.isEquipped = !prevIsItemEquipped;
+
+				if (itemType == ItemType::Weapon)
+				{
+					const ItemDefinitionID equippedItemDefID = player.getEquippedWeaponItemDefID();
+					player.setWeaponAnimationFromItem(equippedItemDefID); // Resets to sheathed animation state.
+				}
 
 				const int listBoxItemIndex = playerInventory.getValidSlotCountBeforeIndex(inventorySlotIndex);
 				const Color displayColor = InventoryUiView::getItemDisplayColor(inventorySlotIndex, player);
