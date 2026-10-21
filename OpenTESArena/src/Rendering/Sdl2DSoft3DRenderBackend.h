@@ -8,6 +8,7 @@ class Sdl2DSoft3DRenderBackend final : public RenderBackend
 {
 private:
 	const Window *window;
+	RenderInternalDimensionsFunc internalDimsFunc;
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture; // Window frame buffer equal to window dimensions.
 	SDL_Texture *gameWorldTexture; // Internal rendering frame buffer, variable dimensions.
@@ -21,8 +22,8 @@ public:
 	bool initRendering(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
 
-	void resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
-	void handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
+	void resize(int windowWidth, int windowHeight) override;
+	void handleRenderTargetsReset(int windowWidth, int windowHeight) override;
 
 	// Gets various profiler information about internal renderer state.
 	RendererProfilerData2D getProfilerData2D() const override;

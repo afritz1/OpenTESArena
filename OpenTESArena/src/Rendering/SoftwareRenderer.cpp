@@ -4143,8 +4143,9 @@ SoftwareRenderer::~SoftwareRenderer()
 
 bool SoftwareRenderer::init(const RenderInitSettings &initSettings)
 {
-	const int frameBufferWidth = initSettings.internalWidth;
-	const int frameBufferHeight = initSettings.internalHeight;
+	const Int2 frameBufferDims = initSettings.internalDimsFunc(initSettings.window);
+	const int frameBufferWidth = frameBufferDims.x;
+	const int frameBufferHeight = frameBufferDims.y;
 	this->paletteIndexBuffer.init(frameBufferWidth, frameBufferHeight);
 	this->depthBuffer.init(frameBufferWidth, frameBufferHeight);
 

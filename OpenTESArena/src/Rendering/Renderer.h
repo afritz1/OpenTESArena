@@ -94,7 +94,6 @@ private:
 	const Window *window;
 	std::unique_ptr<RenderBackend> backend;
 	RendererProfilerData profilerData;
-	RenderResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();
