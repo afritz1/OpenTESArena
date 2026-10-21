@@ -59,8 +59,8 @@ public:
 	virtual bool initRendering(const RenderInitSettings &initSettings) = 0;
 	virtual void shutdown() = 0;
 
-	virtual void resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) = 0;
-	virtual void handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) = 0;
+	virtual void resize(int windowWidth, int windowHeight) = 0;
+	virtual void handleRenderTargetsReset(int windowWidth, int windowHeight) = 0;
 
 	// Gets various profiler information about internal renderer state.
 	virtual RendererProfilerData2D getProfilerData2D() const = 0;

@@ -121,6 +121,8 @@ bool Sdl2DSoft3DRenderBackend::initContext(const RenderContextSettings &contextS
 
 bool Sdl2DSoft3DRenderBackend::initRendering(const RenderInitSettings &initSettings)
 {
+	this->internalDimsFunc = initSettings.internalDimsFunc;
+
 	const Int2 windowDims = this->window->getPixelDimensions();
 	this->nativeTexture = SDL_CreateTexture(this->renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDims.x, windowDims.y);
 	if (this->nativeTexture == nullptr)
@@ -129,10 +131,11 @@ bool Sdl2DSoft3DRenderBackend::initRendering(const RenderInitSettings &initSetti
 		return false;
 	}
 
-	this->gameWorldTexture = SDL_CreateTexture(this->renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, initSettings.internalWidth, initSettings.internalHeight);
+	const Int2 internalDims = initSettings.internalDimsFunc(this->window);
+	this->gameWorldTexture = SDL_CreateTexture(this->renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalDims.x, internalDims.y);
 	if (this->gameWorldTexture == nullptr)
 	{
-		DebugLogErrorFormat("Couldn't create game world texture with dimensions %dx%d (%s).", initSettings.internalWidth, initSettings.internalHeight, SDL_GetError());
+		DebugLogErrorFormat("Couldn't create game world texture with dimensions %dx%d (%s).", internalDims.x, internalDims.y, SDL_GetError());
 	}
 
 	this->renderer2D.init(this->window->window);
@@ -156,10 +159,11 @@ void Sdl2DSoft3DRenderBackend::shutdown()
 		this->renderer = nullptr;
 	}
 
+	this->internalDimsFunc = nullptr;
 	this->window = nullptr;
 }
 
-void Sdl2DSoft3DRenderBackend::resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
+void Sdl2DSoft3DRenderBackend::resize(int windowWidth, int windowHeight)
 {
 	SDL_RenderSetLogicalSize(this->renderer, windowWidth, windowHeight);
 
@@ -179,16 +183,17 @@ void Sdl2DSoft3DRenderBackend::resize(int windowWidth, int windowHeight, int sce
 		SDL_DestroyTexture(this->gameWorldTexture);
 	}
 
-	this->gameWorldTexture = SDL_CreateTexture(this->renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalWidth, internalHeight);
+	const Int2 internalDims = this->internalDimsFunc(this->window);
+	this->gameWorldTexture = SDL_CreateTexture(this->renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalDims.x, internalDims.y);
 	if (this->gameWorldTexture == nullptr)
 	{
-		DebugLogErrorFormat("Couldn't recreate game world texture for internal resize to %dx%d (%s).", internalWidth, internalHeight, SDL_GetError());
+		DebugLogErrorFormat("Couldn't recreate game world texture for internal resize to %dx%d (%s).", internalDims.x, internalDims.y, SDL_GetError());
 	}
 
-	this->renderer3D.resize(internalWidth, internalHeight);
+	this->renderer3D.resize(internalDims.x, internalDims.y);
 }
 
-void Sdl2DSoft3DRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
+void Sdl2DSoft3DRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight)
 {
 	if (this->renderer == nullptr)
 	{
@@ -212,13 +217,14 @@ void Sdl2DSoft3DRenderBackend::handleRenderTargetsReset(int windowWidth, int win
 		SDL_DestroyTexture(this->gameWorldTexture);
 	}
 
-	this->gameWorldTexture = SDL_CreateTexture(this->renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalWidth, internalHeight);
+	const Int2 internalDims = this->internalDimsFunc(this->window);
+	this->gameWorldTexture = SDL_CreateTexture(this->renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalDims.x, internalDims.y);
 	if (this->gameWorldTexture == nullptr)
 	{
-		DebugLogErrorFormat("Couldn't recreate game world texture for render targets reset to %dx%d (%s).", internalWidth, internalHeight, SDL_GetError());
+		DebugLogErrorFormat("Couldn't recreate game world texture for render targets reset to %dx%d (%s).", internalDims.x, internalDims.y, SDL_GetError());
 	}
 
-	this->renderer3D.resize(internalWidth, internalHeight);
+	this->renderer3D.resize(internalDims.x, internalDims.y);
 }
 
 RendererProfilerData2D Sdl2DSoft3DRenderBackend::getProfilerData2D() const

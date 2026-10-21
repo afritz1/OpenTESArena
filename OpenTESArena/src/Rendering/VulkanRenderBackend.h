@@ -285,6 +285,8 @@ class VulkanRenderBackend final : public RenderBackend
 {
 private:
 	vk::Instance instance;
+	const Window *window;
+
 	vk::SurfaceKHR surface;
 	vk::PhysicalDevice physicalDevice;
 	vk::PhysicalDeviceProperties physicalDeviceProperties;
@@ -297,6 +299,7 @@ private:
 
 	vk::Extent2D swapchainExtent;
 	vk::Extent2D sceneViewExtent;
+	RenderInternalDimensionsFunc internalDimsFunc;
 	vk::Extent2D internalExtent;
 	vk::SwapchainKHR swapchain;
 	std::vector<vk::Image> swapchainImages;
@@ -399,8 +402,8 @@ public:
 	bool initRendering(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
 
-	void resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
-	void handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
+	void resize(int windowWidth, int windowHeight) override;
+	void handleRenderTargetsReset(int windowWidth, int windowHeight) override;
 
 	RendererProfilerData2D getProfilerData2D() const override;
 	RendererProfilerData3D getProfilerData3D() const override;

@@ -1,10 +1,14 @@
 #pragma once
 
+#include <functional>
 #include <string>
 
 #include "RenderShaderUtils.h"
+#include "../Math/Vector2.h"
 
 struct Window;
+
+using RenderInternalDimensionsFunc = std::function<Int2(const Window *window)>;
 
 struct RenderContextSettings
 {
@@ -21,12 +25,12 @@ struct RenderInitSettings
 	const Window *window;
 	std::string dataFolderPath;
 
-	int internalWidth, internalHeight;
+	RenderInternalDimensionsFunc internalDimsFunc;
 	int renderThreadsMode;
 	DitheringMode ditheringMode;
 	
 	RenderInitSettings();
 
-	void init(const Window *window, const std::string &dataFolderPath, int internalWidth, int internalHeight, int renderThreadsMode,
-		DitheringMode ditheringMode);
+	void init(const Window *window, const std::string &dataFolderPath, const RenderInternalDimensionsFunc &internalDimsFunc,
+		int renderThreadsMode, DitheringMode ditheringMode);
 };

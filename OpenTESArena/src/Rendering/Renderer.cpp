@@ -32,7 +32,7 @@ namespace
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE = 4.0;
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE_SQR = PHYSICS_DEBUG_MAX_DISTANCE * PHYSICS_DEBUG_MAX_DISTANCE;
 
-	Int2 MakeInternalRendererDimensions(const Int2 &dimensions, double resolutionScale)
+	Int2 MakeInternalRendererDimensions(Int2 dimensions, double resolutionScale)
 	{
 		const double scaledWidthReal = static_cast<double>(dimensions.x) * resolutionScale;
 		const double scaledHeightReal = static_cast<double>(dimensions.y) * resolutionScale;
@@ -158,7 +158,6 @@ bool Renderer::init(const Window *window, RenderBackendType backendType, const R
 	DebugLog("Initializing.");
 
 	this->window = window;
-	this->resolutionScaleFunc = resolutionScaleFunc;
 
 	switch (backendType)
 	{
@@ -191,12 +190,15 @@ bool Renderer::init(const Window *window, RenderBackendType backendType, const R
 		return false;
 	}
 
-	const Int2 viewDims = window->getSceneViewDimensions();
-	const double resolutionScale = resolutionScaleFunc();
-	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
+	RenderInternalDimensionsFunc internalDimsFunc = [resolutionScaleFunc](const Window *window)
+	{
+		const Int2 sceneViewDims = window->getSceneViewDimensions();
+		const double resolutionScale = resolutionScaleFunc();
+		return MakeInternalRendererDimensions(sceneViewDims, resolutionScale);
+	};
 
 	RenderInitSettings initSettings;
-	initSettings.init(window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
+	initSettings.init(window, dataFolderPath, internalDimsFunc, renderThreadsMode, ditheringMode);
 	
 	if (!this->backend->initRendering(initSettings))
 	{
@@ -222,19 +224,13 @@ const RendererProfilerData &Renderer::getProfilerData() const
 void Renderer::resize(int windowWidth, int windowHeight)
 {
 	const Int2 windowDims = this->window->getPixelDimensions();
-	const Int2 viewDims = this->window->getSceneViewDimensions();
-	const double resolutionScale = this->resolutionScaleFunc();
-	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
-	this->backend->resize(windowDims.x, windowDims.y, viewDims.x, viewDims.y, internalDims.x, internalDims.y);
+	this->backend->resize(windowDims.x, windowDims.y);
 }
 
 void Renderer::handleRenderTargetsReset()
 {
 	const Int2 windowDims = this->window->getPixelDimensions();
-	const Int2 viewDims = this->window->getSceneViewDimensions();
-	const double resolutionScale = this->resolutionScaleFunc();
-	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
-	this->backend->handleRenderTargetsReset(windowDims.x, windowDims.y, viewDims.x, viewDims.y, internalDims.x, internalDims.y);
+	this->backend->handleRenderTargetsReset(windowDims.x, windowDims.y);
 }
 
 VertexPositionBufferID Renderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)

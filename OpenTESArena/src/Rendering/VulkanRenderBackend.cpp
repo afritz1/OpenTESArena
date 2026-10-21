@@ -2858,6 +2858,8 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 	const Window *window = initSettings.window;
 	const std::string &dataFolderPath = initSettings.dataFolderPath;
 
+	this->window = window;
+
 	VkSurfaceKHR vulkanSurface;
 	if (SDL_Vulkan_CreateSurface(window->window, this->instance, &vulkanSurface) != SDL_TRUE)
 	{
@@ -2939,7 +2941,9 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	this->internalExtent = vk::Extent2D(initSettings.internalWidth, initSettings.internalHeight);
+	const Int2 internalDims = initSettings.internalDimsFunc(window);
+	this->internalDimsFunc = initSettings.internalDimsFunc;
+	this->internalExtent = vk::Extent2D(internalDims.x, internalDims.y);
 
 	for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 	{
@@ -3539,10 +3543,10 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	const int lightBinWidth = GetLightBinWidth(initSettings.internalWidth);
-	const int lightBinHeight = GetLightBinHeight(initSettings.internalHeight);
-	const int lightBinCountX = GetLightBinCountX(initSettings.internalWidth, lightBinWidth);
-	const int lightBinCountY = GetLightBinCountY(initSettings.internalHeight, lightBinHeight);
+	const int lightBinWidth = GetLightBinWidth(internalDims.x);
+	const int lightBinHeight = GetLightBinHeight(internalDims.y);
+	const int lightBinCountX = GetLightBinCountX(internalDims.x, lightBinWidth);
+	const int lightBinCountY = GetLightBinCountY(internalDims.y, lightBinHeight);
 	const int lightBinCount = lightBinCountX * lightBinCountY;
 	const int lightBinsByteCount = BYTES_PER_LIGHT_BIN * lightBinCount;
 	if (!TryCreateBufferStagingAndDevice(this->device, this->lightBins, lightBinsByteCount, vk::BufferUsageFlagBits::eStorageBuffer,
@@ -4075,6 +4079,7 @@ void VulkanRenderBackend::shutdown()
 		}
 
 		this->internalExtent = vk::Extent2D();
+		this->internalDimsFunc = nullptr;
 		this->sceneViewExtent = vk::Extent2D();
 		this->swapchainExtent = vk::Extent2D();
 
@@ -4107,7 +4112,7 @@ void VulkanRenderBackend::shutdown()
 	}
 }
 
-void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
+void VulkanRenderBackend::resize(int windowWidth, int windowHeight)
 {
 	if (this->lightBins.deviceLocalBuffer)
 	{
@@ -4253,14 +4258,17 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 	const bool isValidWindowHeight = (windowHeight >= minWindowHeight) && (windowHeight <= maxWindowHeight);
 	if (!isValidWindowWidth || !isValidWindowHeight)
 	{
-		DebugLogWarningFormat("Requested window dimensions %dx%d are outside of capabilities (min %dx%d, max %dx%d).",
+		DebugLogWarningFormat("Requested window dimensions %dx%d are outside of driver capabilities (min %dx%d, max %dx%d).",
 			windowWidth, windowHeight, minWindowWidth, minWindowHeight, maxWindowWidth, maxWindowHeight);
 		return;
 	}
 
+	const Int2 sceneViewDims = this->window->getSceneViewDimensions();
+	const Int2 internalDims = this->internalDimsFunc(this->window);
+
 	this->swapchainExtent = vk::Extent2D(windowWidth, windowHeight);
-	this->sceneViewExtent = vk::Extent2D(sceneViewWidth, sceneViewHeight);
-	this->internalExtent = vk::Extent2D(internalWidth, internalHeight);
+	this->sceneViewExtent = vk::Extent2D(sceneViewDims.x, sceneViewDims.y);
+	this->internalExtent = vk::Extent2D(internalDims.x, internalDims.y);
 
 	vk::SurfaceFormatKHR surfaceFormat;
 	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, SwapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
@@ -4378,10 +4386,10 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 
 	this->prevAcquiredSwapchainImageIndex = 0;
 
-	const int lightBinWidth = GetLightBinWidth(internalWidth);
-	const int lightBinHeight = GetLightBinHeight(internalHeight);
-	const int lightBinCountX = GetLightBinCountX(internalWidth, lightBinWidth);
-	const int lightBinCountY = GetLightBinCountY(internalHeight, lightBinHeight);
+	const int lightBinWidth = GetLightBinWidth(internalDims.x);
+	const int lightBinHeight = GetLightBinHeight(internalDims.y);
+	const int lightBinCountX = GetLightBinCountX(internalDims.x, lightBinWidth);
+	const int lightBinCountY = GetLightBinCountY(internalDims.y, lightBinHeight);
 	const int lightBinCount = lightBinCountX * lightBinCountY;
 	const int lightBinsByteCount = BYTES_PER_LIGHT_BIN * lightBinCount;
 	if (!TryCreateBufferStagingAndDevice(this->device, this->lightBins, lightBinsByteCount, vk::BufferUsageFlagBits::eStorageBuffer,
@@ -4400,7 +4408,7 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 	}
 }
 
-void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
+void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight)
 {
 	DebugNotImplementedMsg("handleRenderTargetsReset()");
 }
@@ -5309,7 +5317,7 @@ void VulkanRenderBackend::submitFrame(const RenderDrawCommandList &renderCommand
 	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
 	if (!TryGetSurfaceCapabilities(this->physicalDevice, this->surface, &surfaceCapabilities))
 	{
-		DebugLogErrorFormat("Couldn't get surface capabilities for checking window.");
+		DebugLogErrorFormat("Couldn't get surface capabilities for checking window before rendering.");
 		return;
 	}
 
@@ -5322,9 +5330,17 @@ void VulkanRenderBackend::submitFrame(const RenderDrawCommandList &renderCommand
 
 	constexpr uint64_t acquireTimeout = TIMEOUT_UNLIMITED;
 	vk::ResultValue<uint32_t> acquiredSwapchainImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
-	if (acquiredSwapchainImageIndexResult.result != vk::Result::eSuccess)
+	if (acquiredSwapchainImageIndexResult.result == vk::Result::eErrorOutOfDateKHR ||
+		acquiredSwapchainImageIndexResult.result == vk::Result::eSuboptimalKHR)
 	{
-		DebugLogErrorFormat("Couldn't acquire next swapchain image (%d).", acquiredSwapchainImageIndexResult.result);
+		DebugLogFormat("Acquired swapchain is out-of-date or suboptimal, resizing (%d).", acquiredSwapchainImageIndexResult.result);
+		const Int2 resizeWindowDims = this->window->getPixelDimensions();
+		this->resize(resizeWindowDims.x, resizeWindowDims.y);
+		return;
+	}
+	else if (acquiredSwapchainImageIndexResult.result != vk::Result::eSuccess)
+	{
+		DebugLogWarningFormat("Couldn't acquire next swapchain image (%d).", acquiredSwapchainImageIndexResult.result);
 		return;
 	}
 
@@ -6082,7 +6098,15 @@ void VulkanRenderBackend::submitFrame(const RenderDrawCommandList &renderCommand
 	presentInfo.pImageIndices = &acquiredSwapchainImageIndex;
 
 	const vk::Result presentQueuePresentResult = this->presentQueue.presentKHR(presentInfo);
-	if (presentQueuePresentResult != vk::Result::eSuccess)
+	if (presentQueuePresentResult == vk::Result::eErrorOutOfDateKHR ||
+		presentQueuePresentResult == vk::Result::eSuboptimalKHR)
+	{
+		const Int2 resizeWindowDims = this->window->getPixelDimensions();
+		this->resize(resizeWindowDims.x, resizeWindowDims.y);
+		DebugLogFormat("Presented swapchain is out-of-date or suboptimal, resizing (%d).", presentQueuePresentResult);
+		return;
+	}
+	else if (presentQueuePresentResult != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't execute present queue (%d).", presentQueuePresentResult);
 		return;
