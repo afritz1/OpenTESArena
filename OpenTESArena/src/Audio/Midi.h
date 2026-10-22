@@ -18,6 +18,11 @@ public:
     /* Read and return size is in sample frames. */
     virtual size_t read(char *buffer, size_t count) = 0;
 
+    /* Enable or disable seamless looping in the underlying decoder. Returns
+     * true if the decoder accepted the setting; callers may use a fallback.
+     */
+    virtual bool setLoop(bool loop) = 0;
+
     /* Offset is in sample frames. */
     virtual bool seek(size_t offset) = 0;
 };
