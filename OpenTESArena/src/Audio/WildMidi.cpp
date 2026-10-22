@@ -24,6 +24,8 @@ namespace
 
 		virtual size_t read(char *buffer, size_t count) override;
 
+		virtual bool setLoop(bool loop) override;
+
 		virtual bool seek(size_t offset) override;
 	};
 
@@ -50,6 +52,12 @@ namespace
 #else
 		return WildMidi_GetOutput(mSong, buffer, static_cast<unsigned long>(count * 4)) / 4;
 #endif
+	}
+
+	bool WildMidiSong::setLoop(bool loop)
+	{
+		const uint16_t setting = loop ? WM_MO_LOOP : 0;
+		return WildMidi_SetOption(mSong, WM_MO_LOOP, setting) >= 0;
 	}
 
 	bool WildMidiSong::seek(size_t offset)

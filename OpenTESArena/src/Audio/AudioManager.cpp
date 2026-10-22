@@ -406,7 +406,8 @@ public:
 		mSampleRate = srate;
 
 		mSource = source;
-		mLoop = loop;
+		const bool loopHandledBySong = mSong->setLoop(loop);
+		mLoop = loop && !loopHandledBySong;
 		return true;
 	}
 };
