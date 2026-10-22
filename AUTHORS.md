@@ -17,6 +17,7 @@ I started this project in 2016. Over time, several individuals have contributed 
     Pietro Ferrari (Plettro)
     Robert MacGregor (Ragora)
     Will Herrmann (Thunderforge)
+    Wu Shuwen (dajiaohuang)
     
 ### Research / Documentation
     A4136
