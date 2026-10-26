@@ -235,10 +235,8 @@ bool Game::init()
 	const std::string basePath = Platform::getBasePath();
 	const std::string dataFolderPath = basePath + "data/";
 
-	// Initialize options from default and changes files if present. The path is platform-dependent
-	// and points inside the preferences directory so it's always writable.
-	const std::string optionsPath = Platform::getOptionsPath();
-	this->initOptions(basePath, optionsPath);
+	// Initialize options from default and changes files if present.
+	this->initOptions(basePath);
 
 	// Collect all possible directories an Arena install could be in. In most cases the engine will select
 	// the user's Steam install, unless there is an override path for e.g. the floppy disk version.
@@ -561,25 +559,39 @@ void Game::setCursorOverride(const std::optional<UiCursorOverrideState> &state)
 	this->uiManager.setTransformSize(this->cursorImageElementInstID, cursorSize);
 }
 
-void Game::initOptions(const std::string &basePath, const std::string &optionsPath)
+void Game::initOptions(const std::string &basePath)
 {
-	// Load the default options first.
-	const std::string defaultOptionsPath(basePath + "options/" + Options::DEFAULT_FILENAME);
-	this->options.loadDefaults(defaultOptionsPath);
+	const std::string defaultDirectory(basePath + "options/");
+	this->options.setDefaultDirectory(defaultDirectory);
+	this->options.loadDefaults();
 
-	// Check if the changes options file exists.
-	const std::string changesOptionsPath(optionsPath + Options::CHANGES_FILENAME);
-	if (!File::exists(changesOptionsPath.c_str()))
+	const std::string &overrideDirectory = this->options.getMisc_OptionsSaveOverridePath();
+	std::string changesDirectory;
+	if (!overrideDirectory.empty())
 	{
-		// Make one. Since the default options object has no changes, the new file will have
-		// no key-value pairs.
-		DebugLog("Creating options file at \"" + changesOptionsPath + "\".");
+		if (Path::isRelative(overrideDirectory.c_str()))
+		{
+			changesDirectory += basePath;
+		}
+
+		changesDirectory += String::addTrailingSlashIfMissing(overrideDirectory);
+	}
+	else
+	{
+		changesDirectory = Platform::getOptionsPath();
+	}
+
+	this->options.setChangesDirectory(changesDirectory);
+
+	const std::string changesFilePath = changesDirectory + Options::CHANGES_FILENAME;
+	if (!File::exists(changesFilePath.c_str()))
+	{
+		DebugLogFormat("Creating new options file at \"%s\".", changesFilePath.c_str());
 		this->options.saveChanges();
 	}
 	else
 	{
-		// Read in any key-value pairs in the "changes" options file.
-		this->options.loadChanges(changesOptionsPath);
+		this->options.loadChanges();
 	}
 }
 

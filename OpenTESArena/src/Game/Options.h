@@ -26,6 +26,9 @@ private:
 		StringMap strings;
 	};
 
+	std::string defaultDirectory;
+	std::string changesDirectory;
+
 	// Default values come from the default options file. Changed values come from
 	// changes at runtime, and those are written to the changed options file. Each
 	// section in the options file has its own map of values.
@@ -186,6 +189,7 @@ void set##section##_##name(const std::string &value) \
 
 	OPTION_STRING(Misc, ArenaPaths)
 	OPTION_STRING(Misc, ArenaSavesPath)
+	OPTION_STRING(Misc, OptionsSaveOverridePath)
 	OPTION_BOOL(Misc, GhostMode)
 	OPTION_BOOL(Misc, ImmuneToDamage)
 	OPTION_INT(Misc, ProfilerLevel, MIN_PROFILER_LEVEL, MAX_PROFILER_LEVEL)
@@ -196,12 +200,11 @@ void set##section##_##name(const std::string &value) \
 	OPTION_BOOL(Misc, PlayerHasLight)
 	OPTION_BOOL(Misc, EnableValidationLayers)
 
-	// Reads all the key-values pairs from the given absolute path into the default members.
-	void loadDefaults(const std::string &filename);
+	void setDefaultDirectory(const std::string &path);
+	void setChangesDirectory(const std::string &path);
 
-	// Reads all the key-value pairs from the given absolute path into the changes members,
-	// overwriting any existing values.
-	void loadChanges(const std::string &filename);
+	void loadDefaults();
+	void loadChanges();
 
 	// Saves all key-value pairs that differ from the defaults to the changed options file.
 	void saveChanges();

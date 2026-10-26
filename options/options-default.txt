@@ -92,6 +92,10 @@ ArenaPaths=data/ARENACD,data/ARENA
 # Change "ArenaSavesPath" to your classic saves folder (if any).
 ArenaSavesPath=data/ArenaSaves
 
+# Add a path here to change where your options-changes.txt saves to.
+# Example: options
+OptionsSaveOverridePath=
+
 # Determines whether the player ignores collision and can fly around.
 GhostMode=false
 

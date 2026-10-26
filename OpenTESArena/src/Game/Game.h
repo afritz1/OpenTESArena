@@ -78,7 +78,7 @@ public:
 private:
 	bool running;
 
-	void initOptions(const std::string &basePath, const std::string &optionsPath);
+	void initOptions(const std::string &basePath);
 
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);

@@ -54,6 +54,7 @@ namespace
 	{
 		{ Options::Key_Misc_ArenaPaths, Options::OptionType_Misc_ArenaPaths },
 		{ Options::Key_Misc_ArenaSavesPath, Options::OptionType_Misc_ArenaSavesPath },
+		{ Options::Key_Misc_OptionsSaveOverridePath, Options::OptionType_Misc_OptionsSaveOverridePath },
 		{ Options::Key_Misc_GhostMode, Options::OptionType_Misc_GhostMode },
 		{ Options::Key_Misc_ImmuneToDamage, Options::OptionType_Misc_ImmuneToDamage },
 		{ Options::Key_Misc_ProfilerLevel, Options::OptionType_Misc_ProfilerLevel },
@@ -511,35 +512,45 @@ void Options::setString(const std::string &section, const std::string &key,
 	iter->second = value;
 }
 
-void Options::loadDefaults(const std::string &filename)
+void Options::setDefaultDirectory(const std::string &path)
 {
-	DebugLog("Reading defaults \"" + filename + "\".");
-
-	Options::load(filename.c_str(), this->defaultMaps);
+	this->defaultDirectory = path;
 }
 
-void Options::loadChanges(const std::string &filename)
+void Options::setChangesDirectory(const std::string &path)
 {
-	DebugLog("Reading changes \"" + filename + "\".");
+	this->changesDirectory = path;
+}
 
-	Options::load(filename.c_str(), this->changedMaps);
+void Options::loadDefaults()
+{
+	const std::string filePath = this->defaultDirectory + Options::DEFAULT_FILENAME;
+	DebugLogFormat("Reading defaults \"%s\".", filePath.c_str());
+
+	Options::load(filePath.c_str(), this->defaultMaps);
+}
+
+void Options::loadChanges()
+{
+	const std::string filePath = this->changesDirectory + Options::CHANGES_FILENAME;
+	DebugLogFormat("Reading changes \"%s\".", filePath.c_str());
+
+	Options::load(filePath.c_str(), this->changedMaps);
 }
 
 void Options::saveChanges()
 {
-	const std::string optionsPath = Platform::getOptionsPath();
-	const char *optionsPathPtr = optionsPath.c_str();
-	if (!Directory::exists(optionsPathPtr))
+	const char *saveDirectoryStr = this->changesDirectory.c_str();
+	if (!Directory::exists(saveDirectoryStr))
 	{
-		Directory::createRecursively(optionsPathPtr);
+		Directory::createRecursively(saveDirectoryStr);
 	}
 
-	const std::string filename(optionsPath + Options::CHANGES_FILENAME);
-	std::ofstream ofs(filename);
+	const std::string filePath = this->changesDirectory + Options::CHANGES_FILENAME;
+	std::ofstream ofs(filePath);
 	if (!ofs.is_open())
 	{
-		// @todo: doesn't need to be an exception -- can be a warning/error instead.
-		DebugLogError("Could not save to \"" + filename + "\".");
+		DebugLogErrorFormat("Couldn't save to \"%s\".", filePath.c_str());
 		return;
 	}
 
@@ -623,5 +634,5 @@ void Options::saveChanges()
 	tryWriteSection(Options::SECTION_INPUT, InputMappings);
 	tryWriteSection(Options::SECTION_MISC, MiscMappings);
 
-	DebugLog("Saved settings in \"" + filename + "\".");
+	DebugLogFormat("Saved to \"%s\".", filePath.c_str());
 }
