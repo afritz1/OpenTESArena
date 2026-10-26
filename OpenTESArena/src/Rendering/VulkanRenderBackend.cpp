@@ -43,6 +43,7 @@ namespace
 	constexpr uint32_t VendorID_Intel = 0x8086;
 	constexpr uint32_t VendorID_AppleMSeries = 0x106B;
 	constexpr uint32_t VendorID_Broadcom = 0x14E4;
+	constexpr uint32_t VendorID_ARM = 0x13B5;
 	constexpr uint32_t VendorID_Mesa = 0x10005;
 
 	// Max compatibility image formats across all drivers:
@@ -393,7 +394,8 @@ namespace
 				VendorID_Nvidia,
 				VendorID_Intel,
 				VendorID_AppleMSeries,
-				VendorID_Broadcom
+				VendorID_Broadcom,
+				VendorID_ARM
 			};
 
 			bool isRecognizedHardwareVendor = false;
@@ -1088,6 +1090,19 @@ namespace
 // Vulkan swapchain
 namespace
 {
+	bool IsSwapchainRecreationSupported(vk::PhysicalDeviceProperties physicalDeviceProperties)
+	{
+		// Some drivers need the old swapchain to remain intact on resize/fullscreen.
+		// @todo: If the swapchain is VK_ERROR_OUT_OF_DATE_KHR, the new swapchain create info needs the old
+		// swapchain as an argument and the old swapchain destruction should be deferred until a later frame.
+		if (physicalDeviceProperties.vendorID == VendorID_ARM)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
 	// If better present modes are unavailable then FIFO is always a valid fallback on all platforms.
 	vk::PresentModeKHR GetBestSwapchainPresentMode(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface)
 	{
@@ -4230,10 +4245,13 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight)
 	this->swapchainImageViews.clear();
 	this->swapchainImages.clear();
 
-	if (this->swapchain)
+	if (IsSwapchainRecreationSupported(this->physicalDeviceProperties))
 	{
-		this->device.destroySwapchainKHR(this->swapchain);
-		this->swapchain = nullptr;
+		if (this->swapchain)
+		{
+			this->device.destroySwapchainKHR(this->swapchain);
+			this->swapchain = nullptr;
+		}
 	}
 
 	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
@@ -4277,13 +4295,16 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight)
 		return;
 	}
 
-	const vk::PresentModeKHR presentMode = GetBestSwapchainPresentMode(this->physicalDevice, this->surface);
-
-	if (!TryCreateSwapchain(this->device, this->surface, surfaceFormat, presentMode, surfaceCapabilities, this->swapchainExtent,
-		this->graphicsQueueFamilyIndex, this->presentQueueFamilyIndex, &this->swapchain))
+	if (IsSwapchainRecreationSupported(this->physicalDeviceProperties))
 	{
-		DebugLogErrorFormat("Couldn't create swapchain for resize to %dx%d.", windowWidth, windowHeight);
-		return;
+		const vk::PresentModeKHR presentMode = GetBestSwapchainPresentMode(this->physicalDevice, this->surface);
+
+		if (!TryCreateSwapchain(this->device, this->surface, surfaceFormat, presentMode, surfaceCapabilities, this->swapchainExtent,
+			this->graphicsQueueFamilyIndex, this->presentQueueFamilyIndex, &this->swapchain))
+		{
+			DebugLogErrorFormat("Couldn't create swapchain for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
 	}
 
 	this->swapchainImages = GetSwapchainImages(this->device, this->swapchain);
@@ -5328,15 +5349,23 @@ void VulkanRenderBackend::submitFrame(const RenderDrawCommandList &renderCommand
 		return;
 	}
 
+	const Int2 windowDims = this->window->getPixelDimensions();
 	constexpr uint64_t acquireTimeout = TIMEOUT_UNLIMITED;
 	vk::ResultValue<uint32_t> acquiredSwapchainImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
-	if (acquiredSwapchainImageIndexResult.result == vk::Result::eErrorOutOfDateKHR ||
-		acquiredSwapchainImageIndexResult.result == vk::Result::eSuboptimalKHR)
+	if (acquiredSwapchainImageIndexResult.result == vk::Result::eErrorOutOfDateKHR)
 	{
-		DebugLogFormat("Acquired swapchain is out-of-date or suboptimal, resizing (%d).", acquiredSwapchainImageIndexResult.result);
-		const Int2 resizeWindowDims = this->window->getPixelDimensions();
-		this->resize(resizeWindowDims.x, resizeWindowDims.y);
+		DebugLogFormat("Acquired swapchain is out-of-date, resizing.");
+		this->resize(windowDims.x, windowDims.y);
 		return;
+	}
+	else if (acquiredSwapchainImageIndexResult.result == vk::Result::eSuboptimalKHR)
+	{
+		if (IsSwapchainRecreationSupported(this->physicalDeviceProperties))
+		{
+			DebugLogFormat("Acquired swapchain is suboptimal, resizing.");
+			this->resize(windowDims.x, windowDims.y);
+			return;
+		}
 	}
 	else if (acquiredSwapchainImageIndexResult.result != vk::Result::eSuccess)
 	{
@@ -6098,13 +6127,20 @@ void VulkanRenderBackend::submitFrame(const RenderDrawCommandList &renderCommand
 	presentInfo.pImageIndices = &acquiredSwapchainImageIndex;
 
 	const vk::Result presentQueuePresentResult = this->presentQueue.presentKHR(presentInfo);
-	if (presentQueuePresentResult == vk::Result::eErrorOutOfDateKHR ||
-		presentQueuePresentResult == vk::Result::eSuboptimalKHR)
+	if (presentQueuePresentResult == vk::Result::eErrorOutOfDateKHR)
 	{
-		const Int2 resizeWindowDims = this->window->getPixelDimensions();
-		this->resize(resizeWindowDims.x, resizeWindowDims.y);
-		DebugLogFormat("Presented swapchain is out-of-date or suboptimal, resizing (%d).", presentQueuePresentResult);
+		DebugLogFormat("Presented swapchain is out-of-date, resizing.");
+		this->resize(windowDims.x, windowDims.y);
 		return;
+	}
+	else if (presentQueuePresentResult == vk::Result::eSuboptimalKHR)
+	{
+		if (IsSwapchainRecreationSupported(this->physicalDeviceProperties))
+		{
+			DebugLogFormat("Presented swapchain is suboptimal, resizing.");
+			this->resize(windowDims.x, windowDims.y);
+			return;
+		}
 	}
 	else if (presentQueuePresentResult != vk::Result::eSuccess)
 	{
