@@ -8,6 +8,7 @@ class Game;
 
 enum class MouseButtonType;
 
+struct CharacterClassDefinition;
 struct CharacterQuestion;
 
 struct ChooseClassQuestionsUiState
@@ -17,12 +18,13 @@ struct ChooseClassQuestionsUiState
 	Game *game;
 	UiContextInstanceID contextInstID;
 	UiContextInstanceID initialPopUpContextInstID;
-	UiContextInstanceID suggestedClassContextInstID;
+	UiContextInstanceID suggestedClassPopUpContextInstID;
 
 	int questionIndices[MAX_QUESTIONS]; // Randomly selected each time entering this UI.
 	int questionIndexCount;
 	int currentQuestion;
 	int categoryAnswerCounts[3]; // # of times class categories have an answer chosen.
+	int suggestedCharClassDefID;
 
 	double currentScrollAmount;
 
@@ -36,10 +38,11 @@ namespace ChooseClassQuestionsUI
 	DECLARE_UI_CONTEXT(ChooseClassQuestions);
 
 	void onAnswerChosen(int optionIndex);
+	void setQuestionsPresentationVisible(bool visible);
 	void setQuestionsTextBoxContent(const CharacterQuestion &question);
 
 	void showInitialPopUp();
-	void showDecidedClassPopUp();
+	void showSuggestedClassPopUp(const CharacterClassDefinition &charClassDef);
 
 	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
 
@@ -50,6 +53,13 @@ namespace ChooseClassQuestionsUI
 	void onAInputAction(const InputActionCallbackValues &values);
 	void onBInputAction(const InputActionCallbackValues &values);
 	void onCInputAction(const InputActionCallbackValues &values);
+
+	void onInitialPopUpBackButtonSelected(MouseButtonType mouseButtonType);
+	void onInitialPopUpBackInputAction(const InputActionCallbackValues &values);
+
+	void onSuggestedClassPopUpYesButtonSelected(MouseButtonType mouseButtonType);
+	void onSuggestedClassPopUpNoButtonSelected(MouseButtonType mouseButtonType);
+	void onSuggestedClassPopUpBackInputAction(const InputActionCallbackValues &values);
 
 	constexpr std::pair<const char*, UiButtonDefinitionCallback> ButtonCallbacks[] =
 	{

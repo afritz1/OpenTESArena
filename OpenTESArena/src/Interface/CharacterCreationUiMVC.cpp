@@ -97,6 +97,19 @@ std::string ChooseClassCreationUiModel::getSelectButtonText(Game &game)
 	return exeData.charCreation.chooseClassCreationSelect;
 }
 
+std::string ChooseClassQuestionsUiModel::getInitialPopUpText(Game &game)
+{
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	return String::replace(exeData.charCreation.classQuestionsIntro, '\r', '\n');
+}
+
+std::string ChooseClassQuestionsUiModel::getSuggestedClassPopUpText(const CharacterClassDefinition &charClassDef)
+{
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string suggestedClassStr = String::format(exeData.charCreation.suggestedClass.c_str(), charClassDef.name);
+	return String::replace(suggestedClassStr, '\r', '\n');
+}
+
 std::string ChooseClassUiModel::getTitleText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();

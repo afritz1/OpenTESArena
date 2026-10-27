@@ -41,6 +41,12 @@ namespace ChooseClassCreationUiModel
 	std::string getSelectButtonText(Game &game);
 }
 
+namespace ChooseClassQuestionsUiModel
+{
+	std::string getInitialPopUpText(Game &game);
+	std::string getSuggestedClassPopUpText(const CharacterClassDefinition &charClassDef);
+}
+
 namespace ChooseClassUiModel
 {
 	std::string getTitleText(Game &game);
@@ -105,6 +111,24 @@ namespace CharacterCreationUiView
 	TextureAsset getNightSkyTextureAsset();
 
 	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
+}
+
+namespace ChooseClassQuestionsUiView
+{
+	const Int2 InitialPopUpTextureCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	constexpr UiTexturePatternType InitialPopUpPatternType = UiTexturePatternType::Parchment;
+	
+	const Int2 InitialPopUpTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	const std::string InitialPopUpFontName = ArenaFontName::A;
+	const Color InitialPopUpColor(52, 24, 8);
+	constexpr TextAlignment InitialPopUpAlignment = TextAlignment::MiddleCenter;
+	constexpr int InitialPopUpLineSpacing = 1;
+
+	const Int2 SuggestedClassPopUpTextCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
+	const std::string SuggestedClassPopUpFontName = ArenaFontName::A;
+	const Color SuggestedClassPopUpTextColor(52, 24, 8);
+	constexpr TextAlignment SuggestedClassPopUpTextAlignment = TextAlignment::MiddleCenter;
+	constexpr int SuggestedClassPopUpLineSpacing = 1;
 }
 
 namespace ChooseClassUiView
