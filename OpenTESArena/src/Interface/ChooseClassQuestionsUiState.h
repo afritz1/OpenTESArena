@@ -45,6 +45,8 @@ namespace ChooseClassQuestionsUI
 {
 	DECLARE_UI_CONTEXT(ChooseClassQuestions);
 
+	int getMaxScrollAmount();
+
 	void onAnswerChosen(int optionIndex);
 	void onVfxFinished();
 	void setQuestionsPresentationVisible(bool visible);
@@ -54,6 +56,7 @@ namespace ChooseClassQuestionsUI
 	void showInitialPopUp();
 	void showSuggestedClassPopUp(const CharacterClassDefinition &charClassDef);
 
+	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt);
 	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
 
 	void onScrollDownButtonSelected(MouseButtonType mouseButtonType);

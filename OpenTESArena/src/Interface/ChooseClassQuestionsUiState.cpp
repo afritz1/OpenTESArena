@@ -25,7 +25,7 @@ namespace
 	static constexpr const char ElementName_QuestionsTextBox[] = "ChooseClassQuestionsTextBox";
 	static constexpr const char ElementName_VfxImage[] = "ChooseClassQuestionsVfxImage";
 
-	constexpr double SCROLL_DELTA_PER_SECOND = 5.0;
+	static constexpr double SCROLL_DELTA_PER_SECOND = 70.0;
 }
 
 ChooseClassQuestionsUiState::ChooseClassQuestionsUiState()
@@ -119,6 +119,7 @@ void ChooseClassQuestionsUI::create(Game &game)
 	state.vfxClassCategoryID = -1;
 	state.vfxCurrentSeconds = 0.0;
 
+	uiManager.addMouseButtonHeldListener(ChooseClassQuestionsUI::onMouseButtonHeld, contextDef.name.c_str(), inputManager);
 	uiManager.addMouseScrollChangedListener(ChooseClassQuestionsUI::onMouseScrollChanged, contextDef.name.c_str(), inputManager);
 
 	game.setCursorOverride(std::nullopt);
@@ -244,6 +245,23 @@ void ChooseClassQuestionsUI::update(double dt)
 	}
 }
 
+int ChooseClassQuestionsUI::getMaxScrollAmount()
+{
+	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
+	const Rect textBoxRect = uiManager.getTransformGlobalRect(textBoxElementInstID);
+	const Rect textBoxClipRect = uiManager.getElementClipRect(textBoxElementInstID);
+
+	// @todo currently the text box is initialized with worstCaseText so this will never be a perfect fit.
+	// Need text box texture resize support.
+
+	const int maxScrollAmount = std::max(textBoxRect.height - textBoxClipRect.height, 0);
+	return maxScrollAmount;
+}
+
 void ChooseClassQuestionsUI::onAnswerChosen(int optionIndex)
 {
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
@@ -286,7 +304,7 @@ void ChooseClassQuestionsUI::onVfxFinished()
 {
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
 	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;	
+	UiManager &uiManager = game.uiManager;
 
 	ChooseClassQuestionsUI::updateBackgroundTexture();
 
@@ -298,7 +316,6 @@ void ChooseClassQuestionsUI::onVfxFinished()
 		Span<const CharacterQuestion> questions = TextAssetLibrary::getInstance().questionTxt;
 		const CharacterQuestion &nextQuestion = questions[nextQuestionIndex];
 
-		const UiElementInstanceID questionsTextBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
 		ChooseClassQuestionsUI::setQuestionsTextBoxContent(nextQuestion);
 		state.currentScrollAmount = 0.0;
 	}
@@ -552,20 +569,7 @@ void ChooseClassQuestionsUI::showSuggestedClassPopUp(const CharacterClassDefinit
 	uiManager.setContextEnabled(state.suggestedClassPopUpContextInstID, true);
 }
 
-void ChooseClassQuestionsUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
-{
-	if (type == MouseWheelScrollType::Up)
-	{
-		ChooseClassQuestionsUI::onScrollUpButtonSelected(MouseButtonType::Left);
-	}
-	else if (type == MouseWheelScrollType::Down)
-	{
-		ChooseClassQuestionsUI::onScrollDownButtonSelected(MouseButtonType::Left);
-	}
-}
-
-// @todo replace with mouse button down
-void ChooseClassQuestionsUI::onScrollDownButtonSelected(MouseButtonType mouseButtonType)
+void ChooseClassQuestionsUI::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt)
 {
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
 	if (state.vfxClassCategoryID >= 0)
@@ -574,19 +578,61 @@ void ChooseClassQuestionsUI::onScrollDownButtonSelected(MouseButtonType mouseBut
 		return;
 	}
 
-	state.currentScrollAmount = std::min<int>(state.currentScrollAmount + SCROLL_DELTA_PER_SECOND, 400); // @todo text box height minus viewable height? 
+	if (type != MouseButtonType::Left)
+	{
+		return;
+	}
+
+	UiManager &uiManager = game.uiManager;
+
+	const UiElementInstanceID scrollDownButtonElementInstID = uiManager.getElementByName("ChooseClassQuestionsScrollDownButton");
+	const UiElementInstanceID scrollUpButtonElementInstID = uiManager.getElementByName("ChooseClassQuestionsScrollUpButton");
+	const Rect scrollDownButtonRect = uiManager.getTransformGlobalRect(scrollDownButtonElementInstID);
+	const Rect scrollUpButtonRect = uiManager.getTransformGlobalRect(scrollUpButtonElementInstID);
+
+	const Int2 classicPosition = game.window.nativeToOriginal(position);
+	const int maxScrollAmount = ChooseClassQuestionsUI::getMaxScrollAmount();
+
+	if (scrollDownButtonRect.contains(classicPosition))
+	{
+		state.currentScrollAmount = std::min<double>(state.currentScrollAmount + (SCROLL_DELTA_PER_SECOND * dt), maxScrollAmount);
+	}
+	else if (scrollUpButtonRect.contains(classicPosition))
+	{
+		state.currentScrollAmount = std::max<double>(state.currentScrollAmount - (SCROLL_DELTA_PER_SECOND * dt), 0.0);
+	}
+}
+
+void ChooseClassQuestionsUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
+{
+	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
+	if (state.vfxClassCategoryID >= 0)
+	{
+		// Currently animating.
+		return;
+	}
+
+	constexpr double scrollDeltaTime = 0.125;
+	const int maxScrollAmount = ChooseClassQuestionsUI::getMaxScrollAmount();
+
+	if (type == MouseWheelScrollType::Down)
+	{
+		state.currentScrollAmount = std::min<double>(state.currentScrollAmount + (SCROLL_DELTA_PER_SECOND * scrollDeltaTime), maxScrollAmount);
+	}
+	else if (type == MouseWheelScrollType::Up)
+	{
+		state.currentScrollAmount = std::max<double>(state.currentScrollAmount - (SCROLL_DELTA_PER_SECOND * scrollDeltaTime), 0.0);
+	}
+}
+
+void ChooseClassQuestionsUI::onScrollDownButtonSelected(MouseButtonType mouseButtonType)
+{
+	// Do nothing (handled by mouse scroll changed).
 }
 
 void ChooseClassQuestionsUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)
 {
-	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
-	if (state.vfxClassCategoryID >= 0)
-	{
-		// Currently animating.
-		return;
-	}
-
-	state.currentScrollAmount = std::max<int>(state.currentScrollAmount - SCROLL_DELTA_PER_SECOND, 0);
+	// Do nothing (handled by mouse scroll changed).
 }
 
 void ChooseClassQuestionsUI::onBackInputAction(const InputActionCallbackValues &values)

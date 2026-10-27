@@ -284,6 +284,12 @@ void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
 	element.active = active;
 }
 
+Rect UiManager::getElementClipRect(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+	return element.clipRect;
+}
+
 void UiManager::setElementDrawOrder(UiElementInstanceID elementInstID, int drawOrder)
 {
 	UiElement &element = this->elements.get(elementInstID);
