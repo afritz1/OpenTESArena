@@ -224,6 +224,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/ChooseAttributesUiState.h"
     "${SRC_ROOT}/Interface/ChooseClassCreationUiState.cpp"
     "${SRC_ROOT}/Interface/ChooseClassCreationUiState.h"
+    "${SRC_ROOT}/Interface/ChooseClassQuestionsUiState.cpp"
+    "${SRC_ROOT}/Interface/ChooseClassQuestionsUiState.h"
     "${SRC_ROOT}/Interface/ChooseClassUiState.cpp"
     "${SRC_ROOT}/Interface/ChooseClassUiState.h"
     "${SRC_ROOT}/Interface/ChooseGenderUiState.cpp"

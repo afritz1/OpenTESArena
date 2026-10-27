@@ -276,6 +276,11 @@ namespace ChooseClassCreationUiController
 	void onSelectButtonSelected(Game &game);
 }
 
+namespace ChooseClassQuestionsUiController
+{
+	void onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values);
+}
+
 namespace ChooseClassUiController
 {
 	void onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values);

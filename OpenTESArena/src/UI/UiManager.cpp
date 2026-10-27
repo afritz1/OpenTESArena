@@ -17,6 +17,7 @@
 #include "../Interface/ChooseAttributesUiState.h"
 #include "../Interface/ChooseClassUiState.h"
 #include "../Interface/ChooseClassCreationUiState.h"
+#include "../Interface/ChooseClassQuestionsUiState.h"
 #include "../Interface/ChooseGenderUiState.h"
 #include "../Interface/ChooseNameUiState.h"
 #include "../Interface/ChooseRaceUiState.h"
@@ -92,6 +93,7 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(ChooseAttributesUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseClassUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseClassCreationUI);
+	REGISTER_SCOPE_CALLBACKS(ChooseClassQuestionsUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseGenderUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseNameUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseRaceUI);

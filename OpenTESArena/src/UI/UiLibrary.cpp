@@ -12,6 +12,7 @@
 #include "../Interface/ChooseAttributesUiState.h"
 #include "../Interface/ChooseClassUiState.h"
 #include "../Interface/ChooseClassCreationUiState.h"
+#include "../Interface/ChooseClassQuestionsUiState.h"
 #include "../Interface/ChooseGenderUiState.h"
 #include "../Interface/ChooseNameUiState.h"
 #include "../Interface/ChooseRaceUiState.h"
@@ -183,6 +184,7 @@ namespace
 		DEFINE_CALLBACK_TUPLE(ChooseAttributesUI),
 		DEFINE_CALLBACK_TUPLE(ChooseClassUI),
 		DEFINE_CALLBACK_TUPLE(ChooseClassCreationUI),
+		DEFINE_CALLBACK_TUPLE(ChooseClassQuestionsUI),
 		DEFINE_CALLBACK_TUPLE(ChooseGenderUI),
 		DEFINE_CALLBACK_TUPLE(ChooseNameUI),
 		DEFINE_CALLBACK_TUPLE(ChooseRaceUI),

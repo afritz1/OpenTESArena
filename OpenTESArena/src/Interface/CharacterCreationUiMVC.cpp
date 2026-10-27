@@ -5,6 +5,7 @@
 #include "CharacterSheetUiMVC.h"
 #include "ChooseAttributesUiState.h"
 #include "ChooseClassCreationUiState.h"
+#include "ChooseClassQuestionsUiState.h"
 #include "ChooseClassUiState.h"
 #include "ChooseGenderUiState.h"
 #include "ChooseNameUiState.h"
@@ -1078,12 +1079,21 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 
 void ChooseClassCreationUiController::onGenerateButtonSelected(Game &game)
 {
-	// @todo: eventually go to a ChooseQuestionsUI with "pop-up" message
+	game.setNextContext(ChooseClassQuestionsUI::ContextName);
 }
 
 void ChooseClassCreationUiController::onSelectButtonSelected(Game &game)
 {
 	game.setNextContext(ChooseClassUI::ContextName);
+}
+
+void ChooseClassQuestionsUiController::onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		Game &game = values.game;
+		game.setNextContext(ChooseClassCreationUI::ContextName);
+	}
 }
 
 void ChooseClassUiController::onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values)
