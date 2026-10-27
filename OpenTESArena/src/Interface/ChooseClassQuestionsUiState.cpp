@@ -1,7 +1,10 @@
 #include <numeric>
 
+#include "components/utilities/String.h"
+
 #include "CharacterCreationUiMVC.h"
 #include "ChooseClassQuestionsUiState.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -25,6 +28,7 @@ ChooseClassQuestionsUiState::ChooseClassQuestionsUiState()
 	this->questionIndexCount = 0;
 	this->currentQuestion = -1;
 	this->currentScrollAmount = 0.0;
+	std::fill(std::begin(this->categoryAnswerCounts), std::end(this->categoryAnswerCounts), 0);
 }
 
 void ChooseClassQuestionsUiState::init(Game &game)
@@ -58,8 +62,9 @@ void ChooseClassQuestionsUI::create(Game &game)
 	}
 
 	state.currentQuestion = 0;
+	std::fill(std::begin(state.categoryAnswerCounts), std::end(state.categoryAnswerCounts), 0);
 
-	const CharacterQuestion &firstQuestion = questions[questionIndices[0]];
+	const CharacterQuestion &firstQuestion = questions[state.questionIndices[0]];
 	ChooseClassQuestionsUI::setQuestionsTextBoxContent(firstQuestion);
 
 	state.currentScrollAmount = 0.0;
@@ -120,7 +125,9 @@ void ChooseClassQuestionsUI::onAnswerChosen(int optionIndex)
 	UiManager &uiManager = game.uiManager;
 
 	Span<const CharacterQuestion> questions = TextAssetLibrary::getInstance().questionTxt;
-	const CharacterQuestion &currentQuestion = questions[state.currentQuestion];
+	DebugAssertIndex(state.questionIndices, state.currentQuestion);
+	const int currentQuestionIndex = state.questionIndices[state.currentQuestion];
+	const CharacterQuestion &currentQuestion = questions[currentQuestionIndex];
 
 	const CharacterQuestionChoice *choice = nullptr;
 	switch (optionIndex)
@@ -139,26 +146,44 @@ void ChooseClassQuestionsUI::onAnswerChosen(int optionIndex)
 		return;
 	}
 
-	DebugLogFormat("Selected category ID %d.", choice->categoryID);
-
-	// @todo increment categoryID count
+	state.categoryAnswerCounts[choice->categoryID]++;
 
 	if (state.currentQuestion < (ChooseClassQuestionsUiState::MAX_QUESTIONS - 1))
 	{
 		state.currentQuestion++;
-		const int questionsIndex = state.questionIndices[state.currentQuestion];
-		const CharacterQuestion &newlySelectedQuestion = questions[questionsIndex];
+
+		const int nextQuestionIndex = state.questionIndices[state.currentQuestion];
+		const CharacterQuestion &nextQuestion = questions[nextQuestionIndex];
 
 		const UiElementInstanceID questionsTextBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
-		ChooseClassQuestionsUI::setQuestionsTextBoxContent(newlySelectedQuestion);
+		ChooseClassQuestionsUI::setQuestionsTextBoxContent(nextQuestion);
 		state.currentScrollAmount = 0.0;
 	}
 	else
 	{
-		// Show decided class popup
-		DebugLogFormat("You would be most successful as a TBD.");
+		const CharacterClassGeneration &charClassGen = BinaryAssetLibrary::getInstance().getClassGenData();
+		static_assert(std::size(state.categoryAnswerCounts) == 3);
+		const int decidedClassIndex = charClassGen.getClassIndex(state.categoryAnswerCounts[0], state.categoryAnswerCounts[1], state.categoryAnswerCounts[2]);
 
-		// @todo probably need some ExeData info for classes -> A/B/C counts
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+		const int decidedCharClassDefID = charClassLibrary.findDefinitionIndexIf(
+			[decidedClassIndex](const CharacterClassDefinition &charClassDef)
+		{
+			return charClassDef.originalClassIndex == decidedClassIndex;
+		});
+
+		if (decidedCharClassDefID < 0)
+		{
+			DebugLogErrorFormat("Couldn't find character class definition matching original class index %d.", decidedClassIndex);
+			return;
+		}
+
+		const CharacterClassDefinition &decidedCharClassDef = charClassLibrary.getDefinition(decidedCharClassDefID);
+
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const std::string suggestedClassStr = String::format(exeData.charCreation.suggestedClass.c_str(), decidedCharClassDef.name);
+		DebugLog(suggestedClassStr.c_str());
+		// @todo show decided class popup
 	}
 }
 

@@ -21,6 +21,6 @@ public:
 
 	int getDefinitionCount() const;
 	const CharacterClassDefinition &getDefinition(int index) const;
-	bool findDefinitionIndexIf(const Predicate &predicate, int *outIndex) const;
+	int findDefinitionIndexIf(const Predicate &predicate) const;
 	bool tryGetDefinitionIndex(const CharacterClassDefinition &def, int *outIndex) const;
 };

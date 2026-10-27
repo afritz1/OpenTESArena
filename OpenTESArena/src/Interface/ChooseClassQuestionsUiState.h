@@ -19,9 +19,10 @@ struct ChooseClassQuestionsUiState
 	UiContextInstanceID initialPopUpContextInstID;
 	UiContextInstanceID decidedClassContextInstID;
 
-	int questionIndices[MAX_QUESTIONS]; // Randomly selected each time.
+	int questionIndices[MAX_QUESTIONS]; // Randomly selected each time entering this UI.
 	int questionIndexCount;
 	int currentQuestion;
+	int categoryAnswerCounts[3]; // # of times class categories have an answer chosen.
 
 	double currentScrollAmount;
 

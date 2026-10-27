@@ -977,20 +977,19 @@ bool ArenaAnimUtils::trySetCitizenFilenameDirection(std::string &filename, int a
 
 void ArenaAnimUtils::getHumanEnemyProperties(int charClassIndex, const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, int *outTypeIndex)
 {
-	int charClassDefIndex;
-	const bool success = charClassLibrary.findDefinitionIndexIf(
+	const int charClassDefID = charClassLibrary.findDefinitionIndexIf(
 		[charClassIndex](const CharacterClassDefinition &def)
 	{
 		return def.originalClassIndex == charClassIndex;
-	}, &charClassDefIndex);
+	});
 
-	if (!success)
+	if (charClassDefID < 0)
 	{
 		DebugLogWarningFormat("Couldn't get character class definition for index \"%d\".", charClassIndex);
 		return;
 	}
 
-	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefIndex);
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 	// Properties about the character class.
 	*outTypeIndex = [&exeData, &charClassDef]()
