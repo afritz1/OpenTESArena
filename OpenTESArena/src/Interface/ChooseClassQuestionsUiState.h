@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Stats/CharacterClassDefinition.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"
@@ -32,6 +33,9 @@ struct ChooseClassQuestionsUiState
 
 	double currentScrollAmount;
 
+	CharacterClassCategoryID vfxClassCategoryID;
+	double vfxCurrentSeconds;
+
 	ChooseClassQuestionsUiState();
 
 	void init(Game &game);
@@ -42,6 +46,7 @@ namespace ChooseClassQuestionsUI
 	DECLARE_UI_CONTEXT(ChooseClassQuestions);
 
 	void onAnswerChosen(int optionIndex);
+	void onVfxFinished();
 	void setQuestionsPresentationVisible(bool visible);
 	void setQuestionsTextBoxContent(const CharacterQuestion &question);
 	void updateBackgroundTexture();

@@ -7,6 +7,7 @@
 #include "ChooseClassUiState.h"
 #include "ChooseNameUiState.h"
 #include "CommonUiMVC.h"
+#include "../Assets/ArenaSoundName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
@@ -22,6 +23,7 @@ namespace
 	static constexpr const char ContextName_SuggestedClassPopUp[] = "ChooseClassQuestionsSuggestedClassPopUp";
 
 	static constexpr const char ElementName_QuestionsTextBox[] = "ChooseClassQuestionsTextBox";
+	static constexpr const char ElementName_VfxImage[] = "ChooseClassQuestionsVfxImage";
 
 	constexpr double SCROLL_DELTA_PER_SECOND = 5.0;
 }
@@ -38,9 +40,11 @@ ChooseClassQuestionsUiState::ChooseClassQuestionsUiState()
 	std::fill(std::begin(this->questionIndices), std::end(this->questionIndices), -1);
 	this->questionIndexCount = 0;
 	this->currentQuestion = -1;
-	this->currentScrollAmount = 0.0;
 	std::fill(std::begin(this->categoryAnswerCounts), std::end(this->categoryAnswerCounts), 0);
 	this->suggestedCharClassDefID = -1;
+	this->currentScrollAmount = 0.0;
+	this->vfxClassCategoryID = -1;
+	this->vfxCurrentSeconds = 0.0;
 }
 
 void ChooseClassQuestionsUiState::init(Game &game)
@@ -112,6 +116,8 @@ void ChooseClassQuestionsUI::create(Game &game)
 	ChooseClassQuestionsUI::setQuestionsPresentationVisible(false);
 
 	state.currentScrollAmount = 0.0;
+	state.vfxClassCategoryID = -1;
+	state.vfxCurrentSeconds = 0.0;
 
 	uiManager.addMouseScrollChangedListener(ChooseClassQuestionsUI::onMouseScrollChanged, contextDef.name.c_str(), inputManager);
 
@@ -166,20 +172,86 @@ void ChooseClassQuestionsUI::update(double dt)
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
 
 	const UiElementInstanceID questionsTextBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
 	const int currentScrollPixelAmount = static_cast<int>(state.currentScrollAmount);
 	const Int2 questionsTextBoxPosition(ArenaRenderUtils::SCREEN_WIDTH / 2, 140 - currentScrollPixelAmount);
 	uiManager.setTransformPosition(questionsTextBoxElementInstID, questionsTextBoxPosition);
 
-	// @todo animate vfx
+	if (state.vfxClassCategoryID >= 0)
+	{
+		const char *vfxSequenceNames[] =
+		{
+			ArenaTextureSequenceName::Mage.c_str(),
+			ArenaTextureSequenceName::Rogue.c_str(),
+			ArenaTextureSequenceName::Warrior.c_str()
+		};
+
+		constexpr Int2 vfxSequencePositions[] =
+		{
+			Int2(79, 1),
+			Int2(1, 1),
+			Int2(110, 1)
+		};
+
+		DebugAssertIndex(vfxSequenceNames, state.vfxClassCategoryID);
+		const char *vfxSequenceName = vfxSequenceNames[state.vfxClassCategoryID];
+
+		const std::optional<TextureFileMetadataID> vfxTextureFileMetadataID = textureManager.tryGetMetadataID(vfxSequenceName);
+		if (!vfxTextureFileMetadataID.has_value())
+		{
+			DebugLogErrorFormat("Couldn't get VFX texture sequence %s.", vfxSequenceName);
+			return;
+		}
+
+		const TextureFileMetadata &vfxTextureFileMetadata = textureManager.getMetadataHandle(*vfxTextureFileMetadataID);
+		const int vfxFrameCount = vfxTextureFileMetadata.getTextureCount();
+		const double vfxTargetSeconds = vfxTextureFileMetadata.getSecondsPerFrame() * vfxFrameCount;
+		const double vfxAnimPercent = std::clamp(state.vfxCurrentSeconds / vfxTargetSeconds, 0.0, 1.0);
+		const int vfxTextureIndex = MathUtils::getRealIndex(vfxFrameCount, vfxAnimPercent);
+		const TextureAsset vfxAnimTextureAsset(vfxSequenceName, vfxTextureIndex);
+		const TextureAsset vfxAnimPaletteAsset(ArenaTextureName::CharacterCreation);
+		const UiTextureID vfxAnimTextureID = uiManager.getOrAddTexture(vfxAnimTextureAsset, vfxAnimPaletteAsset, textureManager, renderer);
+
+		UiElementInstanceID vfxImageElementInstID = uiManager.getElementByName(ElementName_VfxImage);
+		if (vfxImageElementInstID < 0)
+		{
+			UiElementInitInfo vfxImageElementInitInfo;
+			vfxImageElementInitInfo.name = ElementName_VfxImage;
+			vfxImageElementInstID = uiManager.createImage(vfxImageElementInitInfo, vfxAnimTextureID, state.contextInstID, renderer);
+		}
+		else
+		{
+			uiManager.setElementActive(vfxImageElementInstID, true);
+			uiManager.setImageTexture(vfxImageElementInstID, vfxAnimTextureID);
+		}
+
+		DebugAssertIndex(vfxSequencePositions, state.vfxClassCategoryID);
+		const Int2 vfxAnimPosition = vfxSequencePositions[state.vfxClassCategoryID];
+		uiManager.setTransformPosition(vfxImageElementInstID, vfxAnimPosition);
+
+		state.vfxCurrentSeconds += dt;
+		if (state.vfxCurrentSeconds >= vfxTargetSeconds)
+		{
+			ChooseClassQuestionsUI::onVfxFinished();
+			uiManager.setElementActive(vfxImageElementInstID, false);
+
+			state.vfxClassCategoryID = -1;
+			state.vfxCurrentSeconds = 0.0;
+		}
+	}
 }
 
 void ChooseClassQuestionsUI::onAnswerChosen(int optionIndex)
 {
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
-	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;
+	if (state.vfxClassCategoryID >= 0)
+	{
+		// Currently animating.
+		return;
+	}
 
 	Span<const CharacterQuestion> questions = TextAssetLibrary::getInstance().questionTxt;
 	DebugAssertIndex(state.questionIndices, state.currentQuestion);
@@ -204,6 +276,18 @@ void ChooseClassQuestionsUI::onAnswerChosen(int optionIndex)
 	}
 
 	state.categoryAnswerCounts[choice->categoryID]++;
+	state.vfxClassCategoryID = choice->categoryID;
+
+	AudioManager &audioManager = state.game->audioManager;
+	audioManager.playSoundOneShot(ArenaSoundName::Burst);
+}
+
+void ChooseClassQuestionsUI::onVfxFinished()
+{
+	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;	
+
 	ChooseClassQuestionsUI::updateBackgroundTexture();
 
 	if (state.currentQuestion < (ChooseClassQuestionsUiState::MAX_QUESTIONS - 1))
@@ -211,6 +295,7 @@ void ChooseClassQuestionsUI::onAnswerChosen(int optionIndex)
 		state.currentQuestion++;
 
 		const int nextQuestionIndex = state.questionIndices[state.currentQuestion];
+		Span<const CharacterQuestion> questions = TextAssetLibrary::getInstance().questionTxt;
 		const CharacterQuestion &nextQuestion = questions[nextQuestionIndex];
 
 		const UiElementInstanceID questionsTextBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
@@ -483,12 +568,24 @@ void ChooseClassQuestionsUI::onMouseScrollChanged(Game &game, MouseWheelScrollTy
 void ChooseClassQuestionsUI::onScrollDownButtonSelected(MouseButtonType mouseButtonType)
 {
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
+	if (state.vfxClassCategoryID >= 0)
+	{
+		// Currently animating.
+		return;
+	}
+
 	state.currentScrollAmount = std::min<int>(state.currentScrollAmount + SCROLL_DELTA_PER_SECOND, 400); // @todo text box height minus viewable height? 
 }
 
 void ChooseClassQuestionsUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)
 {
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
+	if (state.vfxClassCategoryID >= 0)
+	{
+		// Currently animating.
+		return;
+	}
+
 	state.currentScrollAmount = std::max<int>(state.currentScrollAmount - SCROLL_DELTA_PER_SECOND, 0);
 }
 
