@@ -20,6 +20,10 @@ struct ChooseClassQuestionsUiState
 	UiContextInstanceID initialPopUpContextInstID;
 	UiContextInstanceID suggestedClassPopUpContextInstID;
 
+	TextureBuilderID bgImageTextureBuilderID;
+	PaletteID bgImagePaletteID;
+	UiTextureID bgImageTextureID;
+
 	int questionIndices[MAX_QUESTIONS]; // Randomly selected each time entering this UI.
 	int questionIndexCount;
 	int currentQuestion;
@@ -40,6 +44,7 @@ namespace ChooseClassQuestionsUI
 	void onAnswerChosen(int optionIndex);
 	void setQuestionsPresentationVisible(bool visible);
 	void setQuestionsTextBoxContent(const CharacterQuestion &question);
+	void updateBackgroundTexture();
 
 	void showInitialPopUp();
 	void showSuggestedClassPopUp(const CharacterClassDefinition &charClassDef);

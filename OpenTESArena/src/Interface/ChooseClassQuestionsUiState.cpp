@@ -7,6 +7,7 @@
 #include "ChooseClassUiState.h"
 #include "ChooseNameUiState.h"
 #include "CommonUiMVC.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
@@ -31,6 +32,9 @@ ChooseClassQuestionsUiState::ChooseClassQuestionsUiState()
 	this->contextInstID = -1;
 	this->initialPopUpContextInstID = -1;
 	this->suggestedClassPopUpContextInstID = -1;
+	this->bgImageTextureBuilderID = -1;
+	this->bgImagePaletteID = -1;
+	this->bgImageTextureID = -1;
 	std::fill(std::begin(this->questionIndices), std::end(this->questionIndices), -1);
 	this->questionIndexCount = 0;
 	this->currentQuestion = -1;
@@ -57,6 +61,24 @@ void ChooseClassQuestionsUI::create(Game &game)
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
 	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseClassQuestionsUI::ContextName);
 	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
+
+	const std::string &bgImageTextureFilename = ArenaTextureName::CharacterCreation;
+	const std::optional<TextureBuilderID> bgImageTextureBuilderID = textureManager.tryGetTextureBuilderID(bgImageTextureFilename.c_str());
+	const std::optional<PaletteID> bgImagePaletteID = textureManager.tryGetPaletteID(bgImageTextureFilename.c_str());
+	if (!bgImageTextureBuilderID.has_value() || !bgImagePaletteID.has_value())
+	{
+		DebugLogErrorFormat("Missing background texture or palette.");
+		return;
+	}
+
+	const TextureBuilder &bgImageTextureBuilder = textureManager.getTextureBuilderHandle(*bgImageTextureBuilderID);
+	state.bgImageTextureBuilderID = *bgImageTextureBuilderID;
+	state.bgImagePaletteID = *bgImagePaletteID;
+	state.bgImageTextureID = renderer.createUiTexture(bgImageTextureBuilder.width, bgImageTextureBuilder.height);
+
+	UiElementInitInfo bgImageElementInitInfo;
+	bgImageElementInitInfo.name = "ChooseClassQuestionsBackground";
+	uiManager.createImage(bgImageElementInitInfo, state.bgImageTextureID, state.contextInstID, renderer);
 
 	UiContextInitInfo initialPopUpContextInitInfo;
 	initialPopUpContextInitInfo.name = ContextName_InitialPopUp;
@@ -97,6 +119,7 @@ void ChooseClassQuestionsUI::create(Game &game)
 
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, true);
 
+	ChooseClassQuestionsUI::updateBackgroundTexture();
 	ChooseClassQuestionsUI::showInitialPopUp();
 }
 
@@ -124,6 +147,15 @@ void ChooseClassQuestionsUI::destroy()
 	{
 		uiManager.freeContext(state.suggestedClassPopUpContextInstID, inputManager, renderer);
 		state.suggestedClassPopUpContextInstID = -1;
+	}
+
+	state.bgImageTextureBuilderID = -1;
+	state.bgImagePaletteID = -1;
+
+	if (state.bgImageTextureID >= 0)
+	{
+		renderer.freeUiTexture(state.bgImageTextureID);
+		state.bgImageTextureID = -1;
 	}
 
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
@@ -172,6 +204,7 @@ void ChooseClassQuestionsUI::onAnswerChosen(int optionIndex)
 	}
 
 	state.categoryAnswerCounts[choice->categoryID]++;
+	ChooseClassQuestionsUI::updateBackgroundTexture();
 
 	if (state.currentQuestion < (ChooseClassQuestionsUiState::MAX_QUESTIONS - 1))
 	{
@@ -233,6 +266,40 @@ void ChooseClassQuestionsUI::setQuestionsTextBoxContent(const CharacterQuestion 
 
 	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
 	uiManager.setTextBoxText(textBoxElementInstID, text.c_str());
+}
+
+void ChooseClassQuestionsUI::updateBackgroundTexture()
+{
+	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
+	Game &game = *state.game;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+
+	// Modify background palette based on constellation intensities.
+	Palette palette = textureManager.getPaletteHandle(state.bgImagePaletteID);
+	constexpr uint8_t classCategoryColors[] = { 128, 160, 192 };
+	for (int i = 0; i < static_cast<int>(std::size(classCategoryColors)); i++)
+	{
+		const uint8_t classCategoryColor = classCategoryColors[i];
+		const uint8_t replacementColor = 60 + state.categoryAnswerCounts[i];
+		DebugAssertIndex(palette, classCategoryColor);
+		DebugAssertIndex(palette, replacementColor);
+		palette[classCategoryColor] = palette[replacementColor];
+	}
+
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(state.bgImageTextureBuilderID);
+	Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
+
+	LockedTexture lockedTexture = renderer.lockUiTexture(state.bgImageTextureID);
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+
+	std::transform(srcTexels.begin(), srcTexels.end(), dstTexels.begin(),
+		[&palette](const uint8_t color)
+	{
+		return palette[color].toRGBA();
+	});
+
+	renderer.unlockUiTexture(state.bgImageTextureID);
 }
 
 void ChooseClassQuestionsUI::showInitialPopUp()

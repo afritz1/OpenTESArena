@@ -3,11 +3,7 @@ ContextName=ChooseClassQuestions
 
 ##################################
 
-# Background
-
-[ChooseClassQuestionsBackground]
-Type=Image
-Texture=STARTGAM.MNU
+# Background is handled in code due to palette shifting for constellations.
 
 ##################################
 
