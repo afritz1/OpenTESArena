@@ -17,7 +17,7 @@ struct ChooseClassQuestionsUiState
 	Game *game;
 	UiContextInstanceID contextInstID;
 	UiContextInstanceID initialPopUpContextInstID;
-	UiContextInstanceID decidedClassContextInstID;
+	UiContextInstanceID suggestedClassContextInstID;
 
 	int questionIndices[MAX_QUESTIONS]; // Randomly selected each time entering this UI.
 	int questionIndexCount;

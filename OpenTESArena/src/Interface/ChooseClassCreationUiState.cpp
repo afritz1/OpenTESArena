@@ -42,8 +42,6 @@ void ChooseClassCreationUI::create(Game &game)
 	uiManager.setTextBoxText(selectTextBoxElementInstID, selectText.c_str());
 
 	game.setCursorOverride(std::nullopt);
-
-	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, true);
 }
 
 void ChooseClassCreationUI::destroy()

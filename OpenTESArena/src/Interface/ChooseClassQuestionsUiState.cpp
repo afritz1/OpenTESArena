@@ -23,7 +23,7 @@ ChooseClassQuestionsUiState::ChooseClassQuestionsUiState()
 	this->game = nullptr;
 	this->contextInstID = -1;
 	this->initialPopUpContextInstID = -1;
-	this->decidedClassContextInstID = -1;
+	this->suggestedClassContextInstID = -1;
 	std::fill(std::begin(this->questionIndices), std::end(this->questionIndices), -1);
 	this->questionIndexCount = 0;
 	this->currentQuestion = -1;
@@ -81,26 +81,27 @@ void ChooseClassQuestionsUI::destroy()
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
+	InputManager &inputManager = game.inputManager;
+	Renderer &renderer = game.renderer;
 
 	if (state.contextInstID >= 0)
 	{
-		uiManager.freeContext(state.contextInstID, game.inputManager, game.renderer);
+		uiManager.freeContext(state.contextInstID, inputManager, renderer);
 		state.contextInstID = -1;
 	}
 
 	if (state.initialPopUpContextInstID >= 0)
 	{
-		uiManager.freeContext(state.initialPopUpContextInstID, game.inputManager, game.renderer);
+		uiManager.freeContext(state.initialPopUpContextInstID, inputManager, renderer);
 		state.initialPopUpContextInstID = -1;
 	}
 
-	if (state.decidedClassContextInstID >= 0)
+	if (state.suggestedClassContextInstID >= 0)
 	{
-		uiManager.freeContext(state.decidedClassContextInstID, game.inputManager, game.renderer);
-		state.decidedClassContextInstID = -1;
+		uiManager.freeContext(state.suggestedClassContextInstID, inputManager, renderer);
+		state.suggestedClassContextInstID = -1;
 	}
 
-	InputManager &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
 }
 

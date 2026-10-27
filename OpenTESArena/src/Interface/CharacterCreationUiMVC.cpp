@@ -1071,9 +1071,6 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 
 		AudioManager &audioManager = game.audioManager;
 		audioManager.setMusic(musicDef);
-
-		InputManager &inputManager = game.inputManager;
-		inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
 	}
 }
 
