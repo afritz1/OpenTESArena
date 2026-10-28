@@ -22,6 +22,7 @@ namespace
 	static constexpr const char ContextName_InitialPopUp[] = "ChooseClassQuestionsInitialPopUp";
 	static constexpr const char ContextName_SuggestedClassPopUp[] = "ChooseClassQuestionsSuggestedClassPopUp";
 
+	static constexpr const char ElementName_QuestionsScrollImage[] = "ChooseClassQuestionsScrollImage";
 	static constexpr const char ElementName_QuestionsTextBox[] = "ChooseClassQuestionsTextBox";
 	static constexpr const char ElementName_VfxImage[] = "ChooseClassQuestionsVfxImage";
 
@@ -191,7 +192,7 @@ void ChooseClassQuestionsUI::update(double dt)
 	const TextureAsset scrollAnimTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
 	const TextureAsset scrollAnimPaletteAsset(ArenaTextureName::CharacterCreation);
 	const UiTextureID scrollAnimTextureID = uiManager.getOrAddTexture(scrollAnimTextureAsset, scrollAnimPaletteAsset, textureManager, renderer);
-	const UiElementInstanceID scrollAnimImageElementInstID = uiManager.getElementByName("ChooseClassQuestionsScrollImage");
+	const UiElementInstanceID scrollAnimImageElementInstID = uiManager.getElementByName(ElementName_QuestionsScrollImage);
 	uiManager.setImageTexture(scrollAnimImageElementInstID, scrollAnimTextureID);
 
 	if (state.vfxClassCategoryID >= 0)
@@ -365,7 +366,8 @@ void ChooseClassQuestionsUI::setQuestionsPresentationVisible(bool visible)
 	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
 	uiManager.setElementActive(textBoxElementInstID, visible);
 
-	// @todo parchment/scroll bars too
+	const UiElementInstanceID scrollAnimImageElementInstID = uiManager.getElementByName(ElementName_QuestionsScrollImage);
+	uiManager.setElementActive(scrollAnimImageElementInstID, visible);
 }
 
 void ChooseClassQuestionsUI::setQuestionsTextBoxContent(const CharacterQuestion &question)
