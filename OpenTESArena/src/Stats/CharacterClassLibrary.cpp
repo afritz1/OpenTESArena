@@ -208,19 +208,18 @@ const CharacterClassDefinition &CharacterClassLibrary::getDefinition(int index) 
 	return this->defs[index];
 }
 
-bool CharacterClassLibrary::findDefinitionIndexIf(const Predicate &predicate, int *outIndex) const
+int CharacterClassLibrary::findDefinitionIndexIf(const Predicate &predicate) const
 {
 	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)
 	{
 		const CharacterClassDefinition &def = this->defs[i];
 		if (predicate(def))
 		{
-			*outIndex = i;
-			return true;
+			return i;
 		}
 	}
 
-	return false;
+	return -1;
 }
 
 bool CharacterClassLibrary::tryGetDefinitionIndex(const CharacterClassDefinition &def, int *outIndex) const

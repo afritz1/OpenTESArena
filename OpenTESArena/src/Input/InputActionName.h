@@ -43,6 +43,9 @@ namespace InputActionName
 	constexpr const char *TestGame = "TestGame";
 
 	// Character creation.
+	constexpr const char *ChooseClassQuestionsA = "ChooseClassQuestionsA";
+	constexpr const char *ChooseClassQuestionsB = "ChooseClassQuestionsB";
+	constexpr const char *ChooseClassQuestionsC = "ChooseClassQuestionsC";
 	constexpr const char *SaveAttributes = "SaveAttributes";
 	constexpr const char *RerollAttributes = "RerollAttributes";
 

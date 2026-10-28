@@ -5,6 +5,7 @@
 #include "CharacterSheetUiMVC.h"
 #include "ChooseAttributesUiState.h"
 #include "ChooseClassCreationUiState.h"
+#include "ChooseClassQuestionsUiState.h"
 #include "ChooseClassUiState.h"
 #include "ChooseGenderUiState.h"
 #include "ChooseNameUiState.h"
@@ -94,6 +95,19 @@ std::string ChooseClassCreationUiModel::getSelectButtonText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseClassCreationSelect;
+}
+
+std::string ChooseClassQuestionsUiModel::getInitialPopUpText(Game &game)
+{
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	return String::replace(exeData.charCreation.classQuestionsIntro, '\r', '\n');
+}
+
+std::string ChooseClassQuestionsUiModel::getSuggestedClassPopUpText(const CharacterClassDefinition &charClassDef)
+{
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string suggestedClassStr = String::format(exeData.charCreation.suggestedClass.c_str(), charClassDef.name);
+	return String::replace(suggestedClassStr, '\r', '\n');
 }
 
 std::string ChooseClassUiModel::getTitleText(Game &game)
@@ -1070,20 +1084,26 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 
 		AudioManager &audioManager = game.audioManager;
 		audioManager.setMusic(musicDef);
-
-		InputManager &inputManager = game.inputManager;
-		inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
 	}
 }
 
 void ChooseClassCreationUiController::onGenerateButtonSelected(Game &game)
 {
-	// @todo: eventually go to a ChooseQuestionsUI with "pop-up" message
+	game.setNextContext(ChooseClassQuestionsUI::ContextName);
 }
 
 void ChooseClassCreationUiController::onSelectButtonSelected(Game &game)
 {
 	game.setNextContext(ChooseClassUI::ContextName);
+}
+
+void ChooseClassQuestionsUiController::onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		Game &game = values.game;
+		game.setNextContext(ChooseClassCreationUI::ContextName);
+	}
 }
 
 void ChooseClassUiController::onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values)

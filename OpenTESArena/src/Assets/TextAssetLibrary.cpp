@@ -719,15 +719,21 @@ bool TextAssetLibrary::initQuestionTxt()
 			return -1;
 		};
 
+		const std::string aTrimmed = a.substr(0, a.find_last_of('(')) + '\n';
+		const std::string bTrimmed = b.substr(0, b.find_last_of('(')) + '\n';
+		const std::string cTrimmed = c.substr(0, c.find_last_of('(')) + '\n';
+
 		CharacterQuestionChoice questionChoiceA;
 		CharacterQuestionChoice questionChoiceB;
 		CharacterQuestionChoice questionChoiceC;
-		questionChoiceA.init(a.c_str(), getCategory(a));
-		questionChoiceB.init(b.c_str(), getCategory(b));
-		questionChoiceC.init(c.c_str(), getCategory(c));
+		questionChoiceA.init(aTrimmed.c_str(), getCategory(a));
+		questionChoiceB.init(bTrimmed.c_str(), getCategory(b));
+		questionChoiceC.init(cTrimmed.c_str(), getCategory(c));
+
+		const std::string descriptionTrimmed = description.substr(description.find_first_of('.') + 1);
 
 		CharacterQuestion question;
-		question.init(description.c_str(), questionChoiceA, questionChoiceB, questionChoiceC);
+		question.init(descriptionTrimmed.c_str(), questionChoiceA, questionChoiceB, questionChoiceC);
 		this->questionTxt.emplace_back(std::move(question));
 	};
 

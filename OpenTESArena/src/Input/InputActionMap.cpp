@@ -100,6 +100,18 @@ namespace
 		else if (StringView::equals(mapName, InputActionMapName::CharacterCreation))
 		{
 			defs.emplace_back(makeKeyDef(
+				InputActionName::ChooseClassQuestionsA,
+				InputStateType::BeginPerform,
+				SDLK_a));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::ChooseClassQuestionsB,
+				InputStateType::BeginPerform,
+				SDLK_b));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::ChooseClassQuestionsC,
+				InputStateType::BeginPerform,
+				SDLK_c));
+			defs.emplace_back(makeKeyDef(
 				InputActionName::SaveAttributes,
 				InputStateType::BeginPerform,
 				SDLK_s));
