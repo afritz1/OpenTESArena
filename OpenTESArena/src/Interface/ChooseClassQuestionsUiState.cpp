@@ -27,7 +27,7 @@ namespace
 	static constexpr const char ElementName_VfxImage[] = "ChooseClassQuestionsVfxImage";
 
 	static constexpr double SCROLL_DELTA_PER_SECOND = 75.0;
-	static constexpr double SCROLL_ANIM_REPEAT_AMOUNT = 5.0; // # of scrolled pixels per animation repeat.
+	static constexpr double SCROLL_ANIM_REPEAT_AMOUNT = 16.0; // # of scrolled pixels per animation repeat.
 }
 
 ChooseClassQuestionsUiState::ChooseClassQuestionsUiState()
@@ -183,12 +183,25 @@ void ChooseClassQuestionsUI::update(double dt)
 	const Int2 questionsTextBoxPosition(ArenaRenderUtils::SCREEN_WIDTH / 2, 142 - currentScrollPixelAmount);
 	uiManager.setTransformPosition(questionsTextBoxElementInstID, questionsTextBoxPosition);
 
-	const char *scrollAnimFilename = "SCROLL01.DFA";
+	const double scrollAnimPercent = std::clamp(std::fmod(state.currentScrollAmount, SCROLL_ANIM_REPEAT_AMOUNT) / SCROLL_ANIM_REPEAT_AMOUNT, 0.0, 1.0);
+
+	double scrollAnimSubPercent = 0.0;
+	const char *scrollAnimFilename = nullptr;
+	if (scrollAnimPercent < 0.50)
+	{
+		scrollAnimSubPercent = std::clamp(scrollAnimPercent * 2.0, 0.0, 1.0);
+		scrollAnimFilename = "SCROLL01.DFA";
+	}
+	else
+	{
+		scrollAnimSubPercent = std::clamp((scrollAnimPercent - 0.50) * 2.0, 0.0, 1.0);
+		scrollAnimFilename = "SCROLL02.DFA";
+	}
+
 	const std::optional<TextureFileMetadataID> scrollAnimTextureFileMetadataID = textureManager.tryGetMetadataID(scrollAnimFilename);
 	const TextureFileMetadata &scrollAnimTextureFileMetadata = textureManager.getMetadataHandle(*scrollAnimTextureFileMetadataID);
-	const double scrollAnimPercent = std::clamp(std::fmod(state.currentScrollAmount, SCROLL_ANIM_REPEAT_AMOUNT) / SCROLL_ANIM_REPEAT_AMOUNT, 0.0, 1.0);
 	const int scrollAnimFrameCount = scrollAnimTextureFileMetadata.getTextureCount();
-	const int scrollAnimFrameIndex = MathUtils::getRealIndex(scrollAnimFrameCount, scrollAnimPercent);
+	const int scrollAnimFrameIndex = MathUtils::getRealIndex(scrollAnimFrameCount, scrollAnimSubPercent);
 	const TextureAsset scrollAnimTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
 	const TextureAsset scrollAnimPaletteAsset(ArenaTextureName::CharacterCreation);
 	const UiTextureID scrollAnimTextureID = uiManager.getOrAddTexture(scrollAnimTextureAsset, scrollAnimPaletteAsset, textureManager, renderer);
