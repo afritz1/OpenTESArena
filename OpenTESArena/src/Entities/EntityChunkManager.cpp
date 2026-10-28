@@ -591,10 +591,11 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
-		DebugAssert(initInfo.raceID.has_value());
+		DebugAssert(initInfo.raceDefID.has_value());
+		const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(*initInfo.raceDefID);
 		const uint16_t citizenColorSeed = *initInfo.citizenColorSeed;
 		PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
-		paletteIndices = ArenaAnimUtils::transformCitizenColors(*initInfo.raceID, citizenColorSeed, binaryAssetLibrary.getExeData());
+		paletteIndices = ArenaAnimUtils::transformCitizenColors(raceDef.originalRaceIndex, citizenColorSeed, binaryAssetLibrary.getExeData());
 	}
 
 	if (initInfo.dialogueGenderIsMale.has_value())
@@ -1218,7 +1219,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const int targetCitizensToSpawn = std::min(maxCitizenCountInScene - currentCitizenCount, CitizenUtils::MAX_CITIZENS_PER_CHUNK);
 		const int remainingMaleCitizensToSpawn = targetCitizensToSpawn / 2;
 		const int remainingFemaleCitizensToSpawn = targetCitizensToSpawn - remainingMaleCitizensToSpawn;
-		const int citizenRaceID = citizenGenInfo->raceID;
+		const CharacterRaceDefinitionID citizenRaceDefID = citizenGenInfo->raceDefID;
+		const CharacterRaceDefinition &citizenRaceDef = CharacterRaceLibrary::getInstance().getDefinition(citizenRaceDefID);
 
 		const int citizenCountsToSpawn[] = { remainingMaleCitizensToSpawn, remainingFemaleCitizensToSpawn };
 		const EntityDefID citizenDefIDs[] = { citizenGenInfo->maleEntityDefID, citizenGenInfo->femaleEntityDefID };
@@ -1253,12 +1255,12 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
 
-				const std::string npcNameStr = textAssetLibrary.generateNpcName(citizenRaceID, isMale, arenaRandom);
+				const std::string npcNameStr = textAssetLibrary.generateNpcName(citizenRaceDef.originalRaceIndex, isMale, arenaRandom);
 				citizenInitInfo.npcName = EntityNpcName(npcNameStr.c_str());
 
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);
 				citizenInitInfo.citizenColorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
-				citizenInitInfo.raceID = citizenRaceID;
+				citizenInitInfo.raceDefID = citizenRaceDefID;
 				citizenInitInfo.dialogueGenderIsMale = isMale;
 				citizenInitInfo.canBeKilled = true;
 				citizenInitInfo.hasInventory = false;

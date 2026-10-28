@@ -43,7 +43,7 @@ std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosit
 	const int maskCount = static_cast<int>(worldMapMasks.size());
 	for (int maskID = 0; maskID < maskCount; maskID++)
 	{
-		constexpr int centerProvinceID = ArenaLocationUtils::CENTER_PROVINCE_ID;
+		constexpr int centerProvinceID = ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 		constexpr int exitButtonID = WorldMapUiModel::EXIT_BUTTON_MASK_ID;
 		if ((ignoreCenterProvince && (maskID == centerProvinceID)) ||
 			(ignoreExitButton && (maskID == exitButtonID)))
@@ -115,7 +115,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 	const std::string locationString = [travelDays, &gameState, &exeData, provinceID,
 		localCityID, &provinceDef, &locationDef]()
 	{
-		if (provinceID != ArenaLocationUtils::CENTER_PROVINCE_ID)
+		if (provinceID != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
 		{
 			// The <city type> of <city name> in <province> Province.
 			// Replace first %s with location type.
@@ -306,7 +306,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 	return fullText;
 }
 
-Int2 WorldMapUiView::getProvinceNameOffset(int provinceID, TextureManager &textureManager)
+Int2 WorldMapUiView::getProvinceNameOffset(int originalProvinceIndex, TextureManager &textureManager)
 {
 	const std::string provinceNameOffsetFilename = WorldMapUiModel::getProvinceNameOffsetFilename();
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(provinceNameOffsetFilename.c_str());
@@ -316,7 +316,7 @@ Int2 WorldMapUiView::getProvinceNameOffset(int provinceID, TextureManager &textu
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-	return textureFileMetadata.getOffset(provinceID);
+	return textureFileMetadata.getOffset(originalProvinceIndex);
 }
 
 TextureAsset WorldMapUiView::getPaletteTextureAsset()
@@ -329,17 +329,17 @@ std::string WorldMapUiView::getProvinceNamesFilename()
 	return ArenaTextureName::ProvinceNames;
 }
 
-UiTextureID WorldMapUiView::allocHighlightedTextTexture(int provinceID, TextureManager &textureManager, Renderer &renderer)
+UiTextureID WorldMapUiView::allocHighlightedTextTexture(int originalProvinceIndex, TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAsset paletteTextureAsset = WorldMapUiView::getPaletteTextureAsset();
 
 	const std::string provinceNamesFilename = WorldMapUiView::getProvinceNamesFilename();
-	const TextureAsset textureAsset(provinceNamesFilename, provinceID);
+	const TextureAsset textureAsset(provinceNamesFilename, originalProvinceIndex);
 
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
-		DebugCrash("Couldn't create UI texture for highlighted text for province " + std::to_string(provinceID) + ".");
+		DebugCrash("Couldn't create UI texture for highlighted text for province " + std::to_string(originalProvinceIndex) + ".");
 	}
 
 	return textureID;
@@ -456,7 +456,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		MapGenerationCityInfo cityGenInfo;
 		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
+			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.getOriginalProvinceIndex(), cityDef.premade, cityDef.coastal,
 			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks), mainQuestTempleOverride,
 			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 

@@ -203,7 +203,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	}
 
 	const bool rulerIsMale = (rulerSeed & 0x3) != 0;
-	const bool palaceIsMainQuestDungeon = (provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
+	const bool palaceIsMainQuestDungeon = (provinceID == ArenaLocationUtils::CENTER_PROVINCE_INDEX) && (localCityID == 0);
 
 	this->city.init(type, typeDisplayName.c_str(), typeDisplayNameLowercase.c_str(), mapFilename.c_str(), citySeed, wildSeed,
 		provinceSeed, rulerSeed, skySeed, climateType, reservedBlocks, blockStartPosition.x, blockStartPosition.y,

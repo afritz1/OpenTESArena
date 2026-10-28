@@ -18,9 +18,8 @@ struct Rect;
 // Various functions for working with original game values like location IDs.
 namespace ArenaLocationUtils
 {
-	// Required for handling the original game's special case with the center province's
-	// premade city.
-	constexpr int CENTER_PROVINCE_ID = 8;
+	// Required for handling the original game's special case with the center province's premade city.
+	constexpr int CENTER_PROVINCE_INDEX = 8;
 
 	// Width and height of wild dungeons in chunks.
 	constexpr int WILD_DUNGEON_WIDTH_CHUNK_COUNT = 2;

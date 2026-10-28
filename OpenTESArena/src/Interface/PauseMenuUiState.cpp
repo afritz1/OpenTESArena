@@ -98,7 +98,7 @@ void PauseMenuUI::create(Game &game)
 	const UiElementInstanceID statusGradientImageElementInstID = uiManager.getElementByName(StatusGradientImageElementName);
 	uiManager.setImageTexture(statusGradientImageElementInstID, statusGradientTextureID);
 
-	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
+	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceDefID, player.portraitID);
 	const UiTextureID playerPortraitTextureID = uiManager.getOrAddTexture(playerPortraitTextureAsset, paletteTextureAsset, textureManager, renderer);
 	const UiElementInstanceID playerPortraitImageElementInstID = uiManager.getElementByName(PortraitImageElementName);
 	uiManager.setImageTexture(playerPortraitImageElementInstID, playerPortraitTextureID);

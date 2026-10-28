@@ -9,7 +9,7 @@ struct CharacterCreationState
 
 	char name[MAX_NAME_LENGTH + 1];
 	CharacterClassDefinitionID charClassDefID;
-	int raceIndex;
+	CharacterRaceDefinitionID raceDefID;
 	int portraitIndex;
 	bool male;
 	PrimaryAttributes attributes;

@@ -497,7 +497,7 @@ void GameWorldUI::create(Game &game)
 	uiManager.setElementActive(playerHurtImageElementInstID, false);
 
 	const Player &player = game.player;
-	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
+	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceDefID, player.portraitID);
 	const UiTextureID playerPortraitTextureID = uiManager.getOrAddTexture(playerPortraitTextureAsset, paletteTextureAsset, textureManager, renderer);
 	const UiElementInstanceID playerPortraitImageElementInstID = uiManager.getElementByName(PlayerPortraitImageElementName);
 	uiManager.setImageTexture(playerPortraitImageElementInstID, playerPortraitTextureID);

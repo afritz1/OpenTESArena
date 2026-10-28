@@ -7,18 +7,18 @@
 
 #include "components/debug/Debug.h"
 
-void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
+void ProvinceDefinition::init(int originalProvinceIndex, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const CityDataFile &cityData = binaryAssetLibrary.getCityDataFile();
-	const auto &provinceData = cityData.getProvinceData(provinceID);
+	const auto &provinceData = cityData.getProvinceData(originalProvinceIndex);
 	this->name = provinceData.name;
 	this->globalX = provinceData.globalX;
 	this->globalY = provinceData.globalY;
 	this->globalW = provinceData.globalW;
 	this->globalH = provinceData.globalH;
-	this->raceID = provinceID;
-	this->animatedDistantLand = provinceID == 3;
+	this->originalProvinceIndex = originalProvinceIndex;
+	this->animatedDistantLand = originalProvinceIndex == 3;
 
 	auto canAddLocation = [](const ArenaLocationData &locationData)
 	{
@@ -62,15 +62,15 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		}
 	};
 
-	const bool isCenterProvince = provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID;
+	const bool isCenterProvince = originalProvinceIndex == ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 	const ExeDataCityGeneration &cityGen = binaryAssetLibrary.getExeData().cityGen;
 
-	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](
+	auto tryAddCities = [originalProvinceIndex, &cityGen, &tryAddCity, isCenterProvince](
 		const auto &locations, ArenaCityType type, int startID)
 	{
-		auto isCoastal = [provinceID, &cityGen](int localCityID)
+		auto isCoastal = [originalProvinceIndex, &cityGen](int localCityID)
 		{
-			const int globalCityID = ArenaLocationUtils::getGlobalCityID(localCityID, provinceID);
+			const int globalCityID = ArenaLocationUtils::getGlobalCityID(localCityID, originalProvinceIndex);
 			return std::find(std::begin(cityGen.coastalCityList), std::end(cityGen.coastalCityList), globalCityID) != std::end(cityGen.coastalCityList);
 		};
 
@@ -80,18 +80,18 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 			const int localCityID = startID + static_cast<int>(i);
 			const bool coastal = isCoastal(localCityID);
 			const bool premade = isCenterProvince && (localCityID == 0);
-			tryAddCity(localCityID, provinceID, coastal, premade, type);
+			tryAddCity(localCityID, originalProvinceIndex, coastal, premade, type);
 		}
 	};
 
-	auto tryAddDungeons = [provinceID, &tryAddDungeon](const auto &locations)
+	auto tryAddDungeons = [originalProvinceIndex, &tryAddDungeon](const auto &locations)
 	{
 		for (size_t i = 0; i < std::size(locations); i++)
 		{
 			const auto &location = locations[i];
 
 			const int localDungeonID = 2 + static_cast<int>(i);
-			tryAddDungeon(localDungeonID, provinceID, location);
+			tryAddDungeon(localDungeonID, originalProvinceIndex, location);
 		}
 	};
 
@@ -99,8 +99,8 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 	tryAddCities(provinceData.towns, ArenaCityType::Town, static_cast<int>(std::size(provinceData.cityStates)));
 	tryAddCities(provinceData.villages, ArenaCityType::Village, static_cast<int>(std::size(provinceData.cityStates) + std::size(provinceData.towns)));
 
-	tryAddMainQuestDungeon(0, provinceID, LocationMainQuestDungeonDefinitionType::Staff, provinceData.secondDungeon);
-	tryAddMainQuestDungeon(1, provinceID, LocationMainQuestDungeonDefinitionType::Map, provinceData.firstDungeon);
+	tryAddMainQuestDungeon(0, originalProvinceIndex, LocationMainQuestDungeonDefinitionType::Staff, provinceData.secondDungeon);
+	tryAddMainQuestDungeon(1, originalProvinceIndex, LocationMainQuestDungeonDefinitionType::Map, provinceData.firstDungeon);
 
 	tryAddDungeons(provinceData.randomDungeons);
 
@@ -114,8 +114,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		startDungeonLocation.setVisible(false);
 
 		// After main quest dungeons and regular dungeons (anywhere's fine in the new layout, I guess).
-		tryAddMainQuestDungeon(std::nullopt, provinceID,
-			LocationMainQuestDungeonDefinitionType::Start, startDungeonLocation);
+		tryAddMainQuestDungeon(std::nullopt, originalProvinceIndex, LocationMainQuestDungeonDefinitionType::Start, startDungeonLocation);
 	}
 }
 
@@ -140,9 +139,9 @@ Rect ProvinceDefinition::getGlobalRect() const
 	return Rect(this->globalX, this->globalY, this->globalW, this->globalH);
 }
 
-int ProvinceDefinition::getRaceID() const
+int ProvinceDefinition::getOriginalProvinceIndex() const
 {
-	return this->raceID;
+	return this->originalProvinceIndex;
 }
 
 bool ProvinceDefinition::hasAnimatedDistantLand() const

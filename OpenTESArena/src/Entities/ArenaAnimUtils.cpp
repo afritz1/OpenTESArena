@@ -1373,7 +1373,7 @@ bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLoop
 	return true;
 }
 
-PaletteIndices ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t seed, const ExeData &exeData)
+PaletteIndices ArenaAnimUtils::transformCitizenColors(int originalRaceIndex, uint16_t seed, const ExeData &exeData)
 {
 	PaletteIndices newPaletteIndices;
 	std::iota(newPaletteIndices.begin(), newPaletteIndices.end(), 0);
@@ -1412,8 +1412,8 @@ PaletteIndices ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t se
 
 	// Skin transformation, only if the given race should have its colors transformed.
 	constexpr int RaceOffsets[] = { -1, 148, -1, 52, 192, -1, -1, 116, 148 };
-	DebugAssertIndex(RaceOffsets, raceIndex);
-	const int raceOffset = RaceOffsets[raceIndex];
+	DebugAssertIndex(RaceOffsets, originalRaceIndex);
+	const int raceOffset = RaceOffsets[originalRaceIndex];
 	const bool hasTransformation = raceOffset != -1;
 	if (hasTransformation)
 	{

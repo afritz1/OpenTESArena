@@ -315,13 +315,12 @@ const WorldMapTerrain &BinaryAssetLibrary::getWorldMapTerrain() const
 	return this->worldMapTerrain;
 }
 
-const std::string &BinaryAssetLibrary::getRulerTitle(int provinceID,
-	ArenaLocationType locationType, bool isMale, ArenaRandom &random) const
+const std::string &BinaryAssetLibrary::getRulerTitle(int originalProvinceIndex, ArenaLocationType locationType, bool isMale, ArenaRandom &random) const
 {
 	// Get the index into the titles list.
-	const int titleIndex = [this, provinceID, locationType, &random, isMale]()
+	const int titleIndex = [this, originalProvinceIndex, locationType, &random, isMale]()
 	{
-		if (provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID)
+		if (originalProvinceIndex == ArenaLocationUtils::CENTER_PROVINCE_INDEX)
 		{
 			return isMale ? 6 : 13;
 		}
@@ -341,7 +340,6 @@ const std::string &BinaryAssetLibrary::getRulerTitle(int provinceID,
 		}
 	}();
 
-	const auto &rulerTitles = this->exeData.locations.rulerTitles;
-	DebugAssertIndex(rulerTitles, titleIndex);
+	Span<const std::string> rulerTitles = this->exeData.locations.rulerTitles;
 	return rulerTitles[titleIndex];
 }

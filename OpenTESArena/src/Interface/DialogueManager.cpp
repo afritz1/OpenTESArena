@@ -258,11 +258,11 @@ int DialogueManager::getOathsEntryKey() const
 {
 	const GameState &gameState = this->game->gameState;
 	const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
-	const int provinceIndex = provinceDef.getRaceID();
+	const int originalProvinceIndex = provinceDef.getOriginalProvinceIndex();
 	
 	Random &random = this->game->random;
-	const int oathsProvinceID = (provinceIndex != ArenaLocationUtils::CENTER_PROVINCE_ID) ? provinceIndex : random.next(ArenaLocationUtils::CENTER_PROVINCE_ID);
-	return 364 + oathsProvinceID;
+	const int oathsProvinceIndex = (originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX) ? originalProvinceIndex : random.next(ArenaLocationUtils::CENTER_PROVINCE_INDEX);
+	return 364 + oathsProvinceIndex;
 }
 
 const std::string &DialogueManager::getTemplateDatEntryValueAtIndex(int entryKey, int index) const

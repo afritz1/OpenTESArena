@@ -2,6 +2,8 @@
 
 #include "components/utilities/Span.h"
 
+#include "CharacterRaceLibrary.h"
+
 struct ExeData;
 
 using PrimaryAttributeID = int;
@@ -23,7 +25,7 @@ struct PrimaryAttributes
 
 	PrimaryAttribute strength, intelligence, willpower, agility, speed, endurance, personality, luck;
 
-	void init(int raceID, bool isMale, const ExeData &exeData);
+	void init(CharacterRaceDefinitionID raceDefID, bool isMale, const ExeData &exeData);
 
 	Span<PrimaryAttribute> getView();
 	Span<const PrimaryAttribute> getView() const;

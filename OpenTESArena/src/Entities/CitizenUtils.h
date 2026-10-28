@@ -6,6 +6,7 @@
 #include "EntityUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/TextureUtils.h"
+#include "../Stats/CharacterRaceLibrary.h"
 #include "../World/Coord.h"
 
 class EntityChunkManager;
@@ -23,10 +24,10 @@ struct CitizenGenInfo
 	EntityDefID femaleEntityDefID;
 	const EntityDefinition *maleEntityDef;
 	const EntityDefinition *femaleEntityDef;
-	int raceID;
+	CharacterRaceDefinitionID raceDefID;
 
 	void init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID, const EntityDefinition *maleEntityDef,
-		const EntityDefinition *femaleEntityDef, int raceID);
+		const EntityDefinition *femaleEntityDef, CharacterRaceDefinitionID raceDefID);
 };
 
 namespace CitizenUtils
@@ -37,8 +38,8 @@ namespace CitizenUtils
 	int getMaxCitizenCountForScene(int chunkCount);
 
 	bool canMapTypeSpawnCitizens(MapType mapType);
-	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaClimateType climateType);
-	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef);
+	CitizenGenInfo makeCitizenGenInfo(CharacterRaceDefinitionID raceDefID, ArenaClimateType climateType);
+	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, CharacterRaceDefinitionID raceDefID, const LocationDefinition &locationDef);
 
 	// Helper functions for determining a citizen's walking direction.
 	CardinalDirectionName getCitizenDirectionNameByIndex(int index);

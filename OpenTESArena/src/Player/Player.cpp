@@ -270,7 +270,7 @@ Player::Player()
 	this->movementType = PlayerMovementType::Default;
 	this->movementSoundProgress = 0.0;
 	this->male = false;
-	this->raceID = -1;
+	this->raceDefID = -1;
 	this->charClassDefID = -1;
 	this->portraitID = -1;
 	this->maxHealth = 0.0;
@@ -292,14 +292,14 @@ Player::~Player()
 	DebugAssert(this->physicsCharacterVirtual == nullptr);
 }
 
-void Player::init(const std::string &displayName, bool male, int raceID, CharacterClassDefinitionID charClassDefID, int portraitID,
-	const PrimaryAttributes &primaryAttributes, int maxHealth, int maxStamina, int maxSpellPoints, int gold, bool isGhostModeActive,
-	const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
+void Player::init(const std::string &displayName, bool male, CharacterRaceDefinitionID raceDefID, CharacterClassDefinitionID charClassDefID,
+	int portraitID, const PrimaryAttributes &primaryAttributes, int maxHealth, int maxStamina, int maxSpellPoints, int gold,
+	bool isGhostModeActive, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
 	this->male = male;
-	this->raceID = raceID;
+	this->raceDefID = raceDefID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
 	this->maxHealth = maxHealth;
@@ -672,9 +672,8 @@ double Player::getMaxMoveSpeed() const
 {
 	if (this->groundState.isSwimming)
 	{
-		const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
-		const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(this->raceID);
-		return charRaceDef.swimmingMoveSpeed;
+		const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(this->raceDefID);
+		return raceDef.swimmingMoveSpeed;
 	}
 
 	const int speedAttribute = this->primaryAttributes.speed.maxValue; // @todo use currentValue eventually
@@ -1172,14 +1171,11 @@ void Player::postPhysicsStep(double dt, Game &game)
 			}
 			else if (!isDoneClimbing)
 			{
-				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
-
-				const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
-				const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(this->raceID);
+				const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(this->charClassDefID);
+				const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(this->raceDefID);
 
 				constexpr double baseClimbingSpeed = PlayerConstants::CLIMBING_SPEED;
-				const double climbingSpeedScale = std::max(charClassDef.climbingSpeedScale, charRaceDef.climbingSpeedScale);
+				const double climbingSpeedScale = std::max(charClassDef.climbingSpeedScale, raceDef.climbingSpeedScale);
 				const Double3 climbingVelocity(0.0, baseClimbingSpeed * climbingSpeedScale, 0.0);
 				newVelocity = climbingVelocity;
 			}

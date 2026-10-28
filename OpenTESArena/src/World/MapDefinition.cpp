@@ -279,7 +279,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	return true;
 }
 
-bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
+bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int originalRaceIndex,
 	bool isPremade, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide,
 	bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaCityType cityType,
 	const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, const SkyGenerationExteriorInfo &exteriorSkyGenInfo,
@@ -308,7 +308,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	levelInfoDef.init(ceilingScale);
 
-	MapGeneration::generateMifCity(mif, citySeed, rulerSeed, raceID, isPremade, rulerIsMale, palaceIsMainQuestDungeon,
+	MapGeneration::generateMifCity(mif, citySeed, rulerSeed, originalRaceIndex, isPremade, rulerIsMale, palaceIsMainQuestDungeon,
 		reservedBlocks, blockStartPosX, blockStartPosY, cityBlocksPerSide, coastal, cityTypeName, cityType,
 		mainQuestTempleOverride, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textAssetLibrary,
 		textureManager, &levelDef, &levelInfoDef);
@@ -512,7 +512,7 @@ bool MapDefinition::initCity(const MapGenerationCityInfo &generationInfo, const 
 		generationInfo.mainQuestTempleOverride.has_value() ? &(*generationInfo.mainQuestTempleOverride) : nullptr;
 
 	// Generate city level (optionally generating random city blocks if not premade).
-	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.rulerSeed, generationInfo.raceID,
+	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.rulerSeed, generationInfo.originalRaceIndex,
 		generationInfo.isPremade, reservedBlocks, generationInfo.blockStartPosX, generationInfo.blockStartPosY,
 		generationInfo.cityBlocksPerSide, generationInfo.coastal, generationInfo.rulerIsMale,
 		generationInfo.palaceIsMainQuestDungeon, generationInfo.cityTypeName, generationInfo.cityType,

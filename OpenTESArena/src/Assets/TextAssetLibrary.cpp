@@ -931,9 +931,9 @@ bool TextAssetLibrary::init()
 	return success;
 }
 
-std::string TextAssetLibrary::generateNpcName(int raceID, bool isMale, ArenaRandom &random) const
+std::string TextAssetLibrary::generateNpcName(int originalRaceIndex, bool isMale, ArenaRandom &random) const
 {
-	const RaceNameRules selectedRaceNameRules = NameRules[raceID];
+	const RaceNameRules selectedRaceNameRules = NameRules[originalRaceIndex];
 	const GenderNameRules selectedGenderNameRules = selectedRaceNameRules[isMale ? 0 : 1];
 
 	// Construct the name from each part of the rule.

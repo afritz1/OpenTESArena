@@ -110,5 +110,5 @@ public:
 	bool init();
 
 	// Creates a random NPC name from the given parameters.
-	std::string generateNpcName(int raceID, bool isMale, ArenaRandom &random) const;
+	std::string generateNpcName(int originalRaceIndex, bool isMale, ArenaRandom &random) const;
 };

@@ -102,6 +102,5 @@ public:
 	const WorldMapTerrain &getWorldMapTerrain() const;
 
 	// Gets the ruler title associated with the given parameters.
-	const std::string &getRulerTitle(int provinceID, ArenaLocationType locationType,
-		bool isMale, ArenaRandom &random) const;
+	const std::string &getRulerTitle(int originalProvinceIndex, ArenaLocationType locationType, bool isMale, ArenaRandom &random) const;
 };

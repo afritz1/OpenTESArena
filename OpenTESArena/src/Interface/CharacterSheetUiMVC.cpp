@@ -69,9 +69,8 @@ std::string CharacterSheetUiModel::getPlayerName(Game &game)
 std::string CharacterSheetUiModel::getPlayerRaceName(Game &game)
 {
 	const Player &player = game.player;
-	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
-	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(player.raceID);
-	return characterRaceDefinition.singularName;
+	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
+	return raceDef.singularName;
 }
 
 std::string CharacterSheetUiModel::getPlayerClassName(Game &game)
@@ -358,16 +357,15 @@ TextureAsset CharacterSheetUiView::getPaletteTextureAsset()
 TextureAsset CharacterSheetUiView::getBodyTextureAsset(Game &game)
 {
 	const Player &player = game.player;
-	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
-	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(player.raceID);
+	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
 
 	if (player.male)
 	{
-		return characterRaceDefinition.maleCharSheetBodyTextureAsset;
+		return raceDef.maleCharSheetBodyTextureAsset;
 	}
 	else
 	{
-		return characterRaceDefinition.femaleCharSheetBodyTextureAsset;
+		return raceDef.femaleCharSheetBodyTextureAsset;
 	}
 }
 
@@ -380,17 +378,16 @@ TextureAsset CharacterSheetUiView::getHeadTextureAsset(Game &game)
 	}
 
 	const Player &player = game.player;
-	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
-	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(player.raceID);
+	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
 	const int headIndex = player.portraitID;
 
 	if (player.male)
 	{
-		return TextureAsset(characterRaceDefinition.maleCharSheetHeadsFilename, headIndex);
+		return TextureAsset(raceDef.maleCharSheetHeadsFilename, headIndex);
 	}
 	else
 	{
-		return TextureAsset(characterRaceDefinition.femaleCharSheetHeadsFilename, headIndex);
+		return TextureAsset(raceDef.femaleCharSheetHeadsFilename, headIndex);
 	}
 }
 

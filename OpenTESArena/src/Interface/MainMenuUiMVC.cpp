@@ -215,13 +215,13 @@ void MainMenuUiModel::getMainQuestLocationFromIndex(int testIndex, const ExeData
 	if (testIndex == 0)
 	{
 		*outLocationID = -1;
-		*outProvinceID = ArenaLocationUtils::CENTER_PROVINCE_ID;
+		*outProvinceID = ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 		*outSpecialCaseType = SpecialCaseType::StartDungeon;
 	}
 	else if (testIndex == (MainQuestLocationCount - 1))
 	{
 		*outLocationID = 0;
-		*outProvinceID = ArenaLocationUtils::CENTER_PROVINCE_ID;
+		*outProvinceID = ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 		*outSpecialCaseType = SpecialCaseType::None;
 	}
 	else
@@ -790,7 +790,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		if (mifName == MainMenuUiModel::ImperialMIF)
 		{
 			// Load city into game state.
-			const int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
+			const int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 			const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 			const std::optional<int> locationIndex = [&mifName, &provinceDef]() -> std::optional<int>
 			{
@@ -839,7 +839,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
-				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
+				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getOriginalProvinceIndex(), cityDef.premade,
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
@@ -923,7 +923,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
-				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
+				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getOriginalProvinceIndex(), cityDef.premade,
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 

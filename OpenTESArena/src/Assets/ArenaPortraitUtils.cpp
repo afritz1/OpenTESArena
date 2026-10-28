@@ -5,14 +5,14 @@
 
 #include "components/utilities/String.h"
 
-std::string ArenaPortraitUtils::getHeads(bool male, int raceID, bool trimmed)
+std::string ArenaPortraitUtils::getHeads(bool male, int originalRaceIndex, bool trimmed)
 {
-	return String::format("FACES%s%d%d.CIF", male ? "" : "F", trimmed ? 0 : 1, raceID);
+	return String::format("FACES%s%d%d.CIF", male ? "" : "F", trimmed ? 0 : 1, originalRaceIndex);
 }
 
-std::string ArenaPortraitUtils::getBody(bool male, int raceID)
+std::string ArenaPortraitUtils::getBody(bool male, int originalRaceIndex)
 {
-	return String::format("%s0%d.IMG", male ? "CHARBK" : "CHRBKF", raceID);
+	return String::format("%s0%d.IMG", male ? "CHARBK" : "CHRBKF", originalRaceIndex);
 }
 
 const std::string &ArenaPortraitUtils::getShirt(bool male, bool magic)

@@ -926,18 +926,17 @@ TextureAsset GameWorldUiView::getStatusGradientTextureAsset(PlayerStatusGradient
 	return TextureAsset(ArenaTextureName::StatusGradients, gradientID);
 }
 
-TextureAsset GameWorldUiView::getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID)
+TextureAsset GameWorldUiView::getPlayerPortraitTextureAsset(bool isMale, CharacterRaceDefinitionID raceDefID, int portraitID)
 {
-	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
-	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(raceID);
+	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(raceDefID);
 
 	if (isMale)
 	{
-		return TextureAsset(characterRaceDefinition.maleGameUiHeadsFilename, portraitID);
+		return TextureAsset(raceDef.maleGameUiHeadsFilename, portraitID);
 	}
 	else
 	{
-		return TextureAsset(characterRaceDefinition.femaleGameUiHeadsFilename, portraitID);
+		return TextureAsset(raceDef.femaleGameUiHeadsFilename, portraitID);
 	}
 }
 

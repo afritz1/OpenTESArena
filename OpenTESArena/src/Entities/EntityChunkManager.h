@@ -56,7 +56,7 @@ struct EntityInitInfo
 	std::optional<int8_t> citizenDirectionIndex;
 	std::optional<EntityNpcName> npcName;
 	std::optional<uint16_t> citizenColorSeed;
-	std::optional<int> raceID;
+	std::optional<CharacterRaceDefinitionID> raceDefID;
 	std::optional<bool> dialogueGenderIsMale;
 	int humanEnemyLevel;
 	bool hasInventory;

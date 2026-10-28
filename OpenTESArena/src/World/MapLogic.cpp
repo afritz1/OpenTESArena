@@ -168,7 +168,8 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	player.setPhysicsVelocity(Double3::Zero);
 	player.clearKeyInventory();
 
-	const int provinceID = player.raceID; // @todo: this should be more like a WorldMapDefinition::getProvinceIdForRaceId() that searches provinces
+	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
+	const int provinceID = raceDef.provinceID;
 	const int locationID = game.random.next(32); // @todo: this should not assume 32 locations per province
 
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
@@ -206,7 +207,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 
 	MapGenerationCityInfo cityGenInfo;
 	cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-		cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
+		cityDef.citySeed, cityDef.rulerSeed, provinceDef.getOriginalProvinceIndex(), cityDef.premade, cityDef.coastal,
 		cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 		mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
@@ -508,8 +509,8 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				}();
 
 				MapGenerationCityInfo cityGenInfo;
-				cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
-					cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
+				cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
+					cityDef.citySeed, cityDef.rulerSeed, provinceDef.getOriginalProvinceIndex(), cityDef.premade,
 					cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 					mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY,
 					cityDef.cityBlocksPerSide);

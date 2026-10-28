@@ -30,19 +30,20 @@ void PrimaryAttribute::clear()
 	this->maxValue = 0;
 }
 
-void PrimaryAttributes::init(int raceID, bool isMale, const ExeData &exeData)
+void PrimaryAttributes::init(CharacterRaceDefinitionID raceDefID, bool isMale, const ExeData &exeData)
 {
+	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(raceDefID);
+	const Span<const std::string> attributeNames = exeData.entities.attributeNames;
+
 	Span<PrimaryAttribute> attributes = this->getView();
 	for (int i = 0; i < COUNT; i++)
 	{
-		DebugAssertIndex(exeData.entities.attributeNames, i);
-		const std::string &attributeName = exeData.entities.attributeNames[i];
-		const int raceAttributesIndex = (raceID * 2) + (isMale ? 0 : 1); // Alternates male/female
-		DebugAssertIndex(exeData.entities.raceAttributes, raceAttributesIndex);
-		const Span<const uint8_t> raceAttributesView = exeData.entities.raceAttributes[raceAttributesIndex];
-		const uint8_t attributeValue = raceAttributesView[i]; // 0..255
-		const int attributeValueCorrected = static_cast<int>(std::round(static_cast<double>(attributeValue) / (255.0 / 100.0)));
-
+		const std::string &attributeName = attributeNames[i];
+		const int raceAttributesIndex = (raceDef.originalRaceIndex * 2) + (isMale ? 0 : 1); // Alternates male/female
+		const Span<const uint8_t> raceAttributes = exeData.entities.raceAttributes[raceAttributesIndex];
+		const uint8_t attributeValue = raceAttributes[i]; // 0..255
+		const int attributeValueCorrected = static_cast<int>(std::round(static_cast<double>(attributeValue) / (255.0 / 100.0))); // @todo use ArenaStatUtils::scale256To100() here?
+		
 		PrimaryAttribute &attribute = attributes[i];
 		attribute.init(attributeName.c_str(), attributeValueCorrected);
 	}

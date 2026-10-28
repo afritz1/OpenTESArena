@@ -796,7 +796,7 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			gameState.init(game.arenaRandom);
 
 			// Find starting dungeon location definition.
-			constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
+			constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 			const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 			const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 			const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>
@@ -847,7 +847,7 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 			const std::string_view name = charCreationState.name;
 			const bool male = charCreationState.male;
-			const int raceIndex = charCreationState.raceIndex;
+			const CharacterRaceDefinitionID raceDefID = charCreationState.raceDefID;
 
 			const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 			const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
@@ -864,7 +864,7 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			const int gold = charCreationState.gold;
 
 			Player &player = game.player;
-			player.init(std::string(name), male, raceIndex, charClassDefID, portraitIndex, attributes, maxHealth, maxStamina, maxSpellPoints,
+			player.init(std::string(name), male, raceDefID, charClassDefID, portraitIndex, attributes, maxHealth, maxStamina, maxSpellPoints,
 				gold, game.options.getMisc_GhostMode(), exeData, game.physicsSystem);
 
 			// Face west so we don't start looking at a wall.

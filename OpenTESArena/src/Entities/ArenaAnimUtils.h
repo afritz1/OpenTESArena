@@ -219,5 +219,5 @@ namespace ArenaAnimUtils
 
 	// Transforms the palette indices used for a citizen's clothes and skin. The given seed value is
 	// "pure random" and can essentially be anything.
-	PaletteIndices transformCitizenColors(int raceIndex, uint16_t seed, const ExeData &exeData);
+	PaletteIndices transformCitizenColors(int originalRaceIndex, uint16_t seed, const ExeData &exeData);
 }

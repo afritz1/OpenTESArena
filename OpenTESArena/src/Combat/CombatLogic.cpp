@@ -409,7 +409,8 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 
 			if (isPhysicalImpact)
 			{
-				isHitEntityTakingDamage = ArenaCombatUtils::isMeleeHitSuccessful(player.level, player.raceID, playerHitBonus, playerLuckBonus, hitEntityCombatState->level, hitEntityOriginalClassIndex, hitEntityDefenseBonus, hitEntityLuckBonus, game.arenaRandom);
+				const CharacterRaceDefinition &playerRaceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
+				isHitEntityTakingDamage = ArenaCombatUtils::isMeleeHitSuccessful(player.level, playerRaceDef.originalRaceIndex, playerHitBonus, playerLuckBonus, hitEntityCombatState->level, hitEntityOriginalClassIndex, hitEntityDefenseBonus, hitEntityLuckBonus, game.arenaRandom);
 			}
 			else if (isMagicalImpact)
 			{
@@ -577,6 +578,7 @@ void CombatLogic::onPlayerHitByEntity(EntityInstanceID sourceEntityInstID, Game 
 		damageAmount = creatureDef.minDamage + random.next(creatureDef.maxDamage - creatureDef.minDamage + 1);
 
 		const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
+		const CharacterRaceDefinition &playerRaceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
 
 		// @todo: Pass in real values for the saving throw and resistance effect
 		const bool isPlayerPoisonResistEffectActive = false;
@@ -585,8 +587,9 @@ void CombatLogic::onPlayerHitByEntity(EntityInstanceID sourceEntityInstID, Game 
 		int diseaseID;
 		double diseaseSecondsRemaining;
 		double paralysisSecondsRemaining;
-		ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, originalPlayerClassIndex, isPlayerPoisonResistEffectActive,
-			playerPoisonSavingThrow, arenaRandom, exeData, &diseaseID, &diseaseSecondsRemaining, &paralysisSecondsRemaining);
+		ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, playerRaceDef.originalRaceIndex, originalPlayerClassIndex,
+			isPlayerPoisonResistEffectActive, playerPoisonSavingThrow, arenaRandom, exeData, &diseaseID, &diseaseSecondsRemaining,
+			&paralysisSecondsRemaining);
 
 		if (diseaseID >= 0)
 		{

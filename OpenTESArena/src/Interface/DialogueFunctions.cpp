@@ -318,7 +318,8 @@ std::string DialogueFunctions::get_hc(Game &game)
 {
 	const Player &player = game.player;
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &playerHomeProvince = provinceLibrary.getProvinceDef(player.raceID);
+	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
+	const ProvinceDefinition &playerHomeProvince = provinceLibrary.getProvinceDef(raceDef.provinceID);
 	return playerHomeProvince.getName();
 }
 
@@ -514,8 +515,8 @@ std::string DialogueFunctions::get_r(Game &game)
 std::string DialogueFunctions::get_ra(Game &game)
 {
 	const Player &player = game.player;
-	const CharacterRaceDefinition &charRaceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceID);
-	return charRaceDef.singularName;
+	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
+	return raceDef.singularName;
 }
 
 std::string DialogueFunctions::get_rcn(Game &game)
@@ -531,14 +532,14 @@ std::string DialogueFunctions::get_rcn(Game &game)
 std::string DialogueFunctions::get_rf(Game &game)
 {
 	const GameState &gameState = game.gameState;
-	const int provinceIndex = gameState.getProvinceDefinition().getRaceID();
+	const int originalProvinceIndex = gameState.getProvinceDefinition().getOriginalProvinceIndex();
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
 	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 	const bool isRulerMale = cityDef.rulerIsMale;
 	ArenaRandom tempRandom(cityDef.rulerSeed);
 
 	std::string str;
-	if (provinceIndex == ArenaLocationUtils::CENTER_PROVINCE_ID)
+	if (originalProvinceIndex == ArenaLocationUtils::CENTER_PROVINCE_INDEX)
 	{
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		str = exeData.locations.centerProvinceRulerName;
@@ -546,7 +547,7 @@ std::string DialogueFunctions::get_rf(Game &game)
 	else
 	{
 		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-		const std::string fullName = textAssetLibrary.generateNpcName(provinceIndex, isRulerMale, tempRandom);
+		const std::string fullName = textAssetLibrary.generateNpcName(originalProvinceIndex, isRulerMale, tempRandom);
 		const Buffer<std::string> tokens = String::split(fullName, ' ');
 		str = tokens[0];
 	}
@@ -570,10 +571,10 @@ std::string DialogueFunctions::get_sn(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const DialogueManager &dialogueManager = game.dialogueManager;
-	const int provinceIndex = gameState.getProvinceDefinition().getRaceID();
+	const int originalProvinceIndex = gameState.getProvinceDefinition().getOriginalProvinceIndex();
 	ArenaRandom tempRandom(dialogueManager.entityInstID);
 	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-	const std::string fullName = textAssetLibrary.generateNpcName(provinceIndex, false, tempRandom);
+	const std::string fullName = textAssetLibrary.generateNpcName(originalProvinceIndex, false, tempRandom);
 	const Buffer<std::string> tokens = String::split(fullName, ' ');
 	return tokens[0];
 }
@@ -587,9 +588,9 @@ std::string DialogueFunctions::get_st(Game &game)
 	const Span<const ArenaWeatherType> globalWeathers = gameState.getWorldMapWeathers();
 
 	// War/peace depends on weather which in theory is a slow-changing global variable.
-	const int provinceIndex = gameState.getProvinceDefinition().getRaceID();
+	const int originalProvinceIndex = gameState.getProvinceDefinition().getOriginalProvinceIndex();
 	const int locationIndex = gameState.getLocationIndex();
-	const int quarterIndex = gameState.getLocationGlobalQuarter(provinceIndex, locationIndex);
+	const int quarterIndex = gameState.getLocationGlobalQuarter(originalProvinceIndex, locationIndex);
 	const ArenaWeatherType quarterWeather = globalWeathers[quarterIndex];
 	const uint32_t seed1 = cityDef.citySeed;
 	const uint32_t seed2 = (seed1 & 0xFF) + (static_cast<int>(quarterWeather) & 0x7);
@@ -610,14 +611,14 @@ std::string DialogueFunctions::get_suf(Game &game)
 std::string DialogueFunctions::get_t(Game &game)
 {
 	const GameState &gameState = game.gameState;
-	const int provinceID = gameState.getProvinceDefinition().getRaceID();
+	const int originalProvinceIndex = gameState.getProvinceDefinition().getOriginalProvinceIndex();
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
 	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 	const int localCityID = gameState.getLocationIndex();
 	const ArenaLocationType locationType = ArenaLocationUtils::getCityType(localCityID);
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	ArenaRandom random(game.arenaRandom.getSeed());
-	return binaryAssetLibrary.getRulerTitle(provinceID, locationType, cityDef.rulerIsMale, random);
+	return binaryAssetLibrary.getRulerTitle(originalProvinceIndex, locationType, cityDef.rulerIsMale, random);
 }
 
 std::string DialogueFunctions::get_tan(Game &game)

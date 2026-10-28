@@ -72,8 +72,8 @@ void WorldMapUiState::init(Game &game)
 	const GameState &gameState = game.gameState;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
-	const int provinceID = gameState.getProvinceDefinition().getRaceID();
-	this->highlightedProvinceTextureID = WorldMapUiView::allocHighlightedTextTexture(provinceID, textureManager, renderer);
+	const int originalProvinceIndex = gameState.getProvinceDefinition().getOriginalProvinceIndex();
+	this->highlightedProvinceTextureID = WorldMapUiView::allocHighlightedTextTexture(originalProvinceIndex, textureManager, renderer);
 
 	this->fastTravelAnimTextureIDs = AllocFastTravelAnimTextureIDs(textureManager, renderer);
 	this->fastTravelCurrentSeconds = 0.0;
@@ -129,11 +129,11 @@ void WorldMapUI::create(Game &game)
 	state.fastTravelContextInstID = uiManager.createContext(fastTravelContextInitInfo);*/
 
 	const GameState &gameState = game.gameState;
-	const int provinceID = gameState.getProvinceDefinition().getRaceID();
+	const int originalProvinceIndex = gameState.getProvinceDefinition().getOriginalProvinceIndex();
 
 	UiElementInitInfo highlightedProvinceImageElementInitInfo;
 	highlightedProvinceImageElementInitInfo.name = "WorldMapHighlightedProvinceImage";
-	highlightedProvinceImageElementInitInfo.position = WorldMapUiView::getProvinceNameOffset(provinceID, textureManager);
+	highlightedProvinceImageElementInitInfo.position = WorldMapUiView::getProvinceNameOffset(originalProvinceIndex, textureManager);
 	highlightedProvinceImageElementInitInfo.drawOrder = 1;
 	uiManager.createImage(highlightedProvinceImageElementInitInfo, state.highlightedProvinceTextureID, state.contextInstID, renderer);
 

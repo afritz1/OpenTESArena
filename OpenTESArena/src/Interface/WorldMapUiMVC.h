@@ -37,12 +37,12 @@ namespace FastTravelUiModel
 
 namespace WorldMapUiView
 {
-	Int2 getProvinceNameOffset(int provinceID, TextureManager &textureManager);
+	Int2 getProvinceNameOffset(int originalProvinceIndex, TextureManager &textureManager);
 
 	TextureAsset getPaletteTextureAsset();
 	std::string getProvinceNamesFilename();
 
-	UiTextureID allocHighlightedTextTexture(int provinceID, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocHighlightedTextTexture(int originalProvinceIndex, TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace FastTravelUiView

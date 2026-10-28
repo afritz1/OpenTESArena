@@ -195,7 +195,11 @@ void ChooseRaceUI::onMouseButtonChanged(Game &game, MouseButtonType mouseButtonT
 			if (provinceID.has_value())
 			{
 				CharacterCreationState &charCreationState = game.getCharacterCreationState();
-				charCreationState.raceIndex = *provinceID;
+				charCreationState.raceDefID = CharacterRaceLibrary::getInstance().findDefinitionIdIf(
+					[provinceID](const CharacterRaceDefinition &raceDef)
+				{
+					return raceDef.provinceID == *provinceID;
+				});
 
 				ChooseRaceUiState &state = ChooseRaceUI::state;
 				UiManager &uiManager = game.uiManager;

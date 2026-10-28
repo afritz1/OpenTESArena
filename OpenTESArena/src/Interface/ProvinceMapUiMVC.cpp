@@ -94,7 +94,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 			const auto &locationFormatTexts = exeData.travel.locationFormatTexts;
 
 			// Decide the format based on whether it's the center province.
-			if (srcProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_ID)
+			if (srcProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
 			{
 				// Determine whether to use the city format or dungeon format.
 				if (dstLocationDef.getType() == LocationDefinitionType::City)
@@ -404,7 +404,7 @@ int ProvinceMapUiView::getTextPopUpTextureHeight(int textHeight)
 
 bool ProvinceMapUiView::provinceHasStaffDungeonIcon(int provinceID)
 {
-	return provinceID != ArenaLocationUtils::CENTER_PROVINCE_ID;
+	return provinceID != ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 }
 
 TextureAsset ProvinceMapUiView::getBackgroundTextureAsset(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)

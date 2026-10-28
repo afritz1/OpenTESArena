@@ -1927,7 +1927,7 @@ namespace MapGeneration
 		}
 	}
 
-	void generateArenaCityBuildingNames(uint32_t citySeed, int raceID, bool coastal, const std::string_view cityTypeName,
+	void generateArenaCityBuildingNames(uint32_t citySeed, int originalRaceIndex, bool coastal, const std::string_view cityTypeName,
 		const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, ArenaRandom &random,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
 		LevelInfoDefinition *outLevelInfoDef)
@@ -1978,7 +1978,7 @@ namespace MapGeneration
 
 		// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 		// match the given menu type.
-		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride, &random, &textAssetLibrary,
+		auto generateNames = [&citySeed, originalRaceIndex, coastal, &cityTypeName, mainQuestTempleOverride, &random, &textAssetLibrary,
 			outLevelDef, outLevelInfoDef, &exeData, &localCityPoint, &tryGetInteriorType](ArenaInteriorType interiorType)
 		{
 			if ((interiorType == ArenaInteriorType::Equipment) || (interiorType == ArenaInteriorType::Temple))
@@ -2004,7 +2004,7 @@ namespace MapGeneration
 				return tavernPrefixes[prefixIndex] + ' ' + tavernSuffixes[suffixIndex];
 			};
 
-			auto createEquipmentName = [raceID, &cityTypeName, &random, &textAssetLibrary, &exeData](
+			auto createEquipmentName = [originalRaceIndex, &cityTypeName, &random, &textAssetLibrary, &exeData](
 				int prefixIndex, int suffixIndex, SNInt x, WEInt z)
 			{
 				const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
@@ -2029,10 +2029,10 @@ namespace MapGeneration
 				if (index != std::string::npos)
 				{
 					ArenaRandom nameRandom((x << 16) + z);
-					const std::string maleFirstName = [raceID, &textAssetLibrary, &nameRandom]()
+					const std::string maleFirstName = [originalRaceIndex, &textAssetLibrary, &nameRandom]()
 					{
 						constexpr bool isMale = true;
-						const std::string name = textAssetLibrary.generateNpcName(raceID, isMale, nameRandom);
+						const std::string name = textAssetLibrary.generateNpcName(originalRaceIndex, isMale, nameRandom);
 						const std::string firstName = String::split(name)[0];
 						return firstName;
 					}();
@@ -2046,7 +2046,7 @@ namespace MapGeneration
 				{
 					ArenaRandom nameRandom((z << 16) + x);
 					constexpr bool isMale = true;
-					const std::string maleName = textAssetLibrary.generateNpcName(raceID, isMale, nameRandom);
+					const std::string maleName = textAssetLibrary.generateNpcName(originalRaceIndex, isMale, nameRandom);
 					str.replace(index, 2, maleName);
 				}
 
@@ -2416,7 +2416,7 @@ void MapGenerationInteriorInfo::initDungeon(const LocationDungeonDefinition &dun
 }
 
 void MapGenerationCityInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType, uint32_t citySeed,
-	uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
+	uint32_t rulerSeed, int originalRaceIndex, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	Buffer<uint8_t> &&reservedBlocks, const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
@@ -2425,7 +2425,7 @@ void MapGenerationCityInfo::init(std::string &&mifName, std::string &&cityTypeNa
 	this->cityType = cityType;
 	this->citySeed = citySeed;
 	this->rulerSeed = rulerSeed;
-	this->raceID = raceID;
+	this->originalRaceIndex = originalRaceIndex;
 	this->isPremade = isPremade;
 	this->coastal = coastal;
 	this->rulerIsMale = rulerIsMale;
@@ -2635,7 +2635,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	*outStartPoint = VoxelUtils::originalVoxelToWorldVoxel(startPoint);
 }
 
-void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
+void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int originalRaceIndex,
 	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon, Span<const uint8_t> reservedBlocks,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName,
 	ArenaCityType cityType, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
@@ -2693,7 +2693,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 		entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef, outLevelInfoDef, &map1Mappings,
 		&entityMappings, &transitionMappings, &doorMappings);
 	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
-	MapGeneration::generateArenaCityBuildingNames(citySeed, raceID, coastal, cityTypeName, mainQuestTempleOverride,
+	MapGeneration::generateArenaCityBuildingNames(citySeed, originalRaceIndex, coastal, cityTypeName, mainQuestTempleOverride,
 		random, binaryAssetLibrary, textAssetLibrary, outLevelDef, outLevelInfoDef);
 	MapGeneration::populateInteriorDisplayNames(outLevelDef, outLevelInfoDef);
 }

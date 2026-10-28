@@ -17,7 +17,7 @@ void CharacterCreationState::populateBaseAttributes()
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
-	this->attributes.init(this->raceIndex, this->male, exeData);
+	this->attributes.init(this->raceDefID, this->male, exeData);
 }
 
 void CharacterCreationState::clearChangedPoints()
@@ -29,7 +29,7 @@ void CharacterCreationState::clear()
 {
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
 	this->charClassDefID = -1;
-	this->raceIndex = -1;
+	this->raceDefID = -1;
 	this->portraitIndex = -1;
 	this->male = false;
 	this->attributes.clear();

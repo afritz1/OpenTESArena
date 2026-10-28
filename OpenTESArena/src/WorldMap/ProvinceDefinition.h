@@ -13,11 +13,11 @@ private:
 	std::vector<LocationDefinition> locations;
 	std::string name;
 	int globalX, globalY, globalW, globalH; // Province-to-world-map projection.
-	int raceID;
+	int originalProvinceIndex;
 	bool animatedDistantLand;
 public:
 	// Initialize from original game data.
-	void init(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
+	void init(int originalProvinceIndex, const BinaryAssetLibrary &binaryAssetLibrary);
 	// @todo: eventually have init(const char *filename) for custom provinces.
 
 	// Gets the number of locations in the province.
@@ -33,7 +33,7 @@ public:
 	Rect getGlobalRect() const;
 
 	// Gets the race ID that refers to a specific race.
-	int getRaceID() const;
+	int getOriginalProvinceIndex() const;
 
 	// Whether the province contains any animated distant land like volcanoes.
 	// @todo: expand this into an actual data structure

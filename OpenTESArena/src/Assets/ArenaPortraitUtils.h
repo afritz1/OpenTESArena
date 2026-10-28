@@ -12,10 +12,10 @@ namespace ArenaPortraitUtils
 {
 	// Gets the heads filename for a given gender, race, and whether the heads
 	// are for the character sheet (not trimmed) or the game interface (trimmed).
-	std::string getHeads(bool male, int raceID, bool trimmed);
+	std::string getHeads(bool male, int originalRaceIndex, bool trimmed);
 
 	// Gets the unclothed character background filename for a given gender and race.
-	std::string getBody(bool male, int raceID);
+	std::string getBody(bool male, int originalRaceIndex);
 
 	// Gets the shirt image filename for a given gender and magic affinity.
 	const std::string &getShirt(bool male, bool magic);

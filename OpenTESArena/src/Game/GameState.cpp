@@ -1528,9 +1528,7 @@ void GameState::tickPlayerStamina(double dt, Game &game)
 	constexpr double secondsPerMinute = 60.0;
 
 	Player &player = game.player;
-
-	const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
-	const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(player.raceID);
+	const CharacterRaceDefinition &charRaceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
 
 	constexpr double awakeStaminaLossPerSecond = (baseStaminaLossPerMinute * arenaStaminaScale * ArenaClockUtils::GameSecondsPerRealTimeSecond) / secondsPerMinute;
 	const double swimmingStaminaLossPerSecond = awakeStaminaLossPerSecond * charRaceDef.swimmingStaminaLossMultiplier;
@@ -1759,9 +1757,16 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
 
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+	const CharacterRaceDefinitionID raceDefID = CharacterRaceLibrary::getInstance().findDefinitionIdIf(
+		[&provinceDef](const CharacterRaceDefinition &raceDef)
+	{
+		return raceDef.originalRaceIndex == provinceDef.getOriginalProvinceIndex();
+	});
+
 	const LocationDefinition &locationDef = this->getLocationDefinition();
 	const LocationDefinitionType locationDefType = locationDef.getType();
-	const std::optional<CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(mapType, provinceDef.getRaceID(), locationDef);
+
+	const std::optional<CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(mapType, raceDefID, locationDef);
 
 	// For loot generation.
 	ArenaCityType lootCityType = ArenaCityType::CityState;

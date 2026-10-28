@@ -11,6 +11,7 @@
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../Stats/CharacterRaceLibrary.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/UiListBox.h"
@@ -264,7 +265,7 @@ namespace GameWorldUiView
 	TextureAsset getPaletteTextureAsset();
 	TextureAsset getGameWorldInterfaceTextureAsset();
 	TextureAsset getStatusGradientTextureAsset(PlayerStatusGradientType gradientType);
-	TextureAsset getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID);
+	TextureAsset getPlayerPortraitTextureAsset(bool isMale, CharacterRaceDefinitionID raceDefID, int portraitID);
 	TextureAsset getNoMagicTextureAsset();
 	TextureAsset getWeaponAnimTextureAsset(const std::string &weaponFilename, int index);
 	TextureAsset getCompassFrameTextureAsset();
