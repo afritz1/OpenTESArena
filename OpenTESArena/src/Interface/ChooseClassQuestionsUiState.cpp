@@ -181,6 +181,19 @@ void ChooseClassQuestionsUI::update(double dt)
 	const Int2 questionsTextBoxPosition(ArenaRenderUtils::SCREEN_WIDTH / 2, 140 - currentScrollPixelAmount);
 	uiManager.setTransformPosition(questionsTextBoxElementInstID, questionsTextBoxPosition);
 
+	const char *scrollAnimFilename = "SCROLL01.DFA";
+	const std::optional<TextureFileMetadataID> scrollAnimTextureFileMetadataID = textureManager.tryGetMetadataID(scrollAnimFilename);
+	const TextureFileMetadata &scrollAnimTextureFileMetadata = textureManager.getMetadataHandle(*scrollAnimTextureFileMetadataID);
+	const double scrollAnimRepeatAmount = 6.0;
+	const double scrollAnimPercent = std::clamp(std::fmod(state.currentScrollAmount, scrollAnimRepeatAmount) / scrollAnimRepeatAmount, 0.0, 1.0);
+	const int scrollAnimFrameCount = scrollAnimTextureFileMetadata.getTextureCount();
+	const int scrollAnimFrameIndex = MathUtils::getRealIndex(scrollAnimFrameCount, scrollAnimPercent);
+	const TextureAsset scrollAnimTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
+	const TextureAsset scrollAnimPaletteAsset(ArenaTextureName::CharacterCreation);
+	const UiTextureID scrollAnimTextureID = uiManager.getOrAddTexture(scrollAnimTextureAsset, scrollAnimPaletteAsset, textureManager, renderer);
+	const UiElementInstanceID scrollAnimImageElementInstID = uiManager.getElementByName("ChooseClassQuestionsScrollImage");
+	uiManager.setImageTexture(scrollAnimImageElementInstID, scrollAnimTextureID);
+
 	if (state.vfxClassCategoryID >= 0)
 	{
 		const char *vfxSequenceNames[] =
@@ -221,6 +234,7 @@ void ChooseClassQuestionsUI::update(double dt)
 		{
 			UiElementInitInfo vfxImageElementInitInfo;
 			vfxImageElementInitInfo.name = ElementName_VfxImage;
+			vfxImageElementInitInfo.drawOrder = 1;
 			vfxImageElementInstID = uiManager.createImage(vfxImageElementInitInfo, vfxAnimTextureID, state.contextInstID, renderer);
 		}
 		else
