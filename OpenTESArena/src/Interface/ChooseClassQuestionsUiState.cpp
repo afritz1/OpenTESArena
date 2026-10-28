@@ -26,7 +26,8 @@ namespace
 	static constexpr const char ElementName_QuestionsTextBox[] = "ChooseClassQuestionsTextBox";
 	static constexpr const char ElementName_VfxImage[] = "ChooseClassQuestionsVfxImage";
 
-	static constexpr double SCROLL_DELTA_PER_SECOND = 70.0;
+	static constexpr double SCROLL_DELTA_PER_SECOND = 75.0;
+	static constexpr double SCROLL_ANIM_REPEAT_AMOUNT = 5.0; // # of scrolled pixels per animation repeat.
 }
 
 ChooseClassQuestionsUiState::ChooseClassQuestionsUiState()
@@ -179,14 +180,13 @@ void ChooseClassQuestionsUI::update(double dt)
 
 	const UiElementInstanceID questionsTextBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
 	const int currentScrollPixelAmount = static_cast<int>(state.currentScrollAmount);
-	const Int2 questionsTextBoxPosition(ArenaRenderUtils::SCREEN_WIDTH / 2, 140 - currentScrollPixelAmount);
+	const Int2 questionsTextBoxPosition(ArenaRenderUtils::SCREEN_WIDTH / 2, 142 - currentScrollPixelAmount);
 	uiManager.setTransformPosition(questionsTextBoxElementInstID, questionsTextBoxPosition);
 
 	const char *scrollAnimFilename = "SCROLL01.DFA";
 	const std::optional<TextureFileMetadataID> scrollAnimTextureFileMetadataID = textureManager.tryGetMetadataID(scrollAnimFilename);
 	const TextureFileMetadata &scrollAnimTextureFileMetadata = textureManager.getMetadataHandle(*scrollAnimTextureFileMetadataID);
-	const double scrollAnimRepeatAmount = 6.0;
-	const double scrollAnimPercent = std::clamp(std::fmod(state.currentScrollAmount, scrollAnimRepeatAmount) / scrollAnimRepeatAmount, 0.0, 1.0);
+	const double scrollAnimPercent = std::clamp(std::fmod(state.currentScrollAmount, SCROLL_ANIM_REPEAT_AMOUNT) / SCROLL_ANIM_REPEAT_AMOUNT, 0.0, 1.0);
 	const int scrollAnimFrameCount = scrollAnimTextureFileMetadata.getTextureCount();
 	const int scrollAnimFrameIndex = MathUtils::getRealIndex(scrollAnimFrameCount, scrollAnimPercent);
 	const TextureAsset scrollAnimTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
