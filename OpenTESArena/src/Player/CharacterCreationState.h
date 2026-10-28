@@ -1,14 +1,14 @@
 #pragma once
 
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
 struct CharacterCreationState
 {
 	static constexpr int MAX_NAME_LENGTH = 25;
-	static constexpr int NO_INDEX = -1;
 
 	char name[MAX_NAME_LENGTH + 1];
-	int classDefID;
+	CharacterClassDefinitionID charClassDefID;
 	int raceIndex;
 	int portraitIndex;
 	bool male;

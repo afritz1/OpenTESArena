@@ -5,6 +5,7 @@
 
 #include "../Assets/ArenaTypes.h"
 #include "../Spells/SpellDefinition.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
 #include "components/utilities/Span.h"
@@ -88,8 +89,8 @@ namespace ArenaEntityUtils
 	int getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, ArenaRandom &random);
 	int getCreatureItemQualityThreshold(int creatureLevel);
 
-	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, ArenaRandom &random);
-	int getHumanEnemyExperience(int level, int charClassDefID, const ExeData &exeData);
+	int getHumanEnemyGold(CharacterClassDefinitionID charClassDefID, const ExeData &exeData, ArenaRandom &random);
+	int getHumanEnemyExperience(int level, CharacterClassDefinitionID charClassDefID, const ExeData &exeData);
 
 	constexpr int LOOT_VALUES_INDEX_HOUSE = 0;
 	constexpr int LOOT_VALUES_INDEX_PALACE = 1;

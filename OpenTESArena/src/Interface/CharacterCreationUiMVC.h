@@ -8,6 +8,7 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
@@ -308,7 +309,7 @@ namespace ChooseClassQuestionsUiController
 namespace ChooseClassUiController
 {
 	void onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values);
-	void onItemButtonSelected(Game &game, int charClassDefID);
+	void onItemButtonSelected(Game &game, CharacterClassDefinitionID charClassDefID);
 }
 
 namespace ChooseGenderUiController

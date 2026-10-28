@@ -5,10 +5,10 @@
 #include "EntityDefinition.h"
 #include "../Assets/BinaryAssetLibrary.h"
 
-void EnemyEntityHumanDefinition::init(bool male, int charClassID)
+void EnemyEntityHumanDefinition::init(bool male, CharacterClassDefinitionID charClassDefID)
 {
 	this->male = male;
-	this->charClassID = charClassID;
+	this->charClassDefID = charClassDefID;
 }
 
 bool EnemyEntityHumanDefinition::operator==(const EnemyEntityHumanDefinition &other) const
@@ -23,7 +23,7 @@ bool EnemyEntityHumanDefinition::operator==(const EnemyEntityHumanDefinition &ot
 		return false;
 	}
 
-	if (this->charClassID != other.charClassID)
+	if (this->charClassDefID != other.charClassDefID)
 	{
 		return false;
 	}
@@ -42,10 +42,10 @@ void EnemyEntityDefinition::initCreature(CreatureDefinitionID creatureDefID)
 	this->creatureDefID = creatureDefID;
 }
 
-void EnemyEntityDefinition::initHuman(bool male, int charClassID)
+void EnemyEntityDefinition::initHuman(bool male, CharacterClassDefinitionID charClassDefID)
 {
 	this->type = EnemyEntityDefinitionType::Human;
-	this->human.init(male, charClassID);
+	this->human.init(male, charClassDefID);
 }
 
 bool EnemyEntityDefinition::operator==(const EnemyEntityDefinition &other) const
@@ -480,10 +480,10 @@ void EntityDefinition::initEnemyCreature(CreatureDefinitionID creatureDefID, Ent
 	this->enemy.initCreature(creatureDefID);
 }
 
-void EntityDefinition::initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef)
+void EntityDefinition::initEnemyHuman(bool male, CharacterClassDefinitionID charClassDefID, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Enemy, std::move(animDef));
-	this->enemy.initHuman(male, charClassID);
+	this->enemy.initHuman(male, charClassDefID);
 }
 
 void EntityDefinition::initCitizen(bool male, ArenaClimateType climateType, EntityAnimationDefinition &&animDef)

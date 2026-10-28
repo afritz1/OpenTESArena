@@ -35,11 +35,11 @@ struct CreatureEntityDefinitionKey
 struct HumanEnemyEntityDefinitionKey
 {
 	bool male;
-	int charClassID;
+	CharacterClassDefinitionID charClassDefID;
 
 	bool operator==(const HumanEnemyEntityDefinitionKey &other) const;
 
-	void init(bool male, int charClassID);
+	void init(bool male, CharacterClassDefinitionID charClassDefID);
 };
 
 struct CitizenEntityDefinitionKey
@@ -91,7 +91,7 @@ struct EntityDefinitionKey
 	bool operator==(const EntityDefinitionKey &other) const;
 
 	void initCreature(CreatureDefinitionID creatureDefID);
-	void initHumanEnemy(bool male, int charClassID);
+	void initHumanEnemy(bool male, CharacterClassDefinitionID charClassDefID);
 	void initCitizen(bool male, ArenaClimateType climateType);
 	void initContainer(bool isPlayerItemDropPile);
 	void initVfx(VfxEntityAnimationType type, int index);

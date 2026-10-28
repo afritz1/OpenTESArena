@@ -202,13 +202,13 @@ int CharacterClassLibrary::getDefinitionCount() const
 	return static_cast<int>(this->defs.size());
 }
 
-const CharacterClassDefinition &CharacterClassLibrary::getDefinition(int index) const
+const CharacterClassDefinition &CharacterClassLibrary::getDefinition(CharacterClassDefinitionID id) const
 {
-	DebugAssertIndex(this->defs, index);
-	return this->defs[index];
+	DebugAssertIndex(this->defs, id);
+	return this->defs[id];
 }
 
-int CharacterClassLibrary::findDefinitionIndexIf(const Predicate &predicate) const
+CharacterClassDefinitionID CharacterClassLibrary::findDefinitionIdIf(const CharacterClassPredicate &predicate) const
 {
 	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)
 	{
@@ -222,17 +222,16 @@ int CharacterClassLibrary::findDefinitionIndexIf(const Predicate &predicate) con
 	return -1;
 }
 
-bool CharacterClassLibrary::tryGetDefinitionIndex(const CharacterClassDefinition &def, int *outIndex) const
+CharacterClassDefinitionID CharacterClassLibrary::tryGetDefinitionID(const CharacterClassDefinition &def) const
 {
 	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)
 	{
 		const CharacterClassDefinition &charClassDef = this->defs[i];
 		if (StringView::equals(charClassDef.name, def.name))
 		{
-			*outIndex = i;
-			return true;
+			return i;
 		}
 	}
 
-	return false;
+	return -1;
 }

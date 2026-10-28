@@ -250,7 +250,7 @@ namespace ArenaAnimUtils
 	}
 
 	// Idle or walk animation state for human enemies.
-	bool tryAddDynamicEntityHumanBasicAnimState(int charClassIndex, bool isMale, const char *stateName, double secondsPerFrame,
+	bool tryAddDynamicEntityHumanBasicAnimState(int originalClassIndex, bool isMale, const char *stateName, double secondsPerFrame,
 		bool isLooping, Span<const int> animIndices, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
@@ -258,7 +258,7 @@ namespace ArenaAnimUtils
 
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		int humanFilenameTypeIndex;
-		ArenaAnimUtils::getHumanEnemyProperties(charClassIndex, charClassLibrary, exeData, &humanFilenameTypeIndex);
+		ArenaAnimUtils::getHumanEnemyProperties(originalClassIndex, charClassLibrary, exeData, &humanFilenameTypeIndex);
 
 		auto tryAddDirectionToState = [isMale, &animIndices, &textureManager, humanFilenameTypeIndex, &exeData, outAnimDef](int direction, int stateIndex)
 		{
@@ -331,7 +331,7 @@ namespace ArenaAnimUtils
 			if (!tryAddDirectionToState(i, stateIndex))
 			{
 				DebugLogWarning("Couldn't add human anim keyframe list for character class \"" +
-					std::to_string(charClassIndex) + "\" direction \"" + std::to_string(i) + "\".");
+					std::to_string(originalClassIndex) + "\" direction \"" + std::to_string(i) + "\".");
 			}
 		}
 
@@ -346,7 +346,7 @@ namespace ArenaAnimUtils
 		}
 		else
 		{
-			DebugLogWarning("Missing keyframe list for character class \"" + std::to_string(charClassIndex) + "\" to determine total seconds from.");
+			DebugLogWarning("Missing keyframe list for character class \"" + std::to_string(originalClassIndex) + "\" to determine total seconds from.");
 		}
 
 		animDefState.seconds = stateSeconds;
@@ -402,7 +402,7 @@ namespace ArenaAnimUtils
 		return true;
 	}
 
-	bool tryAddDynamicEntityHumanAttackAnimState(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary,
+	bool tryAddDynamicEntityHumanAttackAnimState(int originalClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
 		// Attack state is only in the first .CFA file and is never mirrored because it only faces forward.
@@ -411,7 +411,7 @@ namespace ArenaAnimUtils
 
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		int humanFilenameTypeIndex;
-		ArenaAnimUtils::getHumanEnemyProperties(charClassIndex, charClassLibrary, exeData, &humanFilenameTypeIndex);
+		ArenaAnimUtils::getHumanEnemyProperties(originalClassIndex, charClassLibrary, exeData, &humanFilenameTypeIndex);
 
 		constexpr int attackTemplateIndex = 1;
 		const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
@@ -975,17 +975,17 @@ bool ArenaAnimUtils::trySetCitizenFilenameDirection(std::string &filename, int a
 	return trySetDynamicEntityFilenameDirection(filename, animDirectionID);
 }
 
-void ArenaAnimUtils::getHumanEnemyProperties(int charClassIndex, const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, int *outTypeIndex)
+void ArenaAnimUtils::getHumanEnemyProperties(int originalClassIndex, const CharacterClassLibrary &charClassLibrary, const ExeData &exeData, int *outTypeIndex)
 {
-	const int charClassDefID = charClassLibrary.findDefinitionIndexIf(
-		[charClassIndex](const CharacterClassDefinition &def)
+	const CharacterClassDefinitionID charClassDefID = charClassLibrary.findDefinitionIdIf(
+		[originalClassIndex](const CharacterClassDefinition &def)
 	{
-		return def.originalClassIndex == charClassIndex;
+		return def.originalClassIndex == originalClassIndex;
 	});
 
 	if (charClassDefID < 0)
 	{
-		DebugLogWarningFormat("Couldn't get character class definition for index \"%d\".", charClassIndex);
+		DebugLogWarningFormat("Couldn't get character class definition for index \"%d\".", originalClassIndex);
 		return;
 	}
 
@@ -1210,38 +1210,38 @@ bool ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(int creatureID, const Exe
 	return true;
 }
 
-bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary,
+bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int originalClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 
 	// Basic states are idle and walk. Human enemies don't have look animations.
-	if (!ArenaAnimUtils::tryAddDynamicEntityHumanBasicAnimState(charClassIndex, isMale, EntityAnimationUtils::STATE_IDLE.c_str(),
+	if (!ArenaAnimUtils::tryAddDynamicEntityHumanBasicAnimState(originalClassIndex, isMale, EntityAnimationUtils::STATE_IDLE.c_str(),
 		HumanIdleSecondsPerFrame, HumanIdleLoop, HumanIdleIndices, charClassLibrary, binaryAssetLibrary, textureManager, outAnimDef))
 	{
-		DebugLogWarning("Couldn't add idle anim state for character class \"" + std::to_string(charClassIndex) + "\".");
+		DebugLogWarning("Couldn't add idle anim state for character class \"" + std::to_string(originalClassIndex) + "\".");
 		return false;
 	}
 
-	if (!ArenaAnimUtils::tryAddDynamicEntityHumanBasicAnimState(charClassIndex, isMale, EntityAnimationUtils::STATE_WALK.c_str(),
+	if (!ArenaAnimUtils::tryAddDynamicEntityHumanBasicAnimState(originalClassIndex, isMale, EntityAnimationUtils::STATE_WALK.c_str(),
 		HumanWalkSecondsPerFrame, HumanWalkLoop, HumanWalkIndices, charClassLibrary, binaryAssetLibrary, textureManager, outAnimDef))
 	{
-		DebugLogWarning("Couldn't add walk anim state for character class \"" + std::to_string(charClassIndex) + "\".");
+		DebugLogWarning("Couldn't add walk anim state for character class \"" + std::to_string(originalClassIndex) + "\".");
 		return false;
 	}
 
 	// Attack state.
-	if (!ArenaAnimUtils::tryAddDynamicEntityHumanAttackAnimState(charClassIndex, isMale, charClassLibrary, binaryAssetLibrary,
+	if (!ArenaAnimUtils::tryAddDynamicEntityHumanAttackAnimState(originalClassIndex, isMale, charClassLibrary, binaryAssetLibrary,
 		textureManager, outAnimDef))
 	{
-		DebugLogWarning("Couldn't add attack anim for character class \"" + std::to_string(charClassIndex) + "\".");
+		DebugLogWarning("Couldn't add attack anim for character class \"" + std::to_string(originalClassIndex) + "\".");
 		return false;
 	}
 
 	// Death state.
 	if (!ArenaAnimUtils::tryAddDynamicEntityHumanDeathAnimState(textureManager, outAnimDef))
 	{
-		DebugLogWarning("Couldn't add death anim for character class \"" + std::to_string(charClassIndex) + "\".");
+		DebugLogWarning("Couldn't add death anim for character class \"" + std::to_string(originalClassIndex) + "\".");
 		return false;
 	}
 
@@ -1279,8 +1279,8 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaFlatIndex flatIndex, const s
 	else if (isHuman)
 	{
 		DebugAssert(isMale.has_value());
-		const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(itemIndex);
-		success = ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(charClassIndex, *isMale, charClassLibrary, binaryAssetLibrary, textureManager, outAnimDef);
+		const int originalClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(itemIndex);
+		success = ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(originalClassIndex, *isMale, charClassLibrary, binaryAssetLibrary, textureManager, outAnimDef);
 	}
 	else
 	{

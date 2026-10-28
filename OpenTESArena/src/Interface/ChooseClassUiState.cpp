@@ -106,10 +106,10 @@ void ChooseClassUI::onListBoxItemSelected(int index)
 	const CharacterClassDefinition &charClassDef = state.charClasses[index];
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	int charClassDefID;
-	if (!charClassLibrary.tryGetDefinitionIndex(charClassDef, &charClassDefID))
+	const CharacterClassDefinitionID charClassDefID = charClassLibrary.tryGetDefinitionID(charClassDef);
+	if (charClassDefID < 0)
 	{
-		DebugLogErrorFormat("Couldn't get index of character class definition \"%s\".", charClassDef.name);
+		DebugLogErrorFormat("Couldn't get character class definition ID for \"%s\".", charClassDef.name);
 		return;
 	}
 

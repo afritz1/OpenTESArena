@@ -354,7 +354,7 @@ void ChooseClassQuestionsUI::onVfxFinished()
 		const int suggestedClassIndex = charClassGen.getClassIndex(state.categoryAnswerCounts[0], state.categoryAnswerCounts[1], state.categoryAnswerCounts[2]);
 
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-		state.suggestedCharClassDefID = charClassLibrary.findDefinitionIndexIf(
+		state.suggestedCharClassDefID = charClassLibrary.findDefinitionIdIf(
 			[suggestedClassIndex](const CharacterClassDefinition &charClassDef)
 		{
 			return charClassDef.originalClassIndex == suggestedClassIndex;
@@ -720,7 +720,7 @@ void ChooseClassQuestionsUI::onSuggestedClassPopUpYesButtonSelected(MouseButtonT
 	game.setNextContext(ChooseNameUI::ContextName);
 
 	DebugAssert(state.suggestedCharClassDefID >= 0);
-	game.charCreationState->classDefID = state.suggestedCharClassDefID;
+	game.charCreationState->charClassDefID = state.suggestedCharClassDefID;
 }
 
 void ChooseClassQuestionsUI::onSuggestedClassPopUpNoButtonSelected(MouseButtonType mouseButtonType)

@@ -21,13 +21,13 @@ void CreatureEntityDefinitionKey::init(CreatureDefinitionID creatureDefID)
 
 bool HumanEnemyEntityDefinitionKey::operator==(const HumanEnemyEntityDefinitionKey &other) const
 {
-	return (this->male == other.male) && (this->charClassID == other.charClassID);
+	return (this->male == other.male) && (this->charClassDefID == other.charClassDefID);
 }
 
-void HumanEnemyEntityDefinitionKey::init(bool male, int charClassID)
+void HumanEnemyEntityDefinitionKey::init(bool male, CharacterClassDefinitionID charClassDefID)
 {
 	this->male = male;
-	this->charClassID = charClassID;
+	this->charClassDefID = charClassDefID;
 }
 
 bool CitizenEntityDefinitionKey::operator==(const CitizenEntityDefinitionKey &other) const
@@ -111,10 +111,10 @@ void EntityDefinitionKey::initCreature(CreatureDefinitionID creatureDefID)
 	this->creature.init(creatureDefID);
 }
 
-void EntityDefinitionKey::initHumanEnemy(bool male, int charClassID)
+void EntityDefinitionKey::initHumanEnemy(bool male, CharacterClassDefinitionID charClassDefID)
 {
 	this->init(EntityDefinitionKeyType::HumanEnemy);
-	this->humanEnemy.init(male, charClassID);
+	this->humanEnemy.init(male, charClassDefID);
 }
 
 void EntityDefinitionKey::initCitizen(bool male, ArenaClimateType climateType)
@@ -175,19 +175,19 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
-	auto addHumanEnemyDef = [this, &entityAnimLibrary](bool male, int charClassID)
+	auto addHumanEnemyDef = [this, &entityAnimLibrary](bool male, CharacterClassDefinitionID charClassDefID)
 	{
 		HumanEnemyEntityAnimationKey animKey;
-		animKey.init(male, charClassID);
+		animKey.init(male, charClassDefID);
 
 		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getHumanEnemyAnimDefID(animKey);
 		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
 
 		EntityDefinitionKey key;
-		key.initHumanEnemy(male, charClassID);
+		key.initHumanEnemy(male, charClassDefID);
 
 		EntityDefinition entityDef;
-		entityDef.initEnemyHuman(male, charClassID, std::move(animDef));
+		entityDef.initEnemyHuman(male, charClassDefID, std::move(animDef));
 
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
@@ -271,9 +271,9 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 	const int charClassCount = charClassLibrary.getDefinitionCount();
 	for (int i = 0; i < charClassCount; i++)
 	{
-		const int charClassID = i;
-		addHumanEnemyDef(true, charClassID);
-		addHumanEnemyDef(false, charClassID);
+		const CharacterClassDefinitionID charClassDefID = static_cast<CharacterClassDefinitionID>(i);
+		addHumanEnemyDef(true, charClassDefID);
+		addHumanEnemyDef(false, charClassDefID);
 	}
 
 	// Iterate all climate type + gender combinations for citizens.

@@ -396,12 +396,12 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 			const int playerHitBonus = playerDerivedAttributes.bonusToHit;
 			const int playerLuckBonus = 0; // @todo
 
-			int hitEntityClassID = -1;
+			int hitEntityOriginalClassIndex = -1;
 			if (hitEntityDef.enemy.type == EnemyEntityDefinitionType::Human)
 			{
-				const int hitHumanEnemyCharClassDefID = hitEntityDef.enemy.human.charClassID;
+				const CharacterClassDefinitionID hitHumanEnemyCharClassDefID = hitEntityDef.enemy.human.charClassDefID;
 				const CharacterClassDefinition &hitEntityCharClassDef = CharacterClassLibrary::getInstance().getDefinition(hitHumanEnemyCharClassDefID);
-				hitEntityClassID = hitEntityCharClassDef.originalClassIndex;
+				hitEntityOriginalClassIndex = hitEntityCharClassDef.originalClassIndex;
 			}
 
 			int hitEntityDefenseBonus = 0; // @todo
@@ -409,7 +409,7 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 
 			if (isPhysicalImpact)
 			{
-				isHitEntityTakingDamage = ArenaCombatUtils::isMeleeHitSuccessful(player.level, player.raceID, playerHitBonus, playerLuckBonus, hitEntityCombatState->level, hitEntityClassID, hitEntityDefenseBonus, hitEntityLuckBonus, game.arenaRandom);
+				isHitEntityTakingDamage = ArenaCombatUtils::isMeleeHitSuccessful(player.level, player.raceID, playerHitBonus, playerLuckBonus, hitEntityCombatState->level, hitEntityOriginalClassIndex, hitEntityDefenseBonus, hitEntityLuckBonus, game.arenaRandom);
 			}
 			else if (isMagicalImpact)
 			{
@@ -472,7 +472,7 @@ void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, CombatRe
 			{
 				const int hitHumanEnemyLevel = hitEntityCombatState->level;
 				DebugAssert(hitEntityDef.enemy.type == EnemyEntityDefinitionType::Human);
-				const int hitHumanEnemyCharClassDefID = hitEntityDef.enemy.human.charClassID;
+				const CharacterClassDefinitionID hitHumanEnemyCharClassDefID = hitEntityDef.enemy.human.charClassDefID;
 				const CharacterClassDefinition &hitEntityCharClassDef = CharacterClassLibrary::getInstance().getDefinition(hitHumanEnemyCharClassDefID);
 				const int humanEnemyCalculatedExperience = ArenaEntityUtils::getHumanEnemyExperience(hitHumanEnemyLevel, hitHumanEnemyCharClassDefID, exeData);
 				player.experience += humanEnemyCalculatedExperience;

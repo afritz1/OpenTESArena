@@ -343,8 +343,8 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const Cha
 	else if (enemyType == EnemyEntityDefinitionType::Human)
 	{
 		const EnemyEntityHumanDefinition &humanDef = enemyDef.human;
-		const CharacterClassDefinition &charClass = charClassLibrary.getDefinition(humanDef.charClassID);
-		*outName = charClass.name;
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanDef.charClassDefID);
+		*outName = charClassDef.name;
 	}
 	else
 	{

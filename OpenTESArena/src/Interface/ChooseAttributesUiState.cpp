@@ -550,9 +550,9 @@ void ChooseAttributesUI::randomizeStats(CharacterCreationState &charCreationStat
 
 	const PrimaryAttributes &primaryAttributes = charCreationState.attributes;
 	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(primaryAttributes);
-	charCreationState.maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charCreationState.classDefID, random);
+	charCreationState.maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charCreationState.charClassDefID, random);
 	charCreationState.maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
-	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, primaryAttributes.intelligence.maxValue);
+	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.charClassDefID, primaryAttributes.intelligence.maxValue);
 	charCreationState.gold = ArenaPlayerUtils::calculateStartingGold(random);
 	charCreationState.bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
 }
@@ -584,7 +584,7 @@ void ChooseAttributesUI::updateDerivedAttributes()
 	CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const PrimaryAttributes &primaryAttributes = charCreationState.attributes;
 	charCreationState.maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
-	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, primaryAttributes.intelligence.maxValue);
+	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.charClassDefID, primaryAttributes.intelligence.maxValue);
 	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(primaryAttributes);
 
 	const Span<const int> derivedAttributesView = charCreationState.derivedAttributes.getView();
@@ -853,7 +853,7 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 			const ExeData &exeData = binaryAssetLibrary.getExeData();
 
-			const int charClassDefID = charCreationState.classDefID;
+			const CharacterClassDefinitionID charClassDefID = charCreationState.charClassDefID;
 			const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 			const int portraitIndex = charCreationState.portraitIndex;
 

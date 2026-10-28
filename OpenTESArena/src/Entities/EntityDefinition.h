@@ -9,6 +9,7 @@
 #include "EntityAnimationUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../World/LevelDefinition.h"
 
 enum class EntityDefinitionType
@@ -32,9 +33,9 @@ enum class EnemyEntityDefinitionType
 struct EnemyEntityHumanDefinition
 {
 	bool male;
-	int charClassID;
+	CharacterClassDefinitionID charClassDefID;
 
-	void init(bool male, int charClassID);
+	void init(bool male, CharacterClassDefinitionID charClassDefID);
 
 	bool operator==(const EnemyEntityHumanDefinition &other) const;
 };
@@ -52,7 +53,7 @@ struct EnemyEntityDefinition
 	EnemyEntityDefinition();
 
 	void initCreature(CreatureDefinitionID creatureDefID);
-	void initHuman(bool male, int charClassID);
+	void initHuman(bool male, CharacterClassDefinitionID charClassDefID);
 
 	bool operator==(const EnemyEntityDefinition &other) const;
 };
@@ -275,7 +276,7 @@ struct EntityDefinition
 	void init(EntityDefinitionType type, EntityAnimationDefinition &&animDef);
 
 	void initEnemyCreature(CreatureDefinitionID creatureDefID, EntityAnimationDefinition &&animDef);
-	void initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef);
+	void initEnemyHuman(bool male, CharacterClassDefinitionID charClassDefID, EntityAnimationDefinition &&animDef);
 
 	void initCitizen(bool male, ArenaClimateType climateType, EntityAnimationDefinition &&animDef);
 

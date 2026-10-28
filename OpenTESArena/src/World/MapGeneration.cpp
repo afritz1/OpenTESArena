@@ -301,8 +301,14 @@ namespace MapGeneration
 		else if (isHumanEnemy)
 		{
 			const bool male = true; // Always male from map data.
-			const int charClassID = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
-			outDef->initEnemyHuman(male, charClassID, std::move(entityAnimDef));
+			const int originalClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
+			const CharacterClassDefinitionID charClassDefID = CharacterClassLibrary::getInstance().findDefinitionIdIf(
+				[originalClassIndex](const CharacterClassDefinition &def)
+			{
+				return def.originalClassIndex == originalClassIndex;
+			});
+
+			outDef->initEnemyHuman(male, charClassDefID, std::move(entityAnimDef));
 		}
 		else if (personalityType.has_value())
 		{

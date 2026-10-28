@@ -40,7 +40,7 @@ int ArenaPlayerUtils::rollHealthDice(int healthDie, Random &random)
 	return 1 + random.next(healthDie);
 }
 
-int ArenaPlayerUtils::calculateMaxHealthPoints(int charClassDefID, Random &random)
+int ArenaPlayerUtils::calculateMaxHealthPoints(CharacterClassDefinitionID charClassDefID, Random &random)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
@@ -55,7 +55,7 @@ int ArenaPlayerUtils::calculateMaxStamina(int strength, int endurance)
 	return strength + endurance;
 }
 
-int ArenaPlayerUtils::calculateMaxSpellPoints(int charClassDefID, int intelligence)
+int ArenaPlayerUtils::calculateMaxSpellPoints(CharacterClassDefinitionID charClassDefID, int intelligence)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);

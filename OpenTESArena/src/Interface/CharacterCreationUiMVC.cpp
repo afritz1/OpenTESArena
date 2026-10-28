@@ -53,10 +53,10 @@ std::string CharacterCreationUiModel::getPlayerRaceName(Game &game)
 
 std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
 {
-	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int defID = charCreationState.classDefID;
-	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
+	const CharacterClassDefinitionID charClassDefID = charCreationState.charClassDefID;
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	return charClassDef.name;
 }
 
@@ -313,7 +313,7 @@ std::string ChooseNameUiModel::getTitleText(Game &game)
 {
 	const auto &charCreationState = game.getCharacterCreationState();
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.classDefID;
+	const CharacterClassDefinitionID charClassDefID = charCreationState.charClassDefID;
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
@@ -330,15 +330,15 @@ bool ChooseNameUiModel::isCharacterAccepted(char c)
 
 std::string ChooseRaceUiModel::getTitleText(Game &game)
 {
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	std::string text = exeData.charCreation.chooseRace;
 	text = String::replace(text, '\r', '\n');
 
-	const auto &charCreationState = game.getCharacterCreationState();
-	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.classDefID;
-	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinitionID charClassDefID = charCreationState.charClassDefID;
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 	// Replace first "%s" with player name.
 	size_t index = text.find("%s");
@@ -353,11 +353,11 @@ std::string ChooseRaceUiModel::getTitleText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmTitleText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.confirmRace;
 	text = String::replace(text, '\r', '\n');
 
-	const auto &charCreationState = game.getCharacterCreationState();
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	const int raceIndex = charCreationState.raceIndex;
 
 	const auto &charCreationProvinceNames = exeData.locations.charCreationProvinceNames;
@@ -408,8 +408,8 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 	const std::string pluralRaceName = characterRaceDefinition.pluralName;
 
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.classDefID;
-	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+	const CharacterClassDefinitionID charClassDefID = charCreationState.charClassDefID;
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 	// Replace first %s with player class.
 	size_t index = segment.find("%s");
@@ -475,11 +475,10 @@ std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 
 	const auto &charCreationState = game.getCharacterCreationState();
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.classDefID;
-	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+	const CharacterClassDefinitionID charClassDefID = charCreationState.charClassDefID;
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
-	const auto &preferredAttributes = exeData.charClasses.preferredAttributes;
-	DebugAssertIndex(preferredAttributes, charClassDefID);
+	const Span<const std::string> preferredAttributes = exeData.charClasses.preferredAttributes;
 	const std::string &preferredAttributesStr = preferredAttributes[charClassDefID];
 
 	// Replace first %s with desired class attributes.
@@ -940,7 +939,7 @@ Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
 	const bool isMale = charCreationState.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.classDefID;
+	const CharacterClassDefinitionID charClassDefID = charCreationState.charClassDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.castsMagic;
 
@@ -983,7 +982,7 @@ TextureAsset ChooseAttributesUiView::getShirtTextureAsset(Game &game)
 	const bool isMale = charCreationState.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.classDefID;
+	const CharacterClassDefinitionID charClassDefID = charCreationState.charClassDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.castsMagic;
 
@@ -1115,10 +1114,10 @@ void ChooseClassUiController::onBackToChooseClassCreationInputAction(const Input
 	}
 }
 
-void ChooseClassUiController::onItemButtonSelected(Game &game, int charClassDefID)
+void ChooseClassUiController::onItemButtonSelected(Game &game, CharacterClassDefinitionID charClassDefID)
 {
 	CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	charCreationState.classDefID = charClassDefID;
+	charCreationState.charClassDefID = charClassDefID;
 
 	game.setNextContext(ChooseNameUI::ContextName);
 }

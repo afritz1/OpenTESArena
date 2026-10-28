@@ -133,7 +133,7 @@ struct Player
 	std::string firstName;
 	bool male;
 	int raceID;
-	int charClassDefID;
+	CharacterClassDefinitionID charClassDefID;
 	int portraitID;
 
 	double maxHealth;
@@ -158,8 +158,9 @@ struct Player
 	Player();
 	~Player();
 
-	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID, const PrimaryAttributes &primaryAttributes,
-		int maxHealth, int maxStamina, int maxSpellPoints, int gold, bool isGhostModeActive, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
+	void init(const std::string &displayName, bool male, int raceID, CharacterClassDefinitionID charClassDefID, int portraitID,
+		const PrimaryAttributes &primaryAttributes, int maxHealth, int maxStamina, int maxSpellPoints, int gold, bool isGhostModeActive,
+		const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 

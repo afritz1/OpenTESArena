@@ -178,7 +178,7 @@ namespace ArenaAnimUtils
 	bool trySetCitizenFilenameDirection(std::string &filename, int animDirectionID);
 
 	// Writes out values for human enemy animations.
-	void getHumanEnemyProperties(int charClassIndex, const CharacterClassLibrary &charClassLibrary,
+	void getHumanEnemyProperties(int originalClassIndex, const CharacterClassLibrary &charClassLibrary,
 		const ExeData &exeData, int *outTypeIndex);
 
 	// Writes the gender data into the given filename if possible.
@@ -197,7 +197,7 @@ namespace ArenaAnimUtils
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out human enemy animation data to animation states.
-	bool tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary, 
+	bool tryMakeDynamicEntityHumanAnims(int originalClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out dynamic entity animation data to animation states. Use this when the dynamic

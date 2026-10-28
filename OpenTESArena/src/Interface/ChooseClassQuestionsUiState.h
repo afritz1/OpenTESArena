@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Stats/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"
@@ -29,7 +29,7 @@ struct ChooseClassQuestionsUiState
 	int questionIndexCount;
 	int currentQuestion;
 	int categoryAnswerCounts[3]; // # of times class categories have an answer chosen.
-	int suggestedCharClassDefID;
+	CharacterClassDefinitionID suggestedCharClassDefID;
 
 	double currentScrollAmount;
 

@@ -28,9 +28,9 @@ void CharacterCreationState::clearChangedPoints()
 void CharacterCreationState::clear()
 {
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
-	this->classDefID = CharacterCreationState::NO_INDEX;
-	this->raceIndex = CharacterCreationState::NO_INDEX;
-	this->portraitIndex = CharacterCreationState::NO_INDEX;
+	this->charClassDefID = -1;
+	this->raceIndex = -1;
+	this->portraitIndex = -1;
 	this->male = false;
 	this->attributes.clear();
 	this->derivedAttributes.clear();

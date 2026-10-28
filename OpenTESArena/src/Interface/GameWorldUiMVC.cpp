@@ -281,7 +281,7 @@ bool GameWorldUiModel::isButtonTooltipAllowed(GameWorldUiButtonType buttonType, 
 	{
 		const Player &player = game.player;
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-		const int charClassDefID = player.charClassDefID;
+		const CharacterClassDefinitionID charClassDefID = player.charClassDefID;
 		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 		return charClassDef.castsMagic;
 	}

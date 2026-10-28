@@ -65,7 +65,7 @@ namespace
 
 		const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassDefID);
 		constexpr int originalGuardClassNumber = 16;
 		return charClassDef.originalClassIndex == originalGuardClassNumber;
 	}
@@ -89,7 +89,7 @@ namespace
 
 				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
 				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassDefID);
 				constexpr int spawnIdToClassNumberDifference = ArenaEntityUtils::FinalBossCreatureID;
 				const int originalEnemyClassNumber = spawnID - spawnIdToClassNumberDifference;
 				return charClassDef.originalClassIndex == originalEnemyClassNumber;

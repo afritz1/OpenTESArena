@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Stats/CharacterClassLibrary.h"
+
 class ArenaRandom;
 class Random;
 
@@ -42,9 +44,9 @@ namespace ArenaPlayerUtils
 	int getJumpUnitsPerFrame(int frame);
 
 	int rollHealthDice(int healthDie, Random &random);
-	int calculateMaxHealthPoints(int charClassDefID, Random &random);
+	int calculateMaxHealthPoints(CharacterClassDefinitionID charClassDefID, Random &random);
 	int calculateMaxStamina(int strength, int endurance);
-	int calculateMaxSpellPoints(int charClassDefID, int intelligence);
+	int calculateMaxSpellPoints(CharacterClassDefinitionID charClassDefID, int intelligence);
 	int calculateDamageBonus(int strength);
 	int calculateMaxWeight(int strength);
 	int calculateMagicDefenseBonus(int willpower);

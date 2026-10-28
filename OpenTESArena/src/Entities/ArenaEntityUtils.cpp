@@ -643,7 +643,7 @@ int ArenaEntityUtils::getCreatureItemQualityThreshold(int creatureLevel)
 	return creatureLevel + 1;
 }
 
-int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeData, ArenaRandom &random)
+int ArenaEntityUtils::getHumanEnemyGold(CharacterClassDefinitionID charClassDefID, const ExeData &exeData, ArenaRandom &random)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
@@ -671,7 +671,7 @@ int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeDa
 	return goldAmount;
 }
 
-int ArenaEntityUtils::getHumanEnemyExperience(int level, int charClassDefID, const ExeData &exeData)
+int ArenaEntityUtils::getHumanEnemyExperience(int level, CharacterClassDefinitionID charClassDefID, const ExeData &exeData)
 {
 	DebugAssert(level >= 0);
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(charClassDefID);

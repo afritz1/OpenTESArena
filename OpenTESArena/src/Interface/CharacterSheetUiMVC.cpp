@@ -265,7 +265,7 @@ Int2 CharacterSheetUiView::getShirtOffset(Game &game)
 	const bool isMale = player.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = player.charClassDefID;
+	const CharacterClassDefinitionID charClassDefID = player.charClassDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.castsMagic;
 
@@ -400,7 +400,7 @@ TextureAsset CharacterSheetUiView::getShirtTextureAsset(Game &game)
 	const bool isMale = player.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = player.charClassDefID;
+	const CharacterClassDefinitionID charClassDefID = player.charClassDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.castsMagic;
 

@@ -27,11 +27,11 @@ struct CreatureEntityAnimationKey
 struct HumanEnemyEntityAnimationKey
 {
 	bool male;
-	int charClassDefID;
+	CharacterClassDefinitionID charClassDefID;
 
 	HumanEnemyEntityAnimationKey();
 
-	void init(bool male, int charClassDefID);
+	void init(bool male, CharacterClassDefinitionID charClassDefID);
 };
 
 struct CitizenEntityAnimationKey

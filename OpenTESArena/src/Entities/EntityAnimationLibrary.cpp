@@ -26,7 +26,7 @@ HumanEnemyEntityAnimationKey::HumanEnemyEntityAnimationKey()
 	this->charClassDefID = -1;
 }
 
-void HumanEnemyEntityAnimationKey::init(bool male, int charClassDefID)
+void HumanEnemyEntityAnimationKey::init(bool male, CharacterClassDefinitionID charClassDefID)
 {
 	this->male = male;
 	this->charClassDefID = charClassDefID;
@@ -114,7 +114,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	const int charClassCount = charClassLibrary.getDefinitionCount();
 	for (int i = 0; i < charClassCount; i++)
 	{
-		const int charClassDefID = i;
+		const CharacterClassDefinitionID charClassDefID = static_cast<CharacterClassDefinitionID>(i);
 		EntityAnimationDefinition maleAnimDef, femaleAnimDef;
 		if (!ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(charClassDefID, true, charClassLibrary, binaryAssetLibrary, textureManager, &maleAnimDef))
 		{

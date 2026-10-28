@@ -475,7 +475,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 			const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
 			const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-			const CharacterClassDefinition &humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+			const CharacterClassDefinition &humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassDefID);
 			health = random.next(initInfo.humanEnemyLevel + 1) + (random.next(humanEnemyCharClassDef.healthDie + 1) * initInfo.humanEnemyLevel);
 		}
 		else if (initInfo.hasCreatureSound)
@@ -756,7 +756,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			{
 				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
 				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-				const CharacterClassDefinition &humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+				const CharacterClassDefinition &humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassDefID);
 
 				if (isGuard)
 				{
@@ -814,7 +814,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				else
 				{
 					const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
-					const int goldAmount = ArenaEntityUtils::getHumanEnemyGold(humanEnemyDef.charClassID, exeData, arenaRandom);
+					const int goldAmount = ArenaEntityUtils::getHumanEnemyGold(humanEnemyDef.charClassDefID, exeData, arenaRandom);
 					if (goldAmount > 0)
 					{
 						itemInventory.insert(goldItemDefID, goldAmount);
