@@ -6,6 +6,7 @@
 #include "../Player/WeaponAnimation.h"
 #include "../Spells/SpellDefinition.h"
 #include "../Stats/PrimaryAttribute.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 #include "components/utilities/Enum.h"
 #include "components/utilities/Span.h"
@@ -137,13 +138,13 @@ struct WeaponItemDefinition
 
 struct ArtifactItemDefinition
 {
-	char flavorText[1024];	
-	int provinceIDs[8];
+	char flavorText[1024];
+	ProvinceDefinitionID provinceDefIDs[8];
 	int provinceCount;
 
 	ArtifactItemDefinition();
 
-	void init(const char *flavorText, Span<const int> provinceIDs);
+	void init(const char *flavorText, Span<const ProvinceDefinitionID> provinceDefIDs);
 };
 
 enum class ItemType

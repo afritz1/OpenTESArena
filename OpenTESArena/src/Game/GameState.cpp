@@ -249,9 +249,9 @@ void TavernRentedRoomState::clear()
 	this->remainingSeconds = 0.0;
 }
 
-GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
+GameState::WorldMapLocationIDs::WorldMapLocationIDs(ProvinceDefinitionID provinceDefID, int locationID)
 {
-	this->provinceID = provinceID;
+	this->provinceDefID = provinceDefID;
 	this->locationID = locationID;
 }
 
@@ -282,16 +282,16 @@ void GameState::init(ArenaRandom &random)
 	this->worldMapInst.init(provinceLibrary);
 
 	// @temp: set main quest dungeons visible for testing.
-	for (int provinceIndex = 0; provinceIndex < this->worldMapInst.getProvinceCount(); provinceIndex++)
+	for (ProvinceInstance &provinceInst : this->worldMapInst.provinces)
 	{
-		ProvinceInstance &provinceInst = this->worldMapInst.getProvinceInstance(provinceIndex);
-		const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+		const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceInst.provinceDefID);
+		const int locationCount = static_cast<int>(provinceDef.locations.size());
 
-		for (int locationIndex = 0; locationIndex < provinceInst.getLocationCount(); locationIndex++)
+		for (int locationIndex = 0; locationIndex < locationCount; locationIndex++)
 		{
-			LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
+			LocationInstance &locationInst = provinceInst.locations[locationIndex];
 			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
 			const std::string &locationName = locationInst.getName(locationDef);
 
 			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinitionType::MainQuestDungeon;
@@ -320,7 +320,7 @@ void GameState::clearSession()
 	this->isLevelTransitionCalculationPending = false;
 
 	// Don't have to clear on-screen text box durations.
-	this->provinceIndex = -1;
+	this->provinceDefID = -1;
 	this->locationIndex = -1;
 
 	this->chasmAnimSeconds = 0.0;
@@ -428,7 +428,7 @@ void GameState::queueMapDefPop()
 	this->nextMapDefLocationIDs = std::nullopt;
 
 	// Calculate weather.
-	const ArenaWeatherType weatherType = this->getWeatherForLocation(this->provinceIndex, this->locationIndex);
+	const ArenaWeatherType weatherType = this->getWeatherForLocation(this->provinceDefID, this->locationIndex);
 	Random random; // @todo: get from Game
 	this->nextMapDefWeatherDef = WeatherDefinition();
 	this->nextMapDefWeatherDef->initFromClassic(weatherType, this->date.getDay(), random);
@@ -590,14 +590,13 @@ WorldMapInstance &GameState::getWorldMapInstance()
 
 const ProvinceDefinition &GameState::getProvinceDefinition() const
 {
-	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	return provinceLibrary.getProvinceDef(this->provinceIndex);
+	return ProvinceLibrary::getInstance().getDefinition(this->provinceDefID);
 }
 
 const LocationDefinition &GameState::getLocationDefinition() const
 {
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	return provinceDef.getLocationDef(this->locationIndex);
+	return provinceDef.locations[this->locationIndex];
 }
 
 int GameState::getLocationIndex() const
@@ -607,16 +606,16 @@ int GameState::getLocationIndex() const
 
 ProvinceInstance &GameState::getProvinceInstance()
 {
-	return this->worldMapInst.getProvinceInstance(this->provinceIndex);
+	return this->worldMapInst.getProvinceFromDefinition(this->provinceDefID);
 }
 
 LocationInstance &GameState::getLocationInstance()
 {
 	ProvinceInstance &provinceInst = this->getProvinceInstance();
-	return provinceInst.getLocationInstance(this->locationIndex);
+	return provinceInst.locations[this->locationIndex];
 }
 
-const ProvinceMapUiModel::TravelData *GameState::getTravelData() const
+const ProvinceMapUiTravelData *GameState::getTravelData() const
 {
 	return this->travelData.has_value() ? &(*this->travelData) : nullptr;
 }
@@ -626,23 +625,23 @@ Span<const ArenaWeatherType> GameState::getWorldMapWeathers() const
 	return this->worldMapWeathers;
 }
 
-int GameState::getLocationGlobalQuarter(int provinceIndex, int locationIndex) const
+int GameState::getLocationGlobalQuarter(ProvinceDefinitionID provinceDefID, int locationIndex) const
 {
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+	const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceDefID);
+	const LocationDefinition &locationDef = provinceDef.locations[locationIndex];
 	const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
 	const CityDataFile &cityDataFile = BinaryAssetLibrary::getInstance().getCityDataFile();
 	return ArenaLocationUtils::getGlobalQuarter(globalPoint, cityDataFile);
 }
 
-ArenaWeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
+ArenaWeatherType GameState::getWeatherForLocation(ProvinceDefinitionID provinceDefID, int locationIndex) const
 {
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
-	const int quarterIndex = this->getLocationGlobalQuarter(provinceIndex, locationIndex);
+	const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceDefID);
+	const LocationDefinition &locationDef = provinceDef.locations[locationIndex];
+	const int quarterIndex = this->getLocationGlobalQuarter(provinceDefID, locationIndex);
 	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
 	ArenaWeatherType weatherType = this->worldMapWeathers[quarterIndex];
 
@@ -710,7 +709,7 @@ bool GameState::isFogActive() const
 	}
 }
 
-void GameState::setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData)
+void GameState::setTravelData(std::optional<ProvinceMapUiTravelData> travelData)
 {
 	this->travelData = std::move(travelData);
 }
@@ -1076,7 +1075,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 		if (this->nextMapDefLocationIDs.has_value())
 		{
-			this->provinceIndex = this->nextMapDefLocationIDs->provinceID;
+			this->provinceDefID = this->nextMapDefLocationIDs->provinceDefID;
 			this->locationIndex = this->nextMapDefLocationIDs->locationID;
 			this->nextMapDefLocationIDs = std::nullopt;
 		}
@@ -1760,7 +1759,7 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	const CharacterRaceDefinitionID raceDefID = CharacterRaceLibrary::getInstance().findDefinitionIdIf(
 		[&provinceDef](const CharacterRaceDefinition &raceDef)
 	{
-		return raceDef.originalRaceIndex == provinceDef.getOriginalProvinceIndex();
+		return raceDef.originalRaceIndex == provinceDef.originalProvinceIndex;
 	});
 
 	const LocationDefinition &locationDef = this->getLocationDefinition();
@@ -1783,7 +1782,7 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	}
 
 	EntityGenInfo entityGenInfo;
-	entityGenInfo.init(player.level, ArenaClockUtils::nightLightsAreActive(this->clock), lootCityType, lootInteriorType, levelIndex, this->provinceIndex);
+	entityGenInfo.init(player.level, ArenaClockUtils::nightLightsAreActive(this->clock), lootCityType, lootInteriorType, levelIndex, this->provinceDefID);
 
 	const double ceilingScale = this->getActiveCeilingScale();
 

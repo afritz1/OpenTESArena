@@ -3,10 +3,11 @@
 #include <string>
 
 #include "../Assets/TextureAsset.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 struct CharacterRaceDefinition
 {
-	int provinceID;
+	ProvinceDefinitionID provinceDefID;
 	int originalRaceIndex;
 	char singularName[32];
 	char pluralName[32];
@@ -22,7 +23,7 @@ struct CharacterRaceDefinition
 
 	CharacterRaceDefinition();
 
-	void init(int provinceID, int originalRaceIndex, const char *singularName, const char *pluralName, double swimmingMoveSpeed,
+	void init(ProvinceDefinitionID provinceDefID, int originalRaceIndex, const char *singularName, const char *pluralName, double swimmingMoveSpeed,
 		double swimmingStaminaLossMultiplier, double climbingSpeedScale, const TextureAsset &maleCharSheetBodyTextureAsset,
 		const std::string &maleCharSheetHeadsFilename, const std::string &maleGameUiHeadsFilename, const TextureAsset &femaleCharSheetBodyTextureAsset,
 		const std::string &femaleCharSheetHeadsFilename, const std::string &femaleGameUiHeadsFilename);

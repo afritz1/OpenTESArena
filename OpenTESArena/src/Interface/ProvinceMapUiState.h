@@ -35,7 +35,7 @@ struct ProvinceMapUiState
 
 	ProvinceMapLocationTextures cityStateTextures, townTextures, villageTextures, dungeonTextures, staffDungeonTextures;
 	AnimationState blinkState;
-	int provinceID;
+	ProvinceDefinitionID provinceDefID;
 	int hoveredLocationID;
 
 	ProvinceMapUiState();
@@ -48,7 +48,7 @@ namespace ProvinceMapUI
 {
 	DECLARE_UI_CONTEXT(ProvinceMap);
 
-	void initLocationIconUI(int provinceID);
+	void initLocationIconUI(ProvinceDefinitionID provinceDefID);
 	void updateHoveredLocationID(Int2 originalPosition);
 	void updateLocationHighlights();
 	void trySelectLocation(int selectedLocationID);

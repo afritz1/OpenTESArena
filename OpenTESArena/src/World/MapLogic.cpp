@@ -169,15 +169,14 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	player.clearKeyInventory();
 
 	const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(player.raceDefID);
-	const int provinceID = raceDef.provinceID;
+	const ProvinceDefinitionID provinceDefID = raceDef.provinceDefID;
 	const int locationID = game.random.next(32); // @todo: this should not assume 32 locations per province
 
-	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
+	const LocationDefinition &locationDef = provinceDef.locations[locationID];
 
 	GameState &gameState = game.gameState;
-	const ArenaWeatherType weatherType = gameState.getWeatherForLocation(provinceID, locationID);
+	const ArenaWeatherType weatherType = gameState.getWeatherForLocation(provinceDefID, locationID);
 
 	const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
 	auto &renderer = game.renderer;
@@ -207,7 +206,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 
 	MapGenerationCityInfo cityGenInfo;
 	cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-		cityDef.citySeed, cityDef.rulerSeed, provinceDef.getOriginalProvinceIndex(), cityDef.premade, cityDef.coastal,
+		cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal,
 		cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 		mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
@@ -221,9 +220,9 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 
 	SkyGenerationExteriorInfo skyGenInfo;
 	skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-		cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+		cityDef.skySeed, provinceDef.hasAnimatedDistantLand);
 
-	const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
+	const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceDefID, locationID);
 
 	MapDefinition mapDefinition;
 	if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.textureManager))
@@ -457,8 +456,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
 				SkyGenerationExteriorInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
-					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand);
 
 				// Calculate wilderness position based on the gate's voxel in the city.
 				const CoordInt2 startCoord = [&hitVoxelCoord, &transitionDir]()
@@ -510,14 +508,13 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 
 				MapGenerationCityInfo cityGenInfo;
 				cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-					cityDef.citySeed, cityDef.rulerSeed, provinceDef.getOriginalProvinceIndex(), cityDef.premade,
+					cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade,
 					cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 					mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY,
 					cityDef.cityBlocksPerSide);
 
 				SkyGenerationExteriorInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
-					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand);
 
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;

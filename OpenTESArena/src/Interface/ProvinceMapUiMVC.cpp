@@ -13,10 +13,10 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-ProvinceMapUiModel::TravelData::TravelData(int locationID, int provinceID, int travelDays)
+ProvinceMapUiTravelData::ProvinceMapUiTravelData(int locationID, ProvinceDefinitionID provinceDefID, int travelDays)
 {
 	this->locationID = locationID;
-	this->provinceID = provinceID;
+	this->provinceDefID = provinceDefID;
 	this->travelDays = travelDays;
 }
 
@@ -38,20 +38,20 @@ std::string ProvinceMapUiModel::makeAlreadyAtLocationText(Game &game, const std:
 	return text;
 }
 
-std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int locationID)
+std::string ProvinceMapUiModel::getLocationName(Game &game, ProvinceDefinitionID provinceDefID, int locationID)
 {
 	GameState &gameState = game.gameState;
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
-	const LocationInstance &locationInst = provinceInst.getLocationInstance(locationID);
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(provinceDefID);
+	const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceDefID);
+	const LocationInstance &locationInst = provinceInst.locations[locationID];
 	const int locationDefIndex = locationInst.getLocationDefIndex();
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+	const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
 	return locationInst.getName(locationDef);
 }
 
-std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex, const LocationDefinition &srcLocationDef,
+std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID srcProvinceDefID, const LocationDefinition &srcLocationDef,
 	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex)
 {
 	GameState &gameState = game.gameState;
@@ -60,19 +60,19 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const int dstProvinceIndex = srcProvinceIndex;
-	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceInstance(dstProvinceIndex);
-	const LocationInstance &dstLocationInst = dstProvinceInst.getLocationInstance(dstLocationIndex);
+	const ProvinceDefinitionID dstProvinceDefID = srcProvinceDefID;
+	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceFromDefinition(dstProvinceDefID);
+	const LocationInstance &dstLocationInst = dstProvinceInst.locations[dstLocationIndex];
 
-	const ProvinceDefinition &dstProvinceDef = provinceLibrary.getProvinceDef(dstProvinceIndex);
+	const ProvinceDefinition &dstProvinceDef = provinceLibrary.getDefinition(dstProvinceDefID);
 	const int dstLocationDefIndex = dstLocationInst.getLocationDefIndex();
-	const LocationDefinition &dstLocationDef = dstProvinceDef.getLocationDef(dstLocationDefIndex);
+	const LocationDefinition &dstLocationDef = dstProvinceDef.locations[dstLocationDefIndex];
 	const std::string &dstLocationName = dstLocationInst.getName(dstLocationDef);
 
 	const Date &currentDate = gameState.getDate();
-	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+	const ProvinceMapUiTravelData *travelDataPtr = gameState.getTravelData();
 	DebugAssert(travelDataPtr != nullptr);
-	const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
+	const ProvinceMapUiTravelData &travelData = *travelDataPtr;
 
 	const Date destinationDate = [&currentDate, &travelData]()
 	{
@@ -85,23 +85,19 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 		return newDate;
 	}();
 
-	const std::string locationFormatText = [srcProvinceIndex, dstLocationIndex, &exeData, &dstProvinceDef,
-		&dstLocationDef, &dstLocationName]()
+	const std::string locationFormatText = [&srcProvinceDef, dstLocationIndex, &exeData, &dstProvinceDef, &dstLocationDef, &dstLocationName]()
 	{
-		std::string formatText = [srcProvinceIndex, dstLocationIndex, &exeData, &dstProvinceDef,
-			&dstLocationDef, &dstLocationName]()
+		std::string formatText = [&srcProvinceDef, dstLocationIndex, &exeData, &dstProvinceDef, &dstLocationDef, &dstLocationName]()
 		{
-			const auto &locationFormatTexts = exeData.travel.locationFormatTexts;
+			Span<const std::string> locationFormatTexts = exeData.travel.locationFormatTexts;
 
-			// Decide the format based on whether it's the center province.
-			if (srcProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
+			if (srcProvinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
 			{
 				// Determine whether to use the city format or dungeon format.
 				if (dstLocationDef.getType() == LocationDefinitionType::City)
 				{
 					// City format.
 					const int locationFormatTextsIndex = 2;
-					DebugAssertIndex(locationFormatTexts, locationFormatTextsIndex);
 					std::string text = locationFormatTexts[locationFormatTextsIndex];
 
 					// Replace first %s with location type.
@@ -117,7 +113,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 
 					// Replace third %s with province name.
 					index = text.find("%s", index);
-					text.replace(index, 2, dstProvinceDef.getName());
+					text.replace(index, 2, dstProvinceDef.name);
 
 					return text;
 				}
@@ -126,7 +122,6 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 				{
 					// Dungeon format.
 					const int locationFormatTextsIndex = 0;
-					DebugAssertIndex(locationFormatTexts, locationFormatTextsIndex);
 					std::string text = locationFormatTexts[locationFormatTextsIndex];
 
 					// Replace first %s with dungeon name.
@@ -135,21 +130,19 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 
 					// Replace second %s with province name.
 					index = text.find("%s", index);
-					text.replace(index, 2, dstProvinceDef.getName());
+					text.replace(index, 2, dstProvinceDef.name);
 
 					return text;
 				}
 				else
 				{
-					DebugUnhandledReturnMsg(std::string,
-						std::to_string(static_cast<int>(dstLocationDef.getType())));
+					DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(dstLocationDef.getType())));
 				}
 			}
 			else
 			{
 				// Center province format (always the center city).
 				const int locationFormatTextsIndex = 1;
-				DebugAssertIndex(locationFormatTexts, locationFormatTextsIndex);
 				std::string text = locationFormatTexts[locationFormatTextsIndex];
 
 				// Replace first %s with center province city name.
@@ -158,7 +151,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 
 				// Replace second %s with center province name.
 				index = text.find("%s", index);
-				text.replace(index, 2, dstProvinceDef.getName());
+				text.replace(index, 2, dstProvinceDef.name);
 
 				return text;
 			}
@@ -282,27 +275,25 @@ std::string ProvinceSearchUiModel::getTitleText(Game &game)
 }
 
 std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const std::string &locationName,
-	int provinceIndex, const int **exactLocationIndex)
+	ProvinceDefinitionID provinceDefID, const int **exactLocationIndex)
 {
 	GameState &gameState = game.gameState;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
-
-	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(provinceDefID);
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
 
 	// Iterate through all locations in the province. If any visible location's name has
 	// a match with the one entered, then add the location to the matching IDs.
 	std::vector<int> locationIndices;
-	for (int i = 0; i < provinceInst.getLocationCount(); i++)
+	for (int i = 0; i < provinceInst.locations.getCount(); i++)
 	{
-		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+		const LocationInstance &locationInst = provinceInst.locations[i];
 
 		// Only check visible locations.
 		if (locationInst.isVisible())
 		{
 			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
 			const std::string &curLocationName = locationInst.getName(locationDef);
 
 			// See if the location names are an exact match.
@@ -333,9 +324,9 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 	// If no exact or approximate matches, just fill the list with all visible location IDs.
 	if (locationIndices.empty())
 	{
-		for (int i = 0; i < provinceInst.getLocationCount(); i++)
+		for (int i = 0; i < provinceInst.locations.getCount(); i++)
 		{
-			const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+			const LocationInstance &locationInst = provinceInst.locations[i];
 			if (locationInst.isVisible())
 			{
 				locationIndices.emplace_back(i);
@@ -358,12 +349,12 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 	std::sort(locationIndices.begin(), locationIndices.end(),
 		[&provinceInst, &provinceDef](int a, int b)
 	{
-		const LocationInstance &locationInstA = provinceInst.getLocationInstance(a);
-		const LocationInstance &locationInstB = provinceInst.getLocationInstance(b);
+		const LocationInstance &locationInstA = provinceInst.locations[a];
+		const LocationInstance &locationInstB = provinceInst.locations[b];
 		const int locationDefIndexA = locationInstA.getLocationDefIndex();
 		const int locationDefIndexB = locationInstB.getLocationDefIndex();
-		const LocationDefinition &locationDefA = provinceDef.getLocationDef(locationDefIndexA);
-		const LocationDefinition &locationDefB = provinceDef.getLocationDef(locationDefIndexB);
+		const LocationDefinition &locationDefA = provinceDef.locations[locationDefIndexA];
+		const LocationDefinition &locationDefB = provinceDef.locations[locationDefIndexB];
 
 		const std::string &aName = locationInstA.getName(locationDefA);
 		const std::string &bName = locationInstB.getName(locationDefB);
@@ -373,12 +364,11 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 	return locationIndices;
 }
 
-Int2 ProvinceMapUiView::getLocationCenterPoint(Game &game, int provinceID, int locationID)
+Int2 ProvinceMapUiView::getLocationCenterPoint(Game &game, ProvinceDefinitionID provinceDefID, int locationID)
 {
-	const auto &gameState = game.gameState;
-	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
+	const GameState &gameState = game.gameState;
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
+	const LocationDefinition &locationDef = provinceDef.locations[locationID];
 	return Int2(locationDef.getScreenX(), locationDef.getScreenY());
 }
 
@@ -402,36 +392,37 @@ int ProvinceMapUiView::getTextPopUpTextureHeight(int textHeight)
 	return std::max(textHeight + 16, 40);
 }
 
-bool ProvinceMapUiView::provinceHasStaffDungeonIcon(int provinceID)
+bool ProvinceMapUiView::provinceHasStaffDungeonIcon(ProvinceDefinitionID provinceDefID)
 {
-	return provinceID != ArenaLocationUtils::CENTER_PROVINCE_INDEX;
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
+	return provinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 }
 
-TextureAsset ProvinceMapUiView::getBackgroundTextureAsset(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
+TextureAsset ProvinceMapUiView::getBackgroundTextureAsset(ProvinceDefinitionID provinceDefID, const BinaryAssetLibrary &binaryAssetLibrary)
 {
-	const auto &exeData = binaryAssetLibrary.getExeData();
-	const auto &provinceImgFilenames = exeData.locations.provinceImgFilenames;
-	DebugAssertIndex(provinceImgFilenames, provinceID);
-	const std::string &filename = provinceImgFilenames[provinceID];
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	Span<const std::string> provinceImgFilenames = exeData.locations.provinceImgFilenames;
+	const std::string &filename = provinceImgFilenames[provinceDef.originalProvinceIndex];
 	return TextureAsset(String::toUppercase(filename));
 }
 
-TextureAsset ProvinceMapUiView::getBackgroundPaletteTextureAsset(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
+TextureAsset ProvinceMapUiView::getBackgroundPaletteTextureAsset(ProvinceDefinitionID provinceDefID, const BinaryAssetLibrary &binaryAssetLibrary)
 {
-	return TextureAsset(ProvinceMapUiView::getBackgroundTextureAsset(provinceID, binaryAssetLibrary));
+	return TextureAsset(ProvinceMapUiView::getBackgroundTextureAsset(provinceDefID, binaryAssetLibrary));
 }
 
-TextureAsset ProvinceMapUiView::getCityStateIconTextureAsset(HighlightType highlightType)
+TextureAsset ProvinceMapUiView::getCityStateIconTextureAsset(ProvinceMapUiHighlightType highlightType)
 {
-	if (highlightType == HighlightType::None)
+	if (highlightType == ProvinceMapUiHighlightType::None)
 	{
 		return TextureAsset(ArenaTextureName::CityStateIcon);
 	}
-	else if (highlightType == HighlightType::PlayerLocation)
+	else if (highlightType == ProvinceMapUiHighlightType::PlayerLocation)
 	{
 		return TextureAsset(ArenaTextureName::MapIconOutlines, ProvinceMapUiView::CityStateIconHighlightIndex);
 	}
-	else if (highlightType == HighlightType::TravelDestination)
+	else if (highlightType == ProvinceMapUiHighlightType::TravelDestination)
 	{
 		return TextureAsset(ArenaTextureName::MapIconOutlinesBlinking, ProvinceMapUiView::CityStateIconHighlightIndex);
 	}
@@ -441,17 +432,17 @@ TextureAsset ProvinceMapUiView::getCityStateIconTextureAsset(HighlightType highl
 	}
 }
 
-TextureAsset ProvinceMapUiView::getTownIconTextureAsset(HighlightType highlightType)
+TextureAsset ProvinceMapUiView::getTownIconTextureAsset(ProvinceMapUiHighlightType highlightType)
 {
-	if (highlightType == HighlightType::None)
+	if (highlightType == ProvinceMapUiHighlightType::None)
 	{
 		return TextureAsset(ArenaTextureName::TownIcon);
 	}
-	else if (highlightType == HighlightType::PlayerLocation)
+	else if (highlightType == ProvinceMapUiHighlightType::PlayerLocation)
 	{
 		return TextureAsset(ArenaTextureName::MapIconOutlines, ProvinceMapUiView::TownIconHighlightIndex);
 	}
-	else if (highlightType == HighlightType::TravelDestination)
+	else if (highlightType == ProvinceMapUiHighlightType::TravelDestination)
 	{
 		return TextureAsset(ArenaTextureName::MapIconOutlinesBlinking, ProvinceMapUiView::TownIconHighlightIndex);
 	}
@@ -461,17 +452,17 @@ TextureAsset ProvinceMapUiView::getTownIconTextureAsset(HighlightType highlightT
 	}
 }
 
-TextureAsset ProvinceMapUiView::getVillageIconTextureAsset(HighlightType highlightType)
+TextureAsset ProvinceMapUiView::getVillageIconTextureAsset(ProvinceMapUiHighlightType highlightType)
 {
-	if (highlightType == HighlightType::None)
+	if (highlightType == ProvinceMapUiHighlightType::None)
 	{
 		return TextureAsset(ArenaTextureName::VillageIcon);
 	}
-	else if (highlightType == HighlightType::PlayerLocation)
+	else if (highlightType == ProvinceMapUiHighlightType::PlayerLocation)
 	{
 		return TextureAsset(ArenaTextureName::MapIconOutlines, ProvinceMapUiView::VillageIconHighlightIndex);
 	}
-	else if (highlightType == HighlightType::TravelDestination)
+	else if (highlightType == ProvinceMapUiHighlightType::TravelDestination)
 	{
 		return TextureAsset(ArenaTextureName::MapIconOutlinesBlinking, ProvinceMapUiView::VillageIconHighlightIndex);
 	}
@@ -481,17 +472,17 @@ TextureAsset ProvinceMapUiView::getVillageIconTextureAsset(HighlightType highlig
 	}
 }
 
-TextureAsset ProvinceMapUiView::getDungeonIconTextureAsset(HighlightType highlightType)
+TextureAsset ProvinceMapUiView::getDungeonIconTextureAsset(ProvinceMapUiHighlightType highlightType)
 {
-	if (highlightType == HighlightType::None)
+	if (highlightType == ProvinceMapUiHighlightType::None)
 	{
 		return TextureAsset(ArenaTextureName::DungeonIcon);
 	}
-	else if (highlightType == HighlightType::PlayerLocation)
+	else if (highlightType == ProvinceMapUiHighlightType::PlayerLocation)
 	{
 		return TextureAsset(ArenaTextureName::MapIconOutlines, ProvinceMapUiView::DungeonIconHighlightIndex);
 	}
-	else if (highlightType == HighlightType::TravelDestination)
+	else if (highlightType == ProvinceMapUiHighlightType::TravelDestination)
 	{
 		return TextureAsset(ArenaTextureName::MapIconOutlinesBlinking, ProvinceMapUiView::DungeonIconHighlightIndex);
 	}
@@ -501,27 +492,27 @@ TextureAsset ProvinceMapUiView::getDungeonIconTextureAsset(HighlightType highlig
 	}
 }
 
-TextureAsset ProvinceMapUiView::getStaffDungeonIconTextureAsset(int provinceID)
+TextureAsset ProvinceMapUiView::getStaffDungeonIconTextureAsset(ProvinceDefinitionID provinceDefID)
 {
-	return TextureAsset(ArenaTextureName::StaffDungeonIcons, provinceID);
+	return TextureAsset(ArenaTextureName::StaffDungeonIcons, provinceDefID);
 }
 
-UiTextureID ProvinceMapUiView::allocBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
+UiTextureID ProvinceMapUiView::allocBackgroundTexture(ProvinceDefinitionID provinceDefID, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAsset textureAsset = ProvinceMapUiView::getBackgroundTextureAsset(provinceID, binaryAssetLibrary);
-	const TextureAsset paletteTextureAsset = ProvinceMapUiView::getBackgroundPaletteTextureAsset(provinceID, binaryAssetLibrary);
+	const TextureAsset textureAsset = ProvinceMapUiView::getBackgroundTextureAsset(provinceDefID, binaryAssetLibrary);
+	const TextureAsset paletteTextureAsset = ProvinceMapUiView::getBackgroundPaletteTextureAsset(provinceDefID, binaryAssetLibrary);
 
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
-		DebugCrash("Couldn't allocate province \"" + std::to_string(provinceID) + "\" background texture.");
+		DebugCrash("Couldn't allocate province \"" + std::to_string(provinceDefID) + "\" background texture.");
 	}
 
 	return textureID;
 }
 
-UiTextureID ProvinceMapUiView::allocCityStateIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+UiTextureID ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAsset textureAsset = ProvinceMapUiView::getCityStateIconTextureAsset(highlightType);
@@ -535,7 +526,7 @@ UiTextureID ProvinceMapUiView::allocCityStateIconTexture(HighlightType highlight
 	return textureID;
 }
 
-UiTextureID ProvinceMapUiView::allocTownIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+UiTextureID ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAsset textureAsset = ProvinceMapUiView::getTownIconTextureAsset(highlightType);
@@ -549,7 +540,7 @@ UiTextureID ProvinceMapUiView::allocTownIconTexture(HighlightType highlightType,
 	return textureID;
 }
 
-UiTextureID ProvinceMapUiView::allocVillageIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+UiTextureID ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAsset textureAsset = ProvinceMapUiView::getVillageIconTextureAsset(highlightType);
@@ -563,7 +554,7 @@ UiTextureID ProvinceMapUiView::allocVillageIconTexture(HighlightType highlightTy
 	return textureID;
 }
 
-UiTextureID ProvinceMapUiView::allocDungeonIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+UiTextureID ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAsset textureAsset = ProvinceMapUiView::getDungeonIconTextureAsset(highlightType);
@@ -577,10 +568,10 @@ UiTextureID ProvinceMapUiView::allocDungeonIconTexture(HighlightType highlightTy
 	return textureID;
 }
 
-UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, HighlightType highlightType,
+UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(ProvinceDefinitionID provinceDefID, ProvinceMapUiHighlightType highlightType,
 	const TextureAsset &paletteTextureAsset, TextureManager &textureManager, Renderer &renderer)
 {
-	DebugAssert(ProvinceMapUiView::provinceHasStaffDungeonIcon(provinceID));
+	DebugAssert(ProvinceMapUiView::provinceHasStaffDungeonIcon(provinceDefID));
 
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
 	if (!paletteID.has_value())
@@ -590,7 +581,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	const TextureAsset textureAsset = ProvinceMapUiView::getStaffDungeonIconTextureAsset(provinceID);
+	const TextureAsset textureAsset = ProvinceMapUiView::getStaffDungeonIconTextureAsset(provinceDefID);
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
@@ -611,7 +602,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 		DebugLogErrorFormat("Couldn't populate staff dungeon texture for \"%s\".", textureAsset.filename.c_str());
 	}
 
-	if (highlightType == HighlightType::None)
+	if (highlightType == ProvinceMapUiHighlightType::None)
 	{
 		return textureID;
 	}
@@ -627,7 +618,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 
 	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
 	uint32_t *dstTexelsPtr = dstTexels.begin();
-	const uint8_t highlightColorIndex = (highlightType == HighlightType::PlayerLocation) ? ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
+	const uint8_t highlightColorIndex = (highlightType == ProvinceMapUiHighlightType::PlayerLocation) ? ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
 	const uint32_t highlightColor = palette[highlightColorIndex].toRGBA();
 
 	const int texelCount = textureBuilder.width * textureBuilder.height;
@@ -704,15 +695,16 @@ TextureAsset ProvinceSearchUiView::getListTextureAsset()
 	return TextureAsset(ArenaTextureName::PopUp8);
 }
 
-TextureAsset ProvinceSearchUiView::getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID)
+TextureAsset ProvinceSearchUiView::getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, ProvinceDefinitionID provinceDefID)
 {
-	const auto &exeData = binaryAssetLibrary.getExeData();
-	const auto &provinceImgFilenames = exeData.locations.provinceImgFilenames;
-	DebugAssertIndex(provinceImgFilenames, provinceID);
-	const std::string &filename = provinceImgFilenames[provinceID];
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
 
-	// Set all characters to uppercase because the texture manager expects 
-	// extensions to be uppercase, and most filenames in A.EXE are lowercase.
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	Span<const std::string> provinceImgFilenames = exeData.locations.provinceImgFilenames;
+	const std::string &filename = provinceImgFilenames[provinceDef.originalProvinceIndex];
+
+	// Set all characters to uppercase because the texture manager expects extensions to be uppercase,
+	// and most filenames in A.EXE are lowercase.
 	return String::toUppercase(filename);
 }
 

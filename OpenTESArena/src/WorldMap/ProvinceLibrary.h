@@ -1,11 +1,17 @@
 #pragma once
 
+#include <functional>
+
+#include "ProvinceDefinition.h"
+
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Singleton.h"
 
 class BinaryAssetLibrary;
+class Random;
 
-struct ProvinceDefinition;
+using ProvinceDefinitionID = int;
+using ProvinceDefinitionPredicate = std::function<bool(const ProvinceDefinition&)>;
 
 class ProvinceLibrary : public Singleton<ProvinceLibrary>
 {
@@ -14,8 +20,9 @@ private:
 public:
 	void init(const BinaryAssetLibrary &binaryAssetLibrary);
 
-	// Gets the number of provinces in the world map.
 	int getProvinceCount() const;
 
-	const ProvinceDefinition &getProvinceDef(int index) const;
+	const ProvinceDefinition &getDefinition(ProvinceDefinitionID id) const;
+	ProvinceDefinitionID getRandomDefinitionIdIf(Random &random, const ProvinceDefinitionPredicate &predicate) const;
+	ProvinceDefinitionID findDefinitionIdIf(const ProvinceDefinitionPredicate &predicate) const;
 };

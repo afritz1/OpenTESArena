@@ -7,7 +7,7 @@
 
 CharacterRaceDefinition::CharacterRaceDefinition()
 {
-	this->provinceID = -1;
+	this->provinceDefID = -1;
 	this->originalRaceIndex = -1;
 	std::fill(std::begin(this->singularName), std::end(this->singularName), '\0');
 	std::fill(std::begin(this->pluralName), std::end(this->pluralName), '\0');
@@ -16,13 +16,13 @@ CharacterRaceDefinition::CharacterRaceDefinition()
 	this->climbingSpeedScale = 0.0;
 }
 
-void CharacterRaceDefinition::init(int provinceID, int originalRaceIndex, const char *singularName, const char *pluralName, double swimmingMoveSpeed,
-	double swimmingStaminaLossMultiplier, double climbingSpeedScale, const TextureAsset &maleCharSheetBodyTextureAsset,
+void CharacterRaceDefinition::init(ProvinceDefinitionID provinceDefID, int originalRaceIndex, const char *singularName, const char *pluralName,
+	double swimmingMoveSpeed, double swimmingStaminaLossMultiplier, double climbingSpeedScale, const TextureAsset &maleCharSheetBodyTextureAsset,
 	const std::string &maleCharSheetHeadsFilename, const std::string &maleGameUiHeadsFilename, const TextureAsset &femaleCharSheetBodyTextureAsset,
 	const std::string &femaleCharSheetHeadsFilename, const std::string &femaleGameUiHeadsFilename)
 {
-	DebugAssert(provinceID >= 0);
-	this->provinceID = provinceID;
+	DebugAssert(provinceDefID >= 0);
+	this->provinceDefID = provinceDefID;
 	this->originalRaceIndex = originalRaceIndex;
 	std::snprintf(std::begin(this->singularName), std::size(this->singularName), "%s", singularName);
 	std::snprintf(std::begin(this->pluralName), std::size(this->pluralName), "%s", pluralName);

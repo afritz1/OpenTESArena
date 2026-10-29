@@ -9,27 +9,42 @@ void WorldMapInstance::init(const ProvinceLibrary &provinceLibrary)
 
 	for (int i = 0; i < provinceCount; i++)
 	{
-		const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(i);
+		const ProvinceDefinitionID provinceDefID = provinceLibrary.findDefinitionIdIf(
+			[i](const ProvinceDefinition &provinceDef)
+		{
+			return provinceDef.originalProvinceIndex == i;
+		});
 
 		ProvinceInstance provinceInst;
-		provinceInst.init(i, provinceDef);
+		provinceInst.init(provinceDefID);
 		this->provinces.set(i, std::move(provinceInst));
 	}
 }
 
-int WorldMapInstance::getProvinceCount() const
+ProvinceInstance &WorldMapInstance::getProvinceFromDefinition(ProvinceDefinitionID defID)
 {
-	return this->provinces.getCount();
+	for (ProvinceInstance &inst : this->provinces)
+	{
+		if (inst.provinceDefID == defID)
+		{
+			return inst;
+		}
+	}
+
+	DebugLogErrorFormat("Couldn't find province instance with definition ID %d.", defID);
+	return this->provinces[0];
 }
 
-ProvinceInstance &WorldMapInstance::getProvinceInstance(int index)
+const ProvinceInstance &WorldMapInstance::getProvinceFromDefinition(ProvinceDefinitionID defID) const
 {
-	DebugAssertIndex(this->provinces, index);
-	return this->provinces[index];
-}
+	for (const ProvinceInstance &inst : this->provinces)
+	{
+		if (inst.provinceDefID == defID)
+		{
+			return inst;
+		}
+	}
 
-const ProvinceInstance &WorldMapInstance::getProvinceInstance(int index) const
-{
-	DebugAssertIndex(this->provinces, index);
-	return this->provinces[index];
+	DebugLogErrorFormat("Couldn't find province instance with definition ID %d.", defID);
+	return this->provinces[0];
 }

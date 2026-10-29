@@ -72,7 +72,7 @@ void WorldMapUiState::init(Game &game)
 	const GameState &gameState = game.gameState;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
-	const int originalProvinceIndex = gameState.getProvinceDefinition().getOriginalProvinceIndex();
+	const int originalProvinceIndex = gameState.getProvinceDefinition().originalProvinceIndex;
 	this->highlightedProvinceTextureID = WorldMapUiView::allocHighlightedTextTexture(originalProvinceIndex, textureManager, renderer);
 
 	this->fastTravelAnimTextureIDs = AllocFastTravelAnimTextureIDs(textureManager, renderer);
@@ -84,7 +84,7 @@ void WorldMapUiState::init(Game &game)
 	// Fast travel bool is set ahead of time by province map logic.
 	if (this->isFastTravelling)
 	{
-		const ProvinceMapUiModel::TravelData *travelData = gameState.getTravelData();
+		const ProvinceMapUiTravelData *travelData = gameState.getTravelData();
 		DebugAssert(travelData != nullptr);
 		this->fastTravelTargetSeconds = std::max(FastTravelUiModel::AnimationMinSeconds, static_cast<double>(travelData->travelDays) * FastTravelUiView::AnimationSecondsPerFrame);
 	}
@@ -129,7 +129,7 @@ void WorldMapUI::create(Game &game)
 	state.fastTravelContextInstID = uiManager.createContext(fastTravelContextInitInfo);*/
 
 	const GameState &gameState = game.gameState;
-	const int originalProvinceIndex = gameState.getProvinceDefinition().getOriginalProvinceIndex();
+	const int originalProvinceIndex = gameState.getProvinceDefinition().originalProvinceIndex;
 
 	UiElementInitInfo highlightedProvinceImageElementInitInfo;
 	highlightedProvinceImageElementInitInfo.name = "WorldMapHighlightedProvinceImage";
@@ -192,7 +192,7 @@ void WorldMapUI::update(double dt)
 
 	Game &game = *state.game;
 	const GameState &gameState = game.gameState;
-	const ProvinceMapUiModel::TravelData *travelData = gameState.getTravelData();
+	const ProvinceMapUiTravelData *travelData = gameState.getTravelData();
 	DebugAssert(travelData != nullptr);
 
 	state.fastTravelCurrentSeconds += dt;
@@ -210,7 +210,7 @@ void WorldMapUI::update(double dt)
 	state.fastTravelTotalSeconds += dt;
 	if (state.fastTravelTotalSeconds >= state.fastTravelTargetSeconds)
 	{
-		FastTravelUiController::onAnimationFinished(game, travelData->provinceID, travelData->locationID, travelData->travelDays);
+		FastTravelUiController::onAnimationFinished(game, travelData->provinceDefID, travelData->locationID, travelData->travelDays);
 	}
 
 	UiManager &uiManager = game.uiManager;
@@ -246,7 +246,12 @@ void WorldMapUI::onMouseButtonChanged(Game &game, MouseButtonType type, const In
 					{
 						if (i < WorldMapUiModel::EXIT_BUTTON_MASK_ID)
 						{
-							ProvinceMapUI::state.provinceID = i;
+							ProvinceMapUI::state.provinceDefID = ProvinceLibrary::getInstance().findDefinitionIdIf(
+								[i](const ProvinceDefinition &provinceDef)
+							{
+								return provinceDef.originalProvinceIndex == i;
+							});
+
 							game.setNextContext(ProvinceMapUI::ContextName);
 						}
 						else

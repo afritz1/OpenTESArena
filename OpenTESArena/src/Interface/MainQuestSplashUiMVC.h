@@ -2,16 +2,18 @@
 
 #include <string>
 
+#include "../WorldMap/ProvinceLibrary.h"
+
 class Game;
 
 struct TextureAsset;
 
 namespace MainQuestSplashUiModel
 {
-	std::string getDungeonText(Game &game, int provinceID);
+	std::string getDungeonText(Game &game, ProvinceDefinitionID provinceDefID);
 }
 
 namespace MainQuestSplashUiView
 {
-	TextureAsset getSplashTextureAsset(int provinceID);
+	TextureAsset getSplashTextureAsset(ProvinceDefinitionID provinceDefID);
 }

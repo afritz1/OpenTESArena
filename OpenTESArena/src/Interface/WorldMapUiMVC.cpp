@@ -97,25 +97,20 @@ void FastTravelUiModel::tickTravelTime(Game &game, int travelDays)
 	}
 }
 
-std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvinceID,
-	int targetLocationID, int travelDays)
+std::string FastTravelUiModel::getCityArrivalMessage(Game &game, ProvinceDefinitionID targetProvinceDefID, int targetLocationID, int travelDays)
 {
-	auto &gameState = game.gameState;
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
+	GameState &gameState = game.gameState;
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 
-	// @todo: change these to 'index' so it's clear they don't rely on original game's 0-32, etc..
-	const int provinceID = targetProvinceID;
 	const int localCityID = targetLocationID;
 
-	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(targetProvinceDefID);
+	const LocationDefinition &locationDef = provinceDef.locations[localCityID];
 
-	const std::string locationString = [travelDays, &gameState, &exeData, provinceID,
-		localCityID, &provinceDef, &locationDef]()
+	const std::string locationString = [travelDays, &gameState, &exeData, localCityID, &provinceDef, &locationDef]()
 	{
-		if (provinceID != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
+		if (provinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
 		{
 			// The <city type> of <city name> in <province> Province.
 			// Replace first %s with location type.
@@ -153,7 +148,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 
 			// Replace third %s with province name.
 			index = text.find("%s", index);
-			text.replace(index, 2, provinceDef.getName());
+			text.replace(index, 2, provinceDef.name);
 
 			return exeData.travel.arrivalPopUpLocation + text;
 		}
@@ -164,8 +159,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 		}
 	}();
 
-	const std::string dateString = exeData.travel.arrivalPopUpDate +
-		ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
+	const std::string dateString = exeData.travel.arrivalPopUpDate + ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
 
 	const std::string daysString = [travelDays, &exeData]()
 	{
@@ -178,23 +172,22 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 		return text;
 	}();
 
-	const std::string locationDescriptionString = [&game, &gameState, &binaryAssetLibrary,
-		&exeData, provinceID, localCityID, &locationDef]()
+	const std::string locationDescriptionString = [&game, &gameState, &binaryAssetLibrary, &exeData, localCityID, &provinceDef, &locationDef]()
 	{
 		const ArenaLocationType locationType = ArenaLocationUtils::getCityType(localCityID);
 
 		// Get the description for the local location. If it's a town or village, choose
 		// one of the three substrings randomly. Otherwise, get the city description text
 		// directly.
-		const std::string description = [&game, &binaryAssetLibrary, &exeData, provinceID, localCityID, &locationDef, locationType]()
+		const std::string description = [&game, &binaryAssetLibrary, &exeData, localCityID, &provinceDef, &locationDef, locationType]()
 		{
 			// City descriptions start at #0600. The three town descriptions are at #1422,
 			// and the three village descriptions are at #1423.
-			const int templateDatEntryKey = [provinceID, localCityID, locationType]()
+			const int templateDatEntryKey = [localCityID, &provinceDef, locationType]()
 			{
 				if (locationType == ArenaLocationType::CityState)
 				{
-					return 600 + localCityID + (8 * provinceID);
+					return 600 + localCityID + (8 * provinceDef.originalProvinceIndex);
 				}
 				else if (locationType == ArenaLocationType::Town)
 				{
@@ -232,8 +225,8 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 				size_t index = description.find("%cn");
 				description.replace(index, 3, locationDef.getName());
 
-				const auto &cityData = binaryAssetLibrary.getCityDataFile();
-				const auto &province = cityData.getProvinceData(provinceID);
+				const CityDataFile &cityData = binaryAssetLibrary.getCityDataFile();
+				const ArenaProvinceData &province = cityData.getProvinceData(provinceDef.originalProvinceIndex);
 				const uint32_t rulerSeed = [localCityID, &cityData, &province]()
 				{
 					const auto &location = province.getLocationData(localCityID);
@@ -248,7 +241,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 				index = description.find("%t");
 				if (index != std::string::npos)
 				{
-					const std::string &rulerTitle = binaryAssetLibrary.getRulerTitle(provinceID, locationType, isMale, random);
+					const std::string &rulerTitle = binaryAssetLibrary.getRulerTitle(provinceDef.originalProvinceIndex, locationType, isMale, random);
 					description.replace(index, 2, rulerTitle);
 				}
 
@@ -257,10 +250,10 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 				index = description.find("%rf");
 				if (index != std::string::npos)
 				{
-					const std::string rulerFirstName = [provinceID, &random, isMale]()
+					const std::string rulerFirstName = [&provinceDef, &random, isMale]()
 					{
 						const auto &textAssetLibrary = TextAssetLibrary::getInstance();
-						const std::string fullName = textAssetLibrary.generateNpcName(provinceID, isMale, random);
+						const std::string fullName = textAssetLibrary.generateNpcName(provinceDef.originalProvinceIndex, isMale, random);
 						const Buffer<std::string> tokens = String::split(fullName, ' ');
 						return tokens[0];
 					}();
@@ -360,7 +353,7 @@ TextureAsset FastTravelUiView::getPaletteTextureAsset()
 	return TextureAsset(ArenaTextureName::WorldMap);
 }
 
-void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays)
+void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionID targetProvinceDefID, int targetLocationID, int travelDays)
 {
 	// Clear selected map location.
 	GameState &gameState = game.gameState;
@@ -406,8 +399,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	}
 
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &travelProvinceDef = provinceLibrary.getProvinceDef(targetProvinceID);
-	const LocationDefinition &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
+	const ProvinceDefinition &travelProvinceDef = provinceLibrary.getDefinition(targetProvinceDefID);
+	const LocationDefinition &travelLocationDef = travelProvinceDef.locations[targetLocationID];
 
 	TextureManager &textureManager = game.textureManager;
 
@@ -456,7 +449,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		MapGenerationCityInfo cityGenInfo;
 		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.getOriginalProvinceIndex(), cityDef.premade, cityDef.coastal,
+			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal,
 			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks), mainQuestTempleOverride,
 			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
@@ -470,9 +463,9 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		SkyGenerationExteriorInfo skyGenInfo;
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
+			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand);
 
-		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
+		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceDefID, targetLocationID);
 
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, textureManager))
@@ -521,15 +514,15 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
 		GameWorldUiInitInfo &gameWorldInitInfo = GameWorldUI::state.initInfo;
-		gameWorldInitInfo.init(FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays));
+		gameWorldInitInfo.init(FastTravelUiModel::getCityArrivalMessage(game, targetProvinceDefID, targetLocationID, travelDays));
 		game.setNextContext(GameWorldUI::ContextName);
 	}
 	else if (travelLocationDef.getType() == LocationDefinitionType::Dungeon)
 	{
 		// Named dungeon.
 		constexpr bool isArtifactDungeon = false;
-		const ProvinceDefinition &travelProvinceDef = provinceLibrary.getProvinceDef(targetProvinceID);
-		const LocationDefinition &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
+		const ProvinceDefinition &travelProvinceDef = provinceLibrary.getDefinition(targetProvinceDefID);
+		const LocationDefinition &travelLocationDef = travelProvinceDef.locations[targetLocationID];
 		const LocationDungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
 
 		MapGenerationInteriorInfo interiorGenInfo;
@@ -539,7 +532,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_X,
 			ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_Z);
 
-		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
+		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceDefID, targetLocationID);
 
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
@@ -581,7 +574,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		interiorGenInfo.initPrefab(mainQuestDungeonDef.mapFilename, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName, doorVoxelOffset);
 
 		const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest dungeon.
-		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);
+		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceDefID, targetLocationID);
 
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
@@ -599,7 +592,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Staff)
 		{
 			// Go to staff dungeon splash image first.
-			MainQuestSplashUI::state.provinceID = targetProvinceID;
+			MainQuestSplashUI::state.provinceDefID = targetProvinceDefID;
 			game.setNextContext(MainQuestSplashUI::ContextName);
 		}
 		else

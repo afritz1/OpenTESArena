@@ -238,7 +238,7 @@ void MainMenuUiModel::getMainQuestLocationFromIndex(int testIndex, const ExeData
 
 std::vector<int> MainMenuUiModel::makeShuffledLocationIndices(const ProvinceDefinition &provinceDef)
 {
-	std::vector<int> indices(provinceDef.getLocationCount());
+	std::vector<int> indices(provinceDef.locations.size());
 	std::iota(indices.begin(), indices.end(), 0);
 	RandomUtils::shuffle<int>(indices);
 	return indices;
@@ -251,7 +251,7 @@ std::optional<int> MainMenuUiModel::getRandomCityLocationDefIndexIfType(const Pr
 
 	for (const int locationIndex : randomLocationIndices)
 	{
-		const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
+		const LocationDefinition &curLocationDef = provinceDef.locations[locationIndex];
 		if (curLocationDef.getType() == LocationDefinitionType::City)
 		{
 			const auto &curCityDef = curLocationDef.getCityDefinition();
@@ -272,7 +272,7 @@ int MainMenuUiModel::getRandomCityLocationIndex(const ProvinceDefinition &provin
 
 	for (const int locationIndex : randomLocationIndices)
 	{
-		const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
+		const LocationDefinition &curLocationDef = provinceDef.locations[locationIndex];
 		if (curLocationDef.getType() == LocationDefinitionType::City)
 		{
 			return locationIndex;
@@ -289,7 +289,7 @@ std::optional<int> MainMenuUiModel::getRandomDungeonLocationDefIndex(const Provi
 
 	for (const int locationIndex : randomLocationIndices)
 	{
-		const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
+		const LocationDefinition &curLocationDef = provinceDef.locations[locationIndex];
 		if (curLocationDef.getType() == LocationDefinitionType::Dungeon)
 		{
 			return locationIndex;
@@ -630,24 +630,20 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				}
 				else if (specialCaseType == MainMenuUiModel::SpecialCaseType::StartDungeon)
 				{
-					// @temp: hacky search for start dungeon location definition.
-					const ProvinceDefinition &tempProvinceDef = provinceLibrary.getProvinceDef(provinceIndex);
-					for (int i = 0; i < tempProvinceDef.getLocationCount(); i++)
+					const ProvinceDefinition &tempProvinceDef = provinceLibrary.getDefinition(provinceIndex);
+					locationIndex = tempProvinceDef.findLocationIndexIf(
+						[](const LocationDefinition &locationDef)
 					{
-						const LocationDefinition &curLocationDef = tempProvinceDef.getLocationDef(i);
-						if (curLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
+						if (locationDef.getType() != LocationDefinitionType::MainQuestDungeon)
 						{
-							const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = curLocationDef.getMainQuestDungeonDefinition();
-
-							if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
-							{
-								locationIndex = i;
-								break;
-							}
+							return false;
 						}
-					}
 
-					DebugAssertMsg(locationIndex != -1, "Couldn't find start dungeon location definition.");
+						const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+						return mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start;
+					});
+
+					DebugAssertMsg(locationIndex >= 0, "Couldn't find start dungeon location definition.");
 				}
 				else
 				{
@@ -659,11 +655,11 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				// Any province besides center province.
 				// @temp: mildly disorganized
 				provinceIndex = random.next(provinceLibrary.getProvinceCount() - 1);
-				locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceLibrary.getProvinceDef(provinceIndex));
+				locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceLibrary.getDefinition(provinceIndex));
 			}
 
-			const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+			const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceIndex);
+			const LocationDefinition &locationDef = provinceDef.locations[locationIndex];
 
 			DebugAssert(optInteriorType.has_value());
 			const ArenaInteriorType interiorType = *optInteriorType;
@@ -701,8 +697,13 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		else
 		{
 			// Pick a random dungeon based on the dungeon type.
-			const int provinceIndex = random.next(provinceLibrary.getProvinceCount() - 1);
-			const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+			const ProvinceDefinitionID provinceDefID = provinceLibrary.getRandomDefinitionIdIf(random,
+				[](const ProvinceDefinition &provinceDef)
+			{
+				return provinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX;
+			});
+
+			const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceDefID);
 
 			constexpr bool isArtifactDungeon = false;
 
@@ -713,15 +714,15 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			if (mifName == MainMenuUiModel::RandomNamedDungeon)
 			{
 				const std::optional<int> locationIndex = MainMenuUiModel::getRandomDungeonLocationDefIndex(provinceDef);
-				DebugAssertMsg(locationIndex.has_value(), "Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
+				DebugAssertMsgFormat(locationIndex.has_value(), "Couldn't find named dungeon in \"%s\".", provinceDef.name.c_str());
 
-				const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
+				const LocationDefinition &locationDef = provinceDef.locations[*locationIndex];
 				const LocationDungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 
 				MapGenerationInteriorInfo interiorGenInfo;
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
-				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceDefID, *locationIndex);
 
 				MapDefinition mapDefinition;
 				if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
@@ -734,8 +735,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 				// Set random named dungeon name and visibility for testing.
 				WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-				ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(worldMapLocationIDs.provinceID);
-				LocationInstance &locationInst = provinceInst.getLocationInstance(worldMapLocationIDs.locationID);
+				ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(worldMapLocationIDs.provinceDefID);
+				LocationInstance &locationInst = provinceInst.locations[worldMapLocationIDs.locationID];
 				locationInst.setNameOverride("Test Dungeon");
 
 				if (!locationInst.isVisible())
@@ -749,7 +750,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				const int wildBlockY = random.next(ArenaWildUtils::WILD_HEIGHT);
 
 				const int locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceDef);
-				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+				const LocationDefinition &locationDef = provinceDef.locations[locationIndex];
 				const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 				const uint32_t dungeonSeed = cityDef.getWildDungeonSeed(wildBlockX, wildBlockY);
@@ -763,7 +764,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				MapGenerationInteriorInfo interiorGenInfo;
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
-				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
+				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceDefID, locationIndex);
 
 				MapDefinition mapDefinition;
 				if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
@@ -784,35 +785,32 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	{
 		TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
 
-		// There is only one "premade" city (used by the center province). All others
-		// are randomly generated.
+		// There is only one "premade" city (used by the center province). All others are randomly generated.
 		// @todo: the IMPERIAL.MIF and random city/town/village branches could be merged a bit.
 		if (mifName == MainMenuUiModel::ImperialMIF)
 		{
 			// Load city into game state.
-			const int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_INDEX;
-			const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
-			const std::optional<int> locationIndex = [&mifName, &provinceDef]() -> std::optional<int>
+			const ProvinceDefinitionID centerProvinceDefID = provinceLibrary.findDefinitionIdIf(
+				[](const ProvinceDefinition &provinceDef)
 			{
-				for (int i = 0; i < provinceDef.getLocationCount(); i++)
+				return provinceDef.originalProvinceIndex == ArenaLocationUtils::CENTER_PROVINCE_INDEX;
+			});
+
+			const ProvinceDefinition &centerProvinceDef = provinceLibrary.getDefinition(centerProvinceDefID);
+			const int locationIndex = centerProvinceDef.findLocationIndexIf(
+				[&mifName](const LocationDefinition &locationDef)
+			{
+				if (locationDef.getType() != LocationDefinitionType::City)
 				{
-					const LocationDefinition &curLocationDef = provinceDef.getLocationDef(i);
-					if (curLocationDef.getType() == LocationDefinitionType::City)
-					{
-						const LocationCityDefinition &cityDef = curLocationDef.getCityDefinition();
-						if ((cityDef.type == ArenaCityType::CityState) && cityDef.premade &&
-							cityDef.palaceIsMainQuestDungeon)
-						{
-							return i;
-						}
-					}
+					return false;
 				}
 
-				return std::nullopt;
-			}();
+				const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+				return (cityDef.type == ArenaCityType::CityState) && cityDef.premade && cityDef.palaceIsMainQuestDungeon;
+			});
 
-			DebugAssertMsg(locationIndex.has_value(), "Couldn't find premade city with main quest palace dungeon.");
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
+			DebugAssertMsg(locationIndex >= 0, "Couldn't find premade city with main quest palace dungeon.");
+			const LocationDefinition &locationDef = centerProvinceDef.locations[locationIndex];
 
 			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 			Buffer<uint8_t> reservedBlocks = [&cityDef]()
@@ -839,7 +837,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
-				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getOriginalProvinceIndex(), cityDef.premade,
+				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, centerProvinceDef.originalProvinceIndex, cityDef.premade,
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
@@ -854,9 +852,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			SkyGenerationExteriorInfo skyGenInfo;
 			skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+				cityDef.skySeed, centerProvinceDef.hasAnimatedDistantLand);
 
-			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+			const GameState::WorldMapLocationIDs worldMapLocationIDs(centerProvinceDefID, locationIndex);
 
 			MapDefinition mapDefinition;
 			if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.textureManager))
@@ -870,8 +868,13 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		else
 		{
 			// Pick a random location based on the .MIF name, excluding the center province.
-			const int provinceIndex = random.next(provinceLibrary.getProvinceCount() - 1);
-			const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+			const ProvinceDefinitionID provinceDefID = provinceLibrary.getRandomDefinitionIdIf(random,
+				[](const ProvinceDefinition &provinceDef)
+			{
+				return provinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX;
+			});
+
+			const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceDefID);
 
 			const ArenaCityType targetCityType = [&mifName]()
 			{
@@ -896,7 +899,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const std::optional<int> locationIndex = MainMenuUiModel::getRandomCityLocationDefIndexIfType(provinceDef, targetCityType);
 			DebugAssertMsg(locationIndex.has_value(), "Couldn't find city for \"" + mifName + "\".");
 
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
+			const LocationDefinition &locationDef = provinceDef.locations[*locationIndex];
 			const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 			Buffer<uint8_t> reservedBlocks = [&cityDef]()
@@ -923,7 +926,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
-				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getOriginalProvinceIndex(), cityDef.premade,
+				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade,
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
@@ -938,9 +941,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			SkyGenerationExteriorInfo skyGenInfo;
 			skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+				cityDef.skySeed, provinceDef.hasAnimatedDistantLand);
 
-			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceDefID, *locationIndex);
 
 			MapDefinition mapDefinition;
 			if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, textureManager))
@@ -955,14 +958,19 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	else if (mapType == MapType::Wilderness)
 	{
 		// Pick a random location and province.
-		const int provinceIndex = random.next(provinceLibrary.getProvinceCount() - 1);
-		const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+		const ProvinceDefinitionID provinceDefID = provinceLibrary.getRandomDefinitionIdIf(random,
+			[](const ProvinceDefinition &provinceDef)
+		{
+			return provinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX;
+		});
+
+		const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceDefID);
 
 		const int locationIndex = MainMenuUiModel::getRandomCityLocationIndex(provinceDef);
-		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+		const LocationDefinition &locationDef = provinceDef.locations[locationIndex];
 		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
-		const auto &exeData = binaryAssetLibrary.getExeData();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
 		Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
 		MapGenerationWildInfo wildGenInfo;
@@ -979,9 +987,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 		SkyGenerationExteriorInfo skyGenInfo;
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+			cityDef.skySeed, provinceDef.hasAnimatedDistantLand);
 
-		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
+		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceDefID, locationIndex);
 
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initWild(wildGenInfo, skyGenInfo, textureManager))

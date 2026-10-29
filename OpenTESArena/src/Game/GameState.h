@@ -143,10 +143,10 @@ public:
 	// Used with the currently selected world map location.
 	struct WorldMapLocationIDs
 	{
-		int provinceID;
+		ProvinceDefinitionID provinceDefID;
 		int locationID;
 
-		WorldMapLocationIDs(int provinceID, int locationID);
+		WorldMapLocationIDs(ProvinceDefinitionID provinceDefID, int locationID);
 	};
 private:
 	MapDefinition activeMapDef;
@@ -172,9 +172,9 @@ private:
 	
 	// Player's current world map location data.
 	WorldMapInstance worldMapInst;
-	int provinceIndex;
+	ProvinceDefinitionID provinceDefID;
 	int locationIndex;
-	std::optional<ProvinceMapUiModel::TravelData> travelData; // Non-null when a destination is selected.
+	std::optional<ProvinceMapUiTravelData> travelData; // Non-null when a destination is selected.
 
 	// One weather for each of the 36 province quadrants (updated hourly).
 	static constexpr int WORLD_MAP_WEATHER_QUADRANT_COUNT = 36;
@@ -243,10 +243,10 @@ public:
 	WorldMapInstance &getWorldMapInstance();
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();
-	const ProvinceMapUiModel::TravelData *getTravelData() const;
+	const ProvinceMapUiTravelData *getTravelData() const;
 	Span<const ArenaWeatherType> getWorldMapWeathers() const;
-	int getLocationGlobalQuarter(int provinceIndex, int locationIndex) const;
-	ArenaWeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
+	int getLocationGlobalQuarter(ProvinceDefinitionID provinceDefID, int locationIndex) const;
+	ArenaWeatherType getWeatherForLocation(ProvinceDefinitionID provinceDefID, int locationIndex) const;
 	Date &getDate();
 	Clock &getClock();
 	const Clock &getClock() const;
@@ -263,7 +263,7 @@ public:
 	bool isFogActive() const;
 
 	// Sets the player's world map travel data when they select a destination.
-	void setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData);
+	void setTravelData(std::optional<ProvinceMapUiTravelData> travelData);
 
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);

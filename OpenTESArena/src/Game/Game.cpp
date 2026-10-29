@@ -364,7 +364,8 @@ bool Game::init()
 
 	CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	charClassLibrary.init(exeData);
-	CharacterRaceLibrary::getInstance().init(exeData);
+
+	CharacterRaceLibrary::getInstance().init(provinceLibrary, exeData);
 
 	EntityAnimationLibrary &entityAnimLibrary = EntityAnimationLibrary::getInstance();
 	entityAnimLibrary.init(binaryAssetLibrary, charClassLibrary, this->textureManager);

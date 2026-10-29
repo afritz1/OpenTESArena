@@ -223,17 +223,17 @@ void WeaponItemDefinition::initRanged(const char *name, ArenaWeaponTypeID typeID
 ArtifactItemDefinition::ArtifactItemDefinition()
 {
 	std::fill(std::begin(this->flavorText), std::end(this->flavorText), '\0');
-	std::fill(std::begin(this->provinceIDs), std::end(this->provinceIDs), -1);
+	std::fill(std::begin(this->provinceDefIDs), std::end(this->provinceDefIDs), -1);
 	this->provinceCount = 0;
 }
 
-void ArtifactItemDefinition::init(const char *flavorText, Span<const int> provinceIDs)
+void ArtifactItemDefinition::init(const char *flavorText, Span<const ProvinceDefinitionID> provinceDefIDs)
 {
 	std::snprintf(std::begin(this->flavorText), std::size(this->flavorText), "%s", flavorText);
 	
-	DebugAssert(provinceIDs.getCount() <= static_cast<int>(std::size(this->provinceIDs)));
-	std::copy(provinceIDs.begin(), provinceIDs.end(), std::begin(this->provinceIDs));
-	this->provinceCount = provinceIDs.getCount();
+	DebugAssert(provinceDefIDs.getCount() <= static_cast<int>(std::size(this->provinceDefIDs)));
+	std::copy(provinceDefIDs.begin(), provinceDefIDs.end(), std::begin(this->provinceDefIDs));
+	this->provinceCount = provinceDefIDs.getCount();
 }
 
 ItemDefinition::ItemDefinition()

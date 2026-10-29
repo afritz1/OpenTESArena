@@ -1139,7 +1139,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
 				const StaticNpcEntityDefinitionType staticNpcEntityDefType = staticNpcEntityDef.type;
 				const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
-				const bool raceID = entityGenInfo.provinceID;
+				const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(entityGenInfo.provinceDefID);
+				const int originalRaceIndex = provinceDef.originalProvinceIndex;
 
 				bool isMale = true;
 				std::string npcName;
@@ -1147,11 +1148,11 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				{
 					const StaticNpcGeneralEntityDefinition &staticNpcGeneralEntityDef = staticNpcEntityDef.general;
 					isMale = GetStaticNpcPersonalityIsMale(staticNpcGeneralEntityDef.type);
-					npcName = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
+					npcName = textAssetLibrary.generateNpcName(originalRaceIndex, isMale, arenaRandom);
 				}
 				else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper)
 				{
-					npcName = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
+					npcName = textAssetLibrary.generateNpcName(originalRaceIndex, isMale, arenaRandom);
 				}
 
 				if (!npcName.empty())

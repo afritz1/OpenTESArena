@@ -45,7 +45,7 @@ namespace MIFUtils
 
 	// Generates the filename for a main quest .MIF file given the XY province coordinates 
 	// and the province ID.
-	std::string makeMainQuestDungeonMifName(int dungeonX, int dungeonY, int provinceID);
+	std::string makeMainQuestDungeonMifName(int dungeonX, int dungeonY, int originalProvinceIndex);
 
 	// City block generation data functions.
 	int getCityBlockCodeCount();

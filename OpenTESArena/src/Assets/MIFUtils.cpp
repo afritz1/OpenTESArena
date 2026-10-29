@@ -30,9 +30,9 @@ Double2 MIFUtils::convertStartPointToReal(const OriginalInt2 &startPoint)
 		static_cast<double>(startPoint.y) / MIFUtils::ARENA_UNITS);
 }
 
-std::string MIFUtils::makeMainQuestDungeonMifName(int dungeonX, int dungeonY, int provinceID)
+std::string MIFUtils::makeMainQuestDungeonMifName(int dungeonX, int dungeonY, int originalProvinceIndex)
 {
-	uint32_t mifID = (dungeonY << 16) + dungeonX + provinceID;
+	uint32_t mifID = (dungeonY << 16) + dungeonX + originalProvinceIndex;
 	mifID = static_cast<uint32_t>(-static_cast<int32_t>(Bytes::rol(mifID, 5)));
 	return String::format("%d.MIF", mifID);
 }

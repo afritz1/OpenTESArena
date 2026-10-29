@@ -3,6 +3,7 @@
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 class Game;
 
@@ -13,7 +14,7 @@ struct MainQuestSplashUiState
 	Game *game;
 	UiContextInstanceID contextInstID;
 
-	int provinceID;
+	ProvinceDefinitionID provinceDefID;
 
 	MainQuestSplashUiState();
 

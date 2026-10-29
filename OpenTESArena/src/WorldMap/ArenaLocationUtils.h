@@ -31,7 +31,7 @@ namespace ArenaLocationUtils
 	int dungeonToLocationID(int localDungeonID);
 
 	// Converts a local city ID + province ID pair to a global city ID.
-	int getGlobalCityID(int localCityID, int provinceID);
+	int getGlobalCityID(int localCityID, int originalProvinceIndex);
 
 	// Converts a global city ID to a local city ID + province ID pair.
 	std::pair<int, int> getLocalCityAndProvinceID(int globalCityID);
@@ -41,8 +41,8 @@ namespace ArenaLocationUtils
 	ArenaLocationType getDungeonType(int localDungeonID);
 
 	// Functions for getting the climate type of a location.
-	ArenaClimateType getCityClimateType(int localCityID, int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
-	ArenaClimateType getDungeonClimateType(int localDungeonID, int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
+	ArenaClimateType getCityClimateType(int localCityID, int originalProvinceIndex, const BinaryAssetLibrary &binaryAssetLibrary);
+	ArenaClimateType getDungeonClimateType(int localDungeonID, int originalProvinceIndex, const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	std::string getMainQuestDungeonMifName(uint32_t dungeonSeed);
@@ -83,17 +83,17 @@ namespace ArenaLocationUtils
 	uint32_t getRulerSeed(const Int2 &localPoint, const Rect &provinceRect);
 
 	// Gets the 32-bit seed for a city's sky in the given province.
-	uint32_t getSkySeed(const Int2 &localPoint, int provinceID, const Rect &provinceRect);
+	uint32_t getSkySeed(const Int2 &localPoint, int originalProvinceIndex, const Rect &provinceRect);
 
 	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID.
-	uint32_t getDungeonSeed(int localDungeonID, int provinceID, const ArenaProvinceData &province);
+	uint32_t getDungeonSeed(int localDungeonID, int originalProvinceIndex, const ArenaProvinceData &province);
 
 	// Gets the 32-bit seed for a province. Used with wilderness dungeons.
-	uint32_t getProvinceSeed(int provinceID, const ArenaProvinceData &province);
+	uint32_t getProvinceSeed(int originalProvinceIndex, const ArenaProvinceData &province);
 
 	// Gets the 32-bit seed for a wilderness dungeon, given a province ID and X and Y
 	// wilderness block coordinates.
-	uint32_t getWildernessDungeonSeed(int provinceID, const ArenaProvinceData &province, int wildBlockX, int wildBlockY);
+	uint32_t getWildernessDungeonSeed(int originalProvinceIndex, const ArenaProvinceData &province, int wildBlockX, int wildBlockY);
 
 	// Gets whether the ruler of a city in the given province should be male.
 	bool isRulerMale(int localCityID, const ArenaProvinceData &province);

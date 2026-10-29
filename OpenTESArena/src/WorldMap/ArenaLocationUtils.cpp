@@ -14,10 +14,10 @@
 namespace ArenaLocationUtils
 {
 	// Parent function for getting the climate type of a location.
-	ArenaClimateType getClimateType(int locationID, int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
+	ArenaClimateType getClimateType(int locationID, int originalProvinceIndex, const BinaryAssetLibrary &binaryAssetLibrary)
 	{
 		const auto &cityData = binaryAssetLibrary.getCityDataFile();
-		const auto &province = cityData.getProvinceData(provinceID);
+		const auto &province = cityData.getProvinceData(originalProvinceIndex);
 		const auto &location = province.getLocationData(locationID);
 		const Int2 localPoint(location.x, location.y);
 		const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, province.getGlobalRect());
@@ -37,9 +37,9 @@ int ArenaLocationUtils::dungeonToLocationID(int localDungeonID)
 	return localDungeonID + 32;
 }
 
-int ArenaLocationUtils::getGlobalCityID(int localCityID, int provinceID)
+int ArenaLocationUtils::getGlobalCityID(int localCityID, int originalProvinceIndex)
 {
-	return (provinceID << 5) + localCityID;
+	return (originalProvinceIndex << 5) + localCityID;
 }
 
 std::pair<int, int> ArenaLocationUtils::getLocalCityAndProvinceID(int globalCityID)
@@ -83,18 +83,18 @@ ArenaLocationType ArenaLocationUtils::getDungeonType(int localDungeonID)
 	}
 }
 
-ArenaClimateType ArenaLocationUtils::getCityClimateType(int localCityID, int provinceID,
+ArenaClimateType ArenaLocationUtils::getCityClimateType(int localCityID, int originalProvinceIndex,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const int locationID = ArenaLocationUtils::cityToLocationID(localCityID);
-	return ArenaLocationUtils::getClimateType(locationID, provinceID, binaryAssetLibrary);
+	return ArenaLocationUtils::getClimateType(locationID, originalProvinceIndex, binaryAssetLibrary);
 }
 
-ArenaClimateType ArenaLocationUtils::getDungeonClimateType(int localDungeonID, int provinceID,
+ArenaClimateType ArenaLocationUtils::getDungeonClimateType(int localDungeonID, int originalProvinceIndex,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const int locationID = ArenaLocationUtils::dungeonToLocationID(localDungeonID);
-	return ArenaLocationUtils::getClimateType(locationID, provinceID, binaryAssetLibrary);
+	return ArenaLocationUtils::getClimateType(locationID, originalProvinceIndex, binaryAssetLibrary);
 }
 
 std::string ArenaLocationUtils::getMainQuestDungeonMifName(uint32_t dungeonSeed)
@@ -126,8 +126,7 @@ Int2 ArenaLocationUtils::getLocalCityPoint(uint32_t citySeed)
 
 int ArenaLocationUtils::getGlobalQuarter(const Int2 &globalPoint, const CityDataFile &cityData)
 {
-	// Find the province that contains the global point.
-	int provinceID = -1;
+	int originalProvinceIndex = -1;
 	Rect provinceRect;
 	for (int i = 0; i < CityDataFile::PROVINCE_COUNT; i++)
 	{
@@ -136,21 +135,19 @@ int ArenaLocationUtils::getGlobalQuarter(const Int2 &globalPoint, const CityData
 
 		if (curProvinceRect.containsInclusive(globalPoint))
 		{
-			provinceID = i;
+			originalProvinceIndex = i;
 			provinceRect = curProvinceRect;
 			break;
 		}
 	}
 
-	DebugAssertMsg(provinceID != -1, "No matching province for global point (" +
-		std::to_string(globalPoint.x) + ", " + std::to_string(globalPoint.y) + ").");
+	DebugAssertMsg(originalProvinceIndex >= 0, "No matching province for global point (" + std::to_string(globalPoint.x) + ", " + std::to_string(globalPoint.y) + ").");
 
 	const Int2 localPoint = ArenaLocationUtils::getLocalPoint(globalPoint, provinceRect);
 
-	// Get the global quarter index.
-	const int globalQuarter = [&localPoint, provinceID]()
+	const int globalQuarter = [&localPoint, originalProvinceIndex]()
 	{
-		int index = provinceID * 4;
+		int index = originalProvinceIndex * 4;
 		const bool inRightHalf = localPoint.x >= 160;
 		const bool inBottomHalf = localPoint.y >= 100;
 
@@ -181,9 +178,8 @@ int ArenaLocationUtils::getMapDistance(Int2 globalSrc, Int2 globalDst)
 	return ArenaMathUtils::getApproximateEuclideanDistance(globalSrc, globalDst);
 }
 
-int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-	int month, Span<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random,
-	const BinaryAssetLibrary &binaryAssetLibrary)
+int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint, int month,
+	Span<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();
 
@@ -282,14 +278,14 @@ uint32_t ArenaLocationUtils::getRulerSeed(const Int2 &localPoint, const Rect &pr
 	return Bytes::rol(seed, 16);
 }
 
-uint32_t ArenaLocationUtils::getSkySeed(const Int2 &localPoint, int provinceID, const Rect &provinceRect)
+uint32_t ArenaLocationUtils::getSkySeed(const Int2 &localPoint, int originalProvinceIndex, const Rect &provinceRect)
 {
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceRect);
 	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
-	return seed * provinceID;
+	return seed * originalProvinceIndex;
 }
 
-uint32_t ArenaLocationUtils::getDungeonSeed(int localDungeonID, int provinceID, const ArenaProvinceData &province)
+uint32_t ArenaLocationUtils::getDungeonSeed(int localDungeonID, int originalProvinceIndex, const ArenaProvinceData &province)
 {
 	const ArenaLocationData &dungeon = [localDungeonID, &province]()
 	{
@@ -311,19 +307,19 @@ uint32_t ArenaLocationUtils::getDungeonSeed(int localDungeonID, int provinceID, 
 		}
 	}();
 
-	const uint32_t seed = (dungeon.y << 16) + dungeon.x + provinceID;
+	const uint32_t seed = (dungeon.y << 16) + dungeon.x + originalProvinceIndex;
 	return (~Bytes::rol(seed, 5)) & 0xFFFFFFFF;
 }
 
-uint32_t ArenaLocationUtils::getProvinceSeed(int provinceID, const ArenaProvinceData &province)
+uint32_t ArenaLocationUtils::getProvinceSeed(int originalProvinceIndex, const ArenaProvinceData &province)
 {
-	const uint32_t provinceSeed = ((province.globalX << 16) + province.globalY) * provinceID;
+	const uint32_t provinceSeed = ((province.globalX << 16) + province.globalY) * originalProvinceIndex;
 	return provinceSeed;
 }
 
-uint32_t ArenaLocationUtils::getWildernessDungeonSeed(int provinceID, const ArenaProvinceData &province, int wildBlockX, int wildBlockY)
+uint32_t ArenaLocationUtils::getWildernessDungeonSeed(int originalProvinceIndex, const ArenaProvinceData &province, int wildBlockX, int wildBlockY)
 {
-	const uint32_t provinceSeed = ArenaLocationUtils::getProvinceSeed(provinceID, province);
+	const uint32_t provinceSeed = ArenaLocationUtils::getProvinceSeed(originalProvinceIndex, province);
 	return (provinceSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 

@@ -6,6 +6,7 @@
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureUtils.h"
 #include "../Math/Vector2.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 class Game;
 class WorldMapMask;
@@ -32,7 +33,7 @@ namespace FastTravelUiModel
 	// Advances the game clock after having fast travelled.
 	void tickTravelTime(Game &game, int travelDays);
 
-	std::string getCityArrivalMessage(Game &game, int targetProvinceID, int targetLocationID, int travelDays);
+	std::string getCityArrivalMessage(Game &game, ProvinceDefinitionID targetProvinceDefID, int targetLocationID, int travelDays);
 }
 
 namespace WorldMapUiView
@@ -56,5 +57,5 @@ namespace FastTravelUiView
 
 namespace FastTravelUiController
 {
-	void onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays);
+	void onAnimationFinished(Game &game, ProvinceDefinitionID targetProvinceDefID, int targetLocationID, int travelDays);
 }

@@ -191,14 +191,20 @@ void ChooseRaceUI::onMouseButtonChanged(Game &game, MouseButtonType mouseButtonT
 	{
 		if (pressed)
 		{
-			const std::optional<int> provinceID = WorldMapUiModel::getMaskID(game, position, true, true);
-			if (provinceID.has_value())
+			const std::optional<int> originalProvinceIndex = WorldMapUiModel::getMaskID(game, position, true, true);
+			if (originalProvinceIndex.has_value())
 			{
+				const ProvinceDefinitionID provinceDefID = ProvinceLibrary::getInstance().findDefinitionIdIf(
+					[originalProvinceIndex](const ProvinceDefinition &provinceDef)
+				{
+					return provinceDef.originalProvinceIndex == *originalProvinceIndex;
+				});
+
 				CharacterCreationState &charCreationState = game.getCharacterCreationState();
 				charCreationState.raceDefID = CharacterRaceLibrary::getInstance().findDefinitionIdIf(
-					[provinceID](const CharacterRaceDefinition &raceDef)
+					[provinceDefID](const CharacterRaceDefinition &raceDef)
 				{
-					return raceDef.provinceID == *provinceID;
+					return raceDef.provinceDefID == provinceDefID;
 				});
 
 				ChooseRaceUiState &state = ChooseRaceUI::state;

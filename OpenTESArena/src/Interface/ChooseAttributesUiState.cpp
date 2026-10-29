@@ -796,32 +796,30 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			gameState.init(game.arenaRandom);
 
 			// Find starting dungeon location definition.
-			constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 			const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-			const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
-			const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>
+			const ProvinceDefinitionID centerProvinceDefID = provinceLibrary.findDefinitionIdIf(
+				[](const ProvinceDefinition &provinceDef)
 			{
-				for (int i = 0; i < provinceDef.getLocationCount(); i++)
-				{
-					const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
-					if (locationDef.getType() == LocationDefinitionType::MainQuestDungeon)
-					{
-						const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+				return provinceDef.originalProvinceIndex == ArenaLocationUtils::CENTER_PROVINCE_INDEX;
+			});
 
-						if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
-						{
-							return i;
-						}
-					}
+			const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(centerProvinceDefID);
+			const int startDungeonLocationIndex = provinceDef.findLocationIndexIf(
+				[&provinceDef](const LocationDefinition &locationDef)
+			{
+				if (locationDef.getType() != LocationDefinitionType::MainQuestDungeon)
+				{
+					return false;
 				}
 
-				return std::nullopt;
-			}();
+				const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+				return mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start;
+			});
 
-			DebugAssertMsg(locationIndex.has_value(), "Couldn't find start dungeon location definition.");
+			DebugAssertMsg(startDungeonLocationIndex >= 0, "Couldn't find start dungeon location definition.");
 
 			// Load starting dungeon.
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
+			const LocationDefinition &locationDef = provinceDef.locations[startDungeonLocationIndex];
 			const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
 			const std::string mifName = mainQuestDungeonDef.mapFilename;
 
@@ -832,12 +830,12 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			MapGenerationInteriorInfo interiorGenInfo;
 			interiorGenInfo.initPrefab(mifName, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName, doorVoxelOffset);
 
-			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+			const GameState::WorldMapLocationIDs worldMapLocationIDs(centerProvinceDefID, startDungeonLocationIndex);
 
 			MapDefinition mapDefinition;
 			if (!mapDefinition.initInterior(interiorGenInfo, game.textureManager))
 			{
-				DebugLogError("Couldn't init MapDefinition for start dungeon \"" + mifName + "\".");
+				DebugLogErrorFormat("Couldn't init MapDefinition for start dungeon \"%s\".", mifName.c_str());
 				return;
 			}
 

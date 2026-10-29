@@ -13,6 +13,7 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/UiListBox.h"
 #include "../Utilities/Color.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 class BinaryAssetLibrary;
 class Game;
@@ -21,26 +22,27 @@ class ProvinceDefinition;
 
 struct TextureAsset;
 
+// Shared between world map and province map for remembering the selected destination.
+struct ProvinceMapUiTravelData
+{
+	int locationID;
+	ProvinceDefinitionID provinceDefID;
+	int travelDays;
+
+	ProvinceMapUiTravelData(int locationID, ProvinceDefinitionID provinceDefID, int travelDays);
+};
+
 namespace ProvinceMapUiModel
 {
-	// Shared between world map and province map for remembering the selected destination.
-	struct TravelData
-	{
-		// @todo: change from 'ID' to 'index' to show it's not dependent on original game's 0-32 format.
-		int locationID, provinceID, travelDays;
-
-		TravelData(int locationID, int provinceID, int travelDays);
-	};
-
 	const std::string SearchButtonTooltip = "Search";
 	const std::string TravelButtonTooltip = "Travel";
 	const std::string BackToWorldMapButtonTooltip = "Back to World Map";
 
-	std::string makeTravelText(Game &game, int srcProvinceIndex, const LocationDefinition &srcLocationDef,
+	std::string makeTravelText(Game &game, ProvinceDefinitionID srcProvinceDefID, const LocationDefinition &srcLocationDef,
 		const ProvinceDefinition &srcProvinceDef, int dstLocationIndex);
 	std::string makeAlreadyAtLocationText(Game &game, const std::string &locationName);
 
-	std::string getLocationName(Game &game, int provinceID, int locationID);
+	std::string getLocationName(Game &game, ProvinceDefinitionID provinceDefID, int locationID);
 }
 
 namespace ProvinceSearchUiModel
@@ -57,24 +59,23 @@ namespace ProvinceSearchUiModel
 	// the given location name. Technically, this should only return up to one index, but returning
 	// a list allows functionality for approximate matches. The exact location index points into
 	// the vector if there is an exact match, or null otherwise.
-	std::vector<int> getMatchingLocations(Game &game, const std::string &locationName,
-		int provinceIndex, const int **exactLocationIndex);
+	std::vector<int> getMatchingLocations(Game &game, const std::string &locationName, ProvinceDefinitionID provinceDefID, const int **exactLocationIndex);
 }
+
+enum class ProvinceMapUiHighlightType
+{
+	None,
+	PlayerLocation,
+	TravelDestination
+};
 
 namespace ProvinceMapUiView
 {
-	enum class HighlightType
-	{
-		None,
-		PlayerLocation,
-		TravelDestination
-	};
-
 	constexpr Rect SearchButtonRect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 	constexpr Rect TravelButtonRect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 	constexpr Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 
-	Int2 getLocationCenterPoint(Game &game, int provinceID, int locationID);
+	Int2 getLocationCenterPoint(Game &game, ProvinceDefinitionID provinceDefID, int locationID);
 	const std::string LocationFontName = ArenaFontName::Arena;
 	const Color LocationTextColor(158, 0, 0);
 	constexpr TextAlignment LocationTextAlignment = TextAlignment::MiddleCenter;
@@ -112,28 +113,28 @@ namespace ProvinceMapUiView
 	constexpr int VillageIconHighlightIndex = 2;
 	constexpr int DungeonIconHighlightIndex = 3;
 
-	bool provinceHasStaffDungeonIcon(int provinceID);
+	bool provinceHasStaffDungeonIcon(ProvinceDefinitionID provinceDefID);
 
-	TextureAsset getBackgroundTextureAsset(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
-	TextureAsset getBackgroundPaletteTextureAsset(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
+	TextureAsset getBackgroundTextureAsset(ProvinceDefinitionID provinceDefID, const BinaryAssetLibrary &binaryAssetLibrary);
+	TextureAsset getBackgroundPaletteTextureAsset(ProvinceDefinitionID provinceDefID, const BinaryAssetLibrary &binaryAssetLibrary);
 
-	TextureAsset getCityStateIconTextureAsset(HighlightType highlightType);
-	TextureAsset getTownIconTextureAsset(HighlightType highlightType);
-	TextureAsset getVillageIconTextureAsset(HighlightType highlightType);
-	TextureAsset getDungeonIconTextureAsset(HighlightType highlightType);
-	TextureAsset getStaffDungeonIconTextureAsset(int provinceID);
+	TextureAsset getCityStateIconTextureAsset(ProvinceMapUiHighlightType highlightType);
+	TextureAsset getTownIconTextureAsset(ProvinceMapUiHighlightType highlightType);
+	TextureAsset getVillageIconTextureAsset(ProvinceMapUiHighlightType highlightType);
+	TextureAsset getDungeonIconTextureAsset(ProvinceMapUiHighlightType highlightType);
+	TextureAsset getStaffDungeonIconTextureAsset(ProvinceDefinitionID provinceDefID);
 
-	UiTextureID allocBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
+	UiTextureID allocBackgroundTexture(ProvinceDefinitionID provinceDefID, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocCityStateIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+	UiTextureID allocCityStateIconTexture(ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocTownIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+	UiTextureID allocTownIconTexture(ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocVillageIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+	UiTextureID allocVillageIconTexture(ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocDungeonIconTexture(HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+	UiTextureID allocDungeonIconTexture(ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 		TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocStaffDungeonIconTexture(int provinceID, HighlightType highlightType, const TextureAsset &paletteTextureAsset,
+	UiTextureID allocStaffDungeonIconTexture(ProvinceDefinitionID provinceDefID, ProvinceMapUiHighlightType highlightType, const TextureAsset &paletteTextureAsset,
 		TextureManager &textureManager, Renderer &renderer);
 
 	UiTextureID allocTextPopUpTexture(int textWidth, int textHeight, TextureManager &textureManager, Renderer &renderer);
@@ -171,7 +172,7 @@ namespace ProvinceSearchUiView
 	UiListBoxInitInfo makeListBoxProperties();
 
 	TextureAsset getListTextureAsset();
-	TextureAsset getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID);
+	TextureAsset getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, ProvinceDefinitionID provinceDefID);
 
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }

@@ -81,20 +81,20 @@ ProvinceMapUiState::ProvinceMapUiState()
 	this->diseaseWarningPopUpContextInstID = -1;
 	this->backgroundTextureID = -1;
 	this->searchInputImageTextureID = -1;
-	this->provinceID = -1;
+	this->provinceDefID = -1;
 	this->hoveredLocationID = -1;
 }
 
 void ProvinceMapUiState::init(Game &game)
 {
-	DebugAssert(this->provinceID >= 0); // Must be set by world map logic already.
+	DebugAssert(this->provinceDefID >= 0); // Must be set by world map logic already.
 	this->game = &game;
 
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
 
-	this->backgroundTextureID = ProvinceMapUiView::allocBackgroundTexture(this->provinceID, binaryAssetLibrary, textureManager, renderer);
+	this->backgroundTextureID = ProvinceMapUiView::allocBackgroundTexture(this->provinceDefID, binaryAssetLibrary, textureManager, renderer);
 	this->searchInputImageTextureID = ProvinceSearchUiView::allocParchmentTexture(textureManager, renderer);
 
 	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
@@ -201,7 +201,7 @@ void ProvinceMapUI::create(Game &game)
 
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const TextureAsset searchResultsImageTextureAsset = ProvinceSearchUiView::getListTextureAsset();
-	const TextureAsset searchResultsImagePaletteTextureAsset = ProvinceSearchUiView::getListPaletteTextureAsset(binaryAssetLibrary, state.provinceID);
+	const TextureAsset searchResultsImagePaletteTextureAsset = ProvinceSearchUiView::getListPaletteTextureAsset(binaryAssetLibrary, state.provinceDefID);
 	const UiTextureID searchResultsImageTextureID = uiManager.getOrAddTexture(searchResultsImageTextureAsset, searchResultsImagePaletteTextureAsset, textureManager, renderer);
 	uiManager.createImage(searchResultsImageElementInitInfo, searchResultsImageTextureID, state.searchResultsPopUpContextInstID, renderer);
 
@@ -243,7 +243,7 @@ void ProvinceMapUI::create(Game &game)
 	uiManager.setContextEnabled(state.searchResultsPopUpContextInstID, false);
 	uiManager.setContextEnabled(state.diseaseWarningPopUpContextInstID, false);
 
-	ProvinceMapUI::initLocationIconUI(state.provinceID);
+	ProvinceMapUI::initLocationIconUI(state.provinceDefID);
 
 	const Window &window = game.window;
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -313,12 +313,12 @@ void ProvinceMapUI::update(double dt)
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const std::string locationName = ProvinceMapUiModel::getLocationName(game, state.provinceID, state.hoveredLocationID);
+	const std::string locationName = ProvinceMapUiModel::getLocationName(game, state.provinceDefID, state.hoveredLocationID);
 	TextRenderShadowInfo shadowInfo;
 	shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY, ProvinceMapUiView::LocationTextShadowColor);
 
 	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
-	const Int2 locationCenter = ProvinceMapUiView::getLocationCenterPoint(game, state.provinceID, state.hoveredLocationID);
+	const Int2 locationCenter = ProvinceMapUiView::getLocationCenterPoint(game, state.provinceDefID, state.hoveredLocationID);
 	const Int2 locationTextBoxCenter = locationCenter - Int2(0, 10);
 	const Rect textBoxRect(locationTextBoxCenter, textureGenInfo.width, textureGenInfo.height);
 	const Int2 locationTextBoxClampedCenter = ProvinceMapUiView::getLocationTextClampedCenter(textBoxRect);
@@ -336,7 +336,7 @@ void ProvinceMapUI::update(double dt)
 	// @todo: draw blinking cursor for search input text entry (not sure where to put that update()).
 }
 
-void ProvinceMapUI::initLocationIconUI(int provinceID)
+void ProvinceMapUI::initLocationIconUI(ProvinceDefinitionID provinceDefID)
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
@@ -345,54 +345,53 @@ void ProvinceMapUI::initLocationIconUI(int provinceID)
 	Renderer &renderer = game.renderer;
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
-	const TextureAsset backgroundPaletteTextureAsset = ProvinceMapUiView::getBackgroundPaletteTextureAsset(provinceID, binaryAssetLibrary);
+	const TextureAsset backgroundPaletteTextureAsset = ProvinceMapUiView::getBackgroundPaletteTextureAsset(provinceDefID, binaryAssetLibrary);
 	state.cityStateTextures.init(
-		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
-		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
-		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiHighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiHighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocCityStateIconTexture(ProvinceMapUiHighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 		renderer);
 	state.townTextures.init(
-		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
-		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
-		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiHighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiHighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocTownIconTexture(ProvinceMapUiHighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 		renderer);
 	state.villageTextures.init(
-		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
-		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
-		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiHighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiHighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocVillageIconTexture(ProvinceMapUiHighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 		renderer);
 	state.dungeonTextures.init(
-		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
-		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
-		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiHighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiHighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+		ProvinceMapUiView::allocDungeonIconTexture(ProvinceMapUiHighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 		renderer);
 
-	if (ProvinceMapUiView::provinceHasStaffDungeonIcon(provinceID))
+	if (ProvinceMapUiView::provinceHasStaffDungeonIcon(provinceDefID))
 	{
 		state.staffDungeonTextures.init(
-			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
-			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
-			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceID, ProvinceMapUiView::HighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceDefID, ProvinceMapUiHighlightType::None, backgroundPaletteTextureAsset, textureManager, renderer),
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceDefID, ProvinceMapUiHighlightType::PlayerLocation, backgroundPaletteTextureAsset, textureManager, renderer),
+			ProvinceMapUiView::allocStaffDungeonIconTexture(provinceDefID, ProvinceMapUiHighlightType::TravelDestination, backgroundPaletteTextureAsset, textureManager, renderer),
 			renderer);
 	}
 
 	GameState &gameState = game.gameState;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
-	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(provinceDefID);
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
 	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
 
-	for (int i = 0; i < provinceInst.getLocationCount(); i++)
+	for (int i = 0; i < provinceInst.locations.getCount(); i++)
 	{
-		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+		const LocationInstance &locationInst = provinceInst.locations[i];
 		if (!locationInst.isVisible())
 		{
 			continue;
 		}
 
 		const int locationDefIndex = locationInst.getLocationDefIndex();
-		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+		const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
 
 		const ProvinceMapLocationTextures *locationTexturesPtr = [&state, &locationDef]() -> const ProvinceMapLocationTextures*
 		{
@@ -448,39 +447,39 @@ void ProvinceMapUI::initLocationIconUI(int provinceID)
 		locationIconImageElementInitInfo.drawOrder = 1;
 		uiManager.createImage(locationIconImageElementInitInfo, locationTexturesPtr->textureID, state.contextInstID, renderer);
 
-		const ProvinceMapUiView::HighlightType locationIconHighlightType = [provinceID, &state, &gameState, &provinceDef, &playerProvinceDef, i, &locationDef]()
+		const ProvinceMapUiHighlightType locationIconHighlightType = [provinceDefID, &state, &gameState, &provinceDef, &playerProvinceDef, i, &locationDef]()
 		{
 			const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
 			if (provinceDef.matches(playerProvinceDef) && locationDef.matches(playerLocationDef))
 			{
-				return ProvinceMapUiView::HighlightType::PlayerLocation;
+				return ProvinceMapUiHighlightType::PlayerLocation;
 			}
 			else
 			{
 				// If there is a currently-selected destination in this province, draw its blinking highlight
 				// if within the "blink on" interval.
-				const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+				const ProvinceMapUiTravelData *travelDataPtr = gameState.getTravelData();
 				if (travelDataPtr != nullptr)
 				{
-					const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
-					if ((travelData.provinceID == provinceID) && (travelData.locationID == i))
+					const ProvinceMapUiTravelData &travelData = *travelDataPtr;
+					if ((travelData.provinceDefID == provinceDefID) && (travelData.locationID == i))
 					{
-						return ProvinceMapUiView::HighlightType::TravelDestination;
+						return ProvinceMapUiHighlightType::TravelDestination;
 					}
 				}
 			}
 
-			return ProvinceMapUiView::HighlightType::None;
+			return ProvinceMapUiHighlightType::None;
 		}();
 
 		const UiTextureID highlightLocationTextureID = [locationIconHighlightType, locationTexturesPtr]()
 		{
 			switch (locationIconHighlightType)
 			{
-			case ProvinceMapUiView::HighlightType::None:
-			case ProvinceMapUiView::HighlightType::TravelDestination:
+			case ProvinceMapUiHighlightType::None:
+			case ProvinceMapUiHighlightType::TravelDestination:
 				return locationTexturesPtr->travelDestinationTextureID;
-			case ProvinceMapUiView::HighlightType::PlayerLocation:
+			case ProvinceMapUiHighlightType::PlayerLocation:
 				return locationTexturesPtr->playerCurrentTextureID;
 			default:
 				DebugUnhandledReturnMsg(UiTextureID, std::to_string(static_cast<int>(locationIconHighlightType)));
@@ -501,13 +500,11 @@ void ProvinceMapUI::updateHoveredLocationID(Int2 originalPosition)
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
 	GameState &gameState = game.gameState;
-	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 
-	const int provinceIndex = state.provinceID;
+	const ProvinceDefinitionID provinceDefID = state.provinceDefID;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(provinceDefID);
+	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
 
 	std::optional<Int2> closestPosition;
 	auto closerThanCurrentClosest = [&originalPosition, &closestPosition](const Int2 &point)
@@ -526,13 +523,13 @@ void ProvinceMapUI::updateHoveredLocationID(Int2 originalPosition)
 
 	// Look through all visible locations to find the one closest to the mouse.
 	std::optional<int> closestIndex;
-	for (int i = 0; i < provinceInst.getLocationCount(); i++)
+	for (int i = 0; i < provinceInst.locations.getCount(); i++)
 	{
-		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+		const LocationInstance &locationInst = provinceInst.locations[i];
 		if (locationInst.isVisible())
 		{
 			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
 			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
 
 			if (closerThanCurrentClosest(point))
@@ -553,7 +550,7 @@ void ProvinceMapUI::updateHoveredLocationID(Int2 originalPosition)
 	{
 		state.hoveredLocationID = *closestIndex;
 
-		const std::string locationName = ProvinceMapUiModel::getLocationName(game, state.provinceID, state.hoveredLocationID);
+		const std::string locationName = ProvinceMapUiModel::getLocationName(game, state.provinceDefID, state.hoveredLocationID);
 
 		UiManager &uiManager = game.uiManager;
 		const UiElementInstanceID hoveredLocationTextBoxElementInstID = uiManager.getElementByName("ProvinceMapLocationTextBox");
@@ -569,14 +566,14 @@ void ProvinceMapUI::updateLocationHighlights()
 
 	GameState &gameState = game.gameState;
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(state.provinceID);
+	const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(state.provinceDefID);
 	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(state.provinceID);
-	for (int i = 0; i < provinceDef.getLocationCount(); i++)
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(state.provinceDefID);
+	for (int i = 0; i < static_cast<int>(provinceDef.locations.size()); i++)
 	{
-		const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
-		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+		const LocationDefinition &locationDef = provinceDef.locations[i];
+		const LocationInstance &locationInst = provinceInst.locations[i];
 		if (!locationInst.isVisible())
 		{
 			continue;
@@ -592,11 +589,11 @@ void ProvinceMapUI::updateLocationHighlights()
 		{
 			// If there is a currently-selected destination in this province, draw its blinking highlight
 			// if within the "blink on" interval.
-			const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+			const ProvinceMapUiTravelData *travelDataPtr = gameState.getTravelData();
 			if (travelDataPtr != nullptr)
 			{
-				const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
-				if ((travelData.provinceID == state.provinceID) && (travelData.locationID == i))
+				const ProvinceMapUiTravelData &travelData = *travelDataPtr;
+				if ((travelData.provinceDefID == state.provinceDefID) && (travelData.locationID == i))
 				{
 					// See if the blink period percent lies within the "on" percent. Use less-than to compare them
 					// so the on-state appears before the off-state.
@@ -621,11 +618,10 @@ void ProvinceMapUI::trySelectLocation(int selectedLocationID)
 	GameState &gameState = game.gameState;
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
-	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 	const ProvinceDefinition &currentProvinceDef = gameState.getProvinceDefinition();
 	const LocationDefinition &currentLocationDef = gameState.getLocationDefinition();
-	const ProvinceDefinition &selectedProvinceDef = provinceLibrary.getProvinceDef(state.provinceID);
-	const LocationDefinition &selectedLocationDef = selectedProvinceDef.getLocationDef(selectedLocationID);
+	const ProvinceDefinition &selectedProvinceDef = ProvinceLibrary::getInstance().getDefinition(state.provinceDefID);
+	const LocationDefinition &selectedLocationDef = selectedProvinceDef.locations[selectedLocationID];
 
 	const bool matchesPlayerLocation = selectedProvinceDef.matches(currentProvinceDef) && selectedLocationDef.matches(currentLocationDef);
 	if (!matchesPlayerLocation)
@@ -645,11 +641,11 @@ void ProvinceMapUI::trySelectLocation(int selectedLocationID)
 
 		const int travelDays = ArenaLocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint, currentDate.getMonth(), gameState.getWorldMapWeathers(), tempRandom, binaryAssetLibrary);
 
-		gameState.setTravelData(ProvinceMapUiModel::TravelData(selectedLocationID, state.provinceID, travelDays));
+		gameState.setTravelData(ProvinceMapUiTravelData(selectedLocationID, state.provinceDefID, travelDays));
 		state.blinkState.reset();
 		ProvinceMapUI::updateLocationHighlights();
 
-		const std::string travelText = ProvinceMapUiModel::makeTravelText(game, state.provinceID, currentLocationDef, currentProvinceDef, selectedLocationID);
+		const std::string travelText = ProvinceMapUiModel::makeTravelText(game, state.provinceDefID, currentLocationDef, currentProvinceDef, selectedLocationID);
 		ProvinceMapUI::showTextPopUp(travelText.c_str());
 	}
 	else
@@ -1044,7 +1040,7 @@ void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValu
 	std::string searchInputText = uiManager.getTextBoxText(textEntryTextBoxElementInstID);
 
 	const int *exactLocationIndex = nullptr;
-	const std::vector<int> matchingLocationIndices = ProvinceSearchUiModel::getMatchingLocations(game, searchInputText, state.provinceID, &exactLocationIndex);
+	const std::vector<int> matchingLocationIndices = ProvinceSearchUiModel::getMatchingLocations(game, searchInputText, state.provinceDefID, &exactLocationIndex);
 	const bool isExactLocationMatch = exactLocationIndex != nullptr;
 
 	if (isExactLocationMatch)
@@ -1056,20 +1052,19 @@ void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValu
 		uiManager.setContextEnabled(state.searchResultsPopUpContextInstID, true);
 
 		GameState &gameState = game.gameState;
-		const int provinceIndex = state.provinceID;
-		const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+		const ProvinceDefinitionID provinceDefID = state.provinceDefID;
 		const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-		const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
-		const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
+		const ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(provinceDefID);
+		const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
 
 		const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_SearchResultsListBox);
 		uiManager.clearListBox(listBoxElementInstID);
 
 		for (const int locationIndex : matchingLocationIndices)
 		{
-			const LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
+			const LocationInstance &locationInst = provinceInst.locations[locationIndex];
 			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
 
 			UiListBoxItemCallback listBoxItemCallback = [locationIndex](MouseButtonType)
 			{

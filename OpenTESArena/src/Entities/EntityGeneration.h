@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EntityUtils.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 enum class ArenaCityType;
 enum class ArenaInteriorType;
@@ -15,9 +16,10 @@ struct EntityGenInfo
 	ArenaInteriorType interiorType;
 	int interiorLevelIndex;
 
-	int provinceID;
+	ProvinceDefinitionID provinceDefID;
 
 	EntityGenInfo();
 
-	void init(int playerLevel, bool nightLightsAreActive, ArenaCityType cityType, ArenaInteriorType interiorType, int interiorLevelIndex, int provinceID);
+	void init(int playerLevel, bool nightLightsAreActive, ArenaCityType cityType, ArenaInteriorType interiorType,
+		int interiorLevelIndex, ProvinceDefinitionID provinceDefID);
 };

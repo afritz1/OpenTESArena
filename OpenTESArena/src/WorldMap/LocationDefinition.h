@@ -120,9 +120,9 @@ private:
 	void init(LocationDefinitionType type, const std::string &name, int x, int y, double latitude);
 public:
 	// Initialize from original game data.
-	void initCity(int localCityID, int provinceID, bool coastal, bool premade, ArenaCityType type, const BinaryAssetLibrary &binaryAssetLibrary);
-	void initDungeon(int localDungeonID, int provinceID, const ArenaLocationData &locationData, const ArenaProvinceData &provinceData);
-	void initMainQuestDungeon(const std::optional<int> &optLocalDungeonID, int provinceID,
+	void initCity(int localCityID, int originalProvinceIndex, bool coastal, bool premade, ArenaCityType type, const BinaryAssetLibrary &binaryAssetLibrary);
+	void initDungeon(int localDungeonID, int originalProvinceIndex, const ArenaLocationData &locationData, const ArenaProvinceData &provinceData);
+	void initMainQuestDungeon(const std::optional<int> &optLocalDungeonID, int originalProvinceIndex,
 		LocationMainQuestDungeonDefinitionType type, const BinaryAssetLibrary &binaryAssetLibrary);
 	// @todo: eventually have init(const char *filename) for custom locations.
 

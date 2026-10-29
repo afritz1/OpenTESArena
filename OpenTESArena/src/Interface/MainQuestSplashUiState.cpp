@@ -8,12 +8,12 @@ MainQuestSplashUiState::MainQuestSplashUiState()
 {
 	this->game = nullptr;
 	this->contextInstID = -1;
-	this->provinceID = -1;
+	this->provinceDefID = -1;
 }
 
 void MainQuestSplashUiState::init(Game &game)
 {
-	DebugAssert(this->provinceID >= 0); // Must already be set by fast travel logic.
+	DebugAssert(this->provinceDefID >= 0); // Must already be set by fast travel logic.
 	this->game = &game;
 }
 
@@ -34,11 +34,11 @@ void MainQuestSplashUI::create(Game &game)
 	UiElementInitInfo backgroundImageElementInitInfo;
 	backgroundImageElementInitInfo.name = "MainQuestSplashBackgroundImage";
 
-	const TextureAsset backgroundImageTextureAsset = MainQuestSplashUiView::getSplashTextureAsset(state.provinceID);
+	const TextureAsset backgroundImageTextureAsset = MainQuestSplashUiView::getSplashTextureAsset(state.provinceDefID);
 	const UiTextureID backgroundImageTextureID = uiManager.getOrAddTexture(backgroundImageTextureAsset, backgroundImageTextureAsset, textureManager, renderer);
 	uiManager.createImage(backgroundImageElementInitInfo, backgroundImageTextureID, state.contextInstID, renderer);
 
-	const std::string descriptionText = MainQuestSplashUiModel::getDungeonText(game, state.provinceID);
+	const std::string descriptionText = MainQuestSplashUiModel::getDungeonText(game, state.provinceDefID);
 	const UiElementInstanceID descriptionTextBoxElementInstID = uiManager.getElementByName("MainQuestSplashTextBox");
 	uiManager.setTextBoxText(descriptionTextBoxElementInstID, descriptionText.c_str());
 
@@ -59,7 +59,7 @@ void MainQuestSplashUI::destroy()
 		state.contextInstID = -1;
 	}
 
-	state.provinceID = -1;
+	state.provinceDefID = -1;
 }
 
 void MainQuestSplashUI::update(double dt)

@@ -18,7 +18,7 @@ void ProvinceDefinition::init(int originalProvinceIndex, const BinaryAssetLibrar
 	this->globalW = provinceData.globalW;
 	this->globalH = provinceData.globalH;
 	this->originalProvinceIndex = originalProvinceIndex;
-	this->animatedDistantLand = originalProvinceIndex == 3;
+	this->hasAnimatedDistantLand = originalProvinceIndex == 3;
 
 	auto canAddLocation = [](const ArenaLocationData &locationData)
 	{
@@ -28,36 +28,36 @@ void ProvinceDefinition::init(int originalProvinceIndex, const BinaryAssetLibrar
 	};
 
 	auto tryAddCity = [this, &binaryAssetLibrary, &provinceData, &canAddLocation](int localCityID,
-		int provinceID, bool coastal, bool premade, ArenaCityType type)
+		int originalProvinceIndex, bool coastal, bool premade, ArenaCityType type)
 	{
-		const auto &locationData = provinceData.getLocationData(localCityID);
+		const ArenaLocationData &locationData = provinceData.getLocationData(localCityID);
 
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initCity(localCityID, provinceID, coastal, premade, type, binaryAssetLibrary);
+			locationDef.initCity(localCityID, originalProvinceIndex, coastal, premade, type, binaryAssetLibrary);
 			this->locations.emplace_back(std::move(locationDef));
 		}
 	};
 
-	auto tryAddDungeon = [this, &provinceData, &canAddLocation](int localDungeonID, int provinceID, const ArenaLocationData &locationData)
+	auto tryAddDungeon = [this, &provinceData, &canAddLocation](int localDungeonID, int originalProvinceIndex, const ArenaLocationData &locationData)
 	{
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initDungeon(localDungeonID, provinceID, locationData, provinceData);
+			locationDef.initDungeon(localDungeonID, originalProvinceIndex, locationData, provinceData);
 			this->locations.emplace_back(std::move(locationDef));
 		}
 	};
 
 	auto tryAddMainQuestDungeon = [this, &binaryAssetLibrary, &provinceData, &canAddLocation](
-		const std::optional<int> &optLocalDungeonID, int provinceID,
+		const std::optional<int> &optLocalDungeonID, int originalProvinceIndex,
 		LocationMainQuestDungeonDefinitionType type, const ArenaLocationData &locationData)
 	{
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initMainQuestDungeon(optLocalDungeonID, provinceID, type, binaryAssetLibrary);
+			locationDef.initMainQuestDungeon(optLocalDungeonID, originalProvinceIndex, type, binaryAssetLibrary);
 			this->locations.emplace_back(std::move(locationDef));
 		}
 	};
@@ -65,8 +65,7 @@ void ProvinceDefinition::init(int originalProvinceIndex, const BinaryAssetLibrar
 	const bool isCenterProvince = originalProvinceIndex == ArenaLocationUtils::CENTER_PROVINCE_INDEX;
 	const ExeDataCityGeneration &cityGen = binaryAssetLibrary.getExeData().cityGen;
 
-	auto tryAddCities = [originalProvinceIndex, &cityGen, &tryAddCity, isCenterProvince](
-		const auto &locations, ArenaCityType type, int startID)
+	auto tryAddCities = [originalProvinceIndex, &cityGen, &tryAddCity, isCenterProvince](Span<const ArenaLocationData> locations, ArenaCityType type, int startID)
 	{
 		auto isCoastal = [originalProvinceIndex, &cityGen](int localCityID)
 		{
@@ -76,7 +75,7 @@ void ProvinceDefinition::init(int originalProvinceIndex, const BinaryAssetLibrar
 
 		for (size_t i = 0; i < std::size(locations); i++)
 		{
-			const auto &location = locations[i];
+			const ArenaLocationData &location = locations[i];
 			const int localCityID = startID + static_cast<int>(i);
 			const bool coastal = isCoastal(localCityID);
 			const bool premade = isCenterProvince && (localCityID == 0);
@@ -84,12 +83,11 @@ void ProvinceDefinition::init(int originalProvinceIndex, const BinaryAssetLibrar
 		}
 	};
 
-	auto tryAddDungeons = [originalProvinceIndex, &tryAddDungeon](const auto &locations)
+	auto tryAddDungeons = [originalProvinceIndex, &tryAddDungeon](Span<const ArenaLocationData> locations)
 	{
 		for (size_t i = 0; i < std::size(locations); i++)
 		{
-			const auto &location = locations[i];
-
+			const ArenaLocationData &location = locations[i];
 			const int localDungeonID = 2 + static_cast<int>(i);
 			tryAddDungeon(localDungeonID, originalProvinceIndex, location);
 		}
@@ -118,35 +116,9 @@ void ProvinceDefinition::init(int originalProvinceIndex, const BinaryAssetLibrar
 	}
 }
 
-int ProvinceDefinition::getLocationCount() const
-{
-	return static_cast<int>(this->locations.size());
-}
-
-const LocationDefinition &ProvinceDefinition::getLocationDef(int index) const
-{
-	DebugAssertIndex(this->locations, index);
-	return this->locations[index];
-}
-
-const std::string &ProvinceDefinition::getName() const
-{
-	return this->name;
-}
-
 Rect ProvinceDefinition::getGlobalRect() const
 {
 	return Rect(this->globalX, this->globalY, this->globalW, this->globalH);
-}
-
-int ProvinceDefinition::getOriginalProvinceIndex() const
-{
-	return this->originalProvinceIndex;
-}
-
-bool ProvinceDefinition::hasAnimatedDistantLand() const
-{
-	return this->animatedDistantLand;
 }
 
 bool ProvinceDefinition::matches(const ProvinceDefinition &other) const
@@ -156,18 +128,16 @@ bool ProvinceDefinition::matches(const ProvinceDefinition &other) const
 		(this->globalW == other.globalW) && (this->globalH == other.globalH);
 }
 
-bool ProvinceDefinition::tryGetLocationIndex(const LocationDefinition &locationDef,
-	int *outLocationIndex) const
+int ProvinceDefinition::findLocationIndexIf(const ProvinceLocationPredicate &predicate) const
 {
-	for (int i = 0; i < this->getLocationCount(); i++)
+	for (int i = 0; i < static_cast<int>(this->locations.size()); i++)
 	{
-		const LocationDefinition &curLocationDef = this->getLocationDef(i);
-		if (curLocationDef.matches(locationDef))
+		const LocationDefinition &locationDef = this->locations[i];
+		if (predicate(locationDef))
 		{
-			*outLocationIndex = i;
-			return true;
+			return i;
 		}
 	}
 
-	return false;
+	return -1;
 }

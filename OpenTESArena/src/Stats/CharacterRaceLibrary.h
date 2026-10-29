@@ -7,6 +7,8 @@
 
 #include "components/utilities/Singleton.h"
 
+class ProvinceLibrary;
+
 struct ExeData;
 
 using CharacterRaceDefinitionID = int;
@@ -17,10 +19,9 @@ class CharacterRaceLibrary : public Singleton<CharacterRaceLibrary>
 private:
 	std::vector<CharacterRaceDefinition> defs;
 public:
-	void init(const ExeData &exeData);
+	void init(const ProvinceLibrary &provinceLibrary, const ExeData &exeData);
 
 	int getDefinitionCount() const;
 	const CharacterRaceDefinition &getDefinition(CharacterRaceDefinitionID id) const;
 	CharacterRaceDefinitionID findDefinitionIdIf(const CharacterRacePredicate &predicate) const;
-	CharacterRaceDefinitionID tryGetDefinitionID(const CharacterRaceDefinition &def) const;
 };

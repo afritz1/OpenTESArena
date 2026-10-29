@@ -6,12 +6,17 @@
 
 #include "components/debug/Debug.h"
 
-void CharacterRaceLibrary::init(const ExeData &exeData)
+void CharacterRaceLibrary::init(const ProvinceLibrary &provinceLibrary, const ExeData &exeData)
 {
 	constexpr int playableRaceCount = CityDataFile::PROVINCE_COUNT - 1;
 	for (int i = 0; i < playableRaceCount; i++)
 	{
-		const int provinceID = i;
+		const ProvinceDefinitionID provinceDefID = provinceLibrary.findDefinitionIdIf(
+			[i](const ProvinceDefinition &provinceDef)
+		{
+			return provinceDef.originalProvinceIndex == i;
+		});
+
 		const int originalRaceIndex = i;
 		DebugAssertIndex(exeData.races.singularNames, originalRaceIndex);
 		DebugAssertIndex(exeData.races.pluralNames, originalRaceIndex);
@@ -40,7 +45,7 @@ void CharacterRaceLibrary::init(const ExeData &exeData)
 		const std::string femaleGameUiHeadsFilename = ArenaPortraitUtils::getHeads(false, originalRaceIndex, true);
 
 		CharacterRaceDefinition raceDef;
-		raceDef.init(provinceID, originalRaceIndex, singularName.c_str(), pluralName.c_str(), swimmingMoveSpeed, swimmingStaminaLossMultiplier,
+		raceDef.init(provinceDefID, originalRaceIndex, singularName.c_str(), pluralName.c_str(), swimmingMoveSpeed, swimmingStaminaLossMultiplier,
 			climbingSpeedScale, maleCharSheetBodyTextureAsset, maleCharSheetHeadsFilename, maleGameUiHeadsFilename, femaleCharSheetBodyTextureAsset,
 			femaleCharSheetHeadsFilename, femaleGameUiHeadsFilename);
 		this->defs.emplace_back(std::move(raceDef));
@@ -64,20 +69,6 @@ CharacterRaceDefinitionID CharacterRaceLibrary::findDefinitionIdIf(const Charact
 	{
 		const CharacterRaceDefinition &def = this->defs[i];
 		if (predicate(def))
-		{
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-CharacterRaceDefinitionID CharacterRaceLibrary::tryGetDefinitionID(const CharacterRaceDefinition &def) const
-{
-	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)
-	{
-		const CharacterRaceDefinition &charClassDef = this->defs[i];
-		if (charClassDef.provinceID == def.provinceID)
 		{
 			return i;
 		}
