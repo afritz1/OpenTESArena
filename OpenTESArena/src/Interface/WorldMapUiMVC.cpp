@@ -28,7 +28,7 @@ std::string WorldMapUiModel::getProvinceNameOffsetFilename()
 
 const WorldMapMask &WorldMapUiModel::getMask(const Game &game, int maskID)
 {
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &worldMapMasks = binaryAssetLibrary.getWorldMapMasks();
 
 	DebugAssertIndex(worldMapMasks, maskID);
@@ -75,7 +75,7 @@ void FastTravelUiModel::tickTravelTime(Game &game, int travelDays)
 {
 	DebugAssert(travelDays >= 0);
 
-	auto &gameState = game.gameState;
+	GameState &gameState = game.gameState;
 	Random &random = game.random;
 
 	Date &date = gameState.getDate();
@@ -252,7 +252,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, ProvinceDefinit
 				{
 					const std::string rulerFirstName = [&provinceDef, &random, isMale]()
 					{
-						const auto &textAssetLibrary = TextAssetLibrary::getInstance();
+						const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
 						const std::string fullName = textAssetLibrary.generateNpcName(provinceDef.originalProvinceIndex, isMale, random);
 						const Buffer<std::string> tokens = String::split(fullName, ' ');
 						return tokens[0];

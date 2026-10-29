@@ -268,7 +268,7 @@ bool ProvinceSearchUiModel::isCharAllowed(char c)
 
 std::string ProvinceSearchUiModel::getTitleText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.travel.searchTitleText;
 }
 

@@ -205,7 +205,7 @@ int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &
 		const uint8_t terrainIndex = WorldMapTerrain::getNormalizedIndex(worldMapTerrain.getAt(point.x, point.y));
 
 		// Calculate the travel speed based on climate and weather.
-		const auto &exeData = binaryAssetLibrary.getExeData();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
 		const auto &climateSpeedTables = exeData.locations.climateSpeedTables;
 		DebugAssertIndex(climateSpeedTables, terrainIndex);
 		const auto &climateSpeedTable = climateSpeedTables[terrainIndex];

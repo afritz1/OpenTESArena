@@ -75,7 +75,7 @@ std::string CharacterCreationUiModel::getPlayerExperience(Game &game)
 
 std::string ChooseClassCreationUiModel::getTitleText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseClassCreation;
 	text = String::replace(text, '\r', '\n');
 	return text;
@@ -83,13 +83,13 @@ std::string ChooseClassCreationUiModel::getTitleText(Game &game)
 
 std::string ChooseClassCreationUiModel::getGenerateButtonText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseClassCreationGenerate;
 }
 
 std::string ChooseClassCreationUiModel::getSelectButtonText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseClassCreationSelect;
 }
 
@@ -108,7 +108,7 @@ std::string ChooseClassQuestionsUiModel::getSuggestedClassPopUpText(const Charac
 
 std::string ChooseClassUiModel::getTitleText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseClassList;
 }
 
@@ -289,19 +289,19 @@ std::string ChooseClassUiModel::getFullTooltipText(const CharacterClassDefinitio
 
 std::string ChooseGenderUiModel::getTitleText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseGender;
 }
 
 std::string ChooseGenderUiModel::getMaleText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseGenderMale;
 }
 
 std::string ChooseGenderUiModel::getFemaleText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseGenderFemale;
 }
 
@@ -311,7 +311,7 @@ std::string ChooseNameUiModel::getTitleText(Game &game)
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 	const auto &charClassDef = charClassLibrary.getDefinition(charCreationState.charClassDefID);
 
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseName;
 	text = String::replace(text, "%s", charClassDef.name);
 	return text;
@@ -380,8 +380,8 @@ std::string ChooseRaceUiModel::getProvinceConfirmNoText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 {
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	std::string segment = exeData.charCreation.confirmedRace1;
 	segment = String::replace(segment, '\r', '\n');
 
@@ -422,7 +422,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmedSecondText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string segment = exeData.charCreation.confirmedRace2;
 	segment = String::replace(segment, '\r', '\n');
 
@@ -451,8 +451,8 @@ std::string ChooseRaceUiModel::getProvinceConfirmedSecondText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 {
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	std::string segment = exeData.charCreation.confirmedRace3;
 	segment = String::replace(segment, '\r', '\n');
 
@@ -477,7 +477,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 
 std::string ChooseRaceUiModel::getProvinceConfirmedFourthText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string segment = exeData.charCreation.confirmedRace4;
 	segment = String::replace(segment, '\r', '\n');
 
@@ -569,7 +569,7 @@ std::string ChooseAttributesUiModel::getPlayerGold(Game &game)
 
 std::string ChooseAttributesUiModel::getInitialText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.distributeClassPoints;
 	text = String::replace(text, '\r', '\n');
 
@@ -581,34 +581,34 @@ std::string ChooseAttributesUiModel::getInitialText(Game &game)
 
 std::string ChooseAttributesUiModel::getMessageBoxTitleText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseAttributes;
 }
 
 std::string ChooseAttributesUiModel::getMessageBoxSaveText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
 	return text;
 }
 
 std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
 	return text;
 }
 
 std::string ChooseAttributesUiModel::getBonusPointsRemainingText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const std::string text = exeData.charCreation.chooseAttributesBonusPointsRemaining;
 	return text;
 }
 
 std::string ChooseAttributesUiModel::getAppearanceText(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAppearance;
 	text = String::replace(text, '\r', '\n');
 	return text;
@@ -636,7 +636,7 @@ UiTextureID CharacterCreationUiView::allocNightSkyTexture(TextureManager &textur
 
 Rect ChooseClassUiView::getListRect(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &chooseClassListUI = exeData.ui.chooseClassList;
 	return Rect(
 		chooseClassListUI.area.x,
@@ -647,7 +647,7 @@ Rect ChooseClassUiView::getListRect(Game &game)
 
 Rect ChooseClassUiView::getUpButtonRect(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &chooseClassListUI = exeData.ui.chooseClassList;
 	return Rect(
 		chooseClassListUI.buttonUp.x,
@@ -658,7 +658,7 @@ Rect ChooseClassUiView::getUpButtonRect(Game &game)
 
 Rect ChooseClassUiView::getDownButtonRect(Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &chooseClassListUI = exeData.ui.chooseClassList;
 	return Rect(
 		chooseClassListUI.buttonDown.x,
@@ -904,7 +904,7 @@ Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 	constexpr bool trimmed = false;
 	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceDef.originalRaceIndex, trimmed);
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(headsFilename.c_str());
 	if (!metadataID.has_value())
 	{
@@ -955,7 +955,7 @@ Buffer<TextureAsset> ChooseAttributesUiView::getHeadTextureAssets(Game &game)
 	constexpr bool trimmed = false;
 	std::string headsFilename = ArenaPortraitUtils::getHeads(isMale, raceDef.originalRaceIndex, trimmed);
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	return TextureUtils::makeTextureAssets(headsFilename, textureManager);
 }
 
@@ -984,8 +984,8 @@ TextureAsset ChooseAttributesUiView::getPantsTextureAsset(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
 {
-	auto &textureManager = game.textureManager;
-	auto &renderer = game.renderer;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getBodyTextureAsset(game);
@@ -1001,8 +1001,8 @@ UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
 {
-	auto &textureManager = game.textureManager;
-	auto &renderer = game.renderer;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getShirtTextureAsset(game);
@@ -1018,8 +1018,8 @@ UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocPantsTexture(Game &game)
 {
-	auto &textureManager = game.textureManager;
-	auto &renderer = game.renderer;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getPantsTextureAsset(game);

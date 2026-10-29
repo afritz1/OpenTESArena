@@ -231,7 +231,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		std::vector<std::string> { "Vulkan", "Software" },
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_GraphicsAPI(value);
 	});
 
@@ -243,7 +243,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		Options::MAX_FPS,
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_TargetFPS(value);
 	});
 
@@ -277,7 +277,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		1,
 		[&game](double value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_VerticalFOV(value);
 	});
 
@@ -307,7 +307,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		1,
 		[&game](double value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_CursorScale(value);
 
 		// Refresh draw call transform size.
@@ -345,7 +345,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		options.getGraphics_TallPixelCorrection(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_TallPixelCorrection(value);
 	});
 
@@ -359,7 +359,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		std::vector<std::string> { "Very Low", "Low", "Medium", "High", "Very High", "Max" },
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_RenderThreadsMode(value);
 	});
 
@@ -373,7 +373,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		std::vector<std::string> { "None", "Classic", "Modern" },
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_DitheringMode(value);
 	});
 
@@ -405,7 +405,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeAudioOptionGroup(Game &game)
 		Options::MAX_SOUND_CHANNELS,
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setAudio_SoundChannels(value);
 	});
 
@@ -419,7 +419,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeAudioOptionGroup(Game &game)
 		std::vector<std::string> { "Default", "Fastest", "Medium", "Best" },
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setAudio_SoundResampling(value);
 
 		// If the sound resampling extension is supported, update the audio manager sources.
@@ -436,7 +436,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeAudioOptionGroup(Game &game)
 		options.getAudio_Is3DAudio(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setAudio_Is3DAudio(value);
 
 		auto &audioManager = game.audioManager;
@@ -465,7 +465,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 		1,
 		[&game](double value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setInput_HorizontalSensitivity(value);
 	});
 
@@ -479,7 +479,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 		1,
 		[&game](double value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setInput_VerticalSensitivity(value);
 	});
 
@@ -488,7 +488,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 		options.getInput_InvertVerticalAxis(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setInput_InvertVerticalAxis(value);
 	});
 
@@ -502,7 +502,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 		1,
 		[&game](double value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setInput_CameraPitchLimit(value);
 
 		// Reset player view to forward.
@@ -527,7 +527,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 		options.getMisc_ShowCompass(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_ShowCompass(value);
 	});
 
@@ -537,7 +537,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 		options.getMisc_ShowIntro(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_ShowIntro(value);
 	});
 
@@ -550,7 +550,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 		Options::MAX_CHUNK_DISTANCE,
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_ChunkDistance(value);
 	});
 
@@ -564,7 +564,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 		std::vector<std::string> { "Classic", "Moderate", "High" },
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_StarDensity(value);
 	});
 
@@ -574,7 +574,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 		options.getMisc_PlayerHasLight(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_PlayerHasLight(value);
 	});
 
@@ -597,7 +597,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 		options.getMisc_GhostMode(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_GhostMode(value);
 
 		Player &player = game.player;
@@ -610,7 +610,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 		options.getMisc_ImmuneToDamage(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_ImmuneToDamage(value);
 	});
 
@@ -623,7 +623,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 		Options::MAX_PROFILER_LEVEL,
 		[&game](int value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_ProfilerLevel(value);
 	});
 
@@ -633,7 +633,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 		options.getMisc_EnableValidationLayers(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setMisc_EnableValidationLayers(value);
 	});
 

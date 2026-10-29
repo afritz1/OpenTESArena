@@ -100,8 +100,8 @@ std::string MainMenuUiModel::getSelectedTestName(Game &game, int testType, int t
 {
 	if (testType == MainMenuUiModel::TestType_MainQuest)
 	{
-		const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-		const auto &exeData = binaryAssetLibrary.getExeData();
+		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
 
 		// Decide how to get the main quest dungeon name.
 		if (testIndex == 0)
@@ -603,9 +603,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		player.setWeaponAnimationFromItem(testWeaponItemDefID);
 	}
 
-	auto &textureManager = game.textureManager;
-	auto &renderer = game.renderer;
-	const auto &options = game.options;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	const Options &options = game.options;
 	const int starCount = SkyUtils::getStarCountFromDensity(options.getMisc_StarDensity());
 	const int currentDay = gameState.getDate().getDay();
 

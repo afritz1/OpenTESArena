@@ -237,7 +237,7 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	const GameState &gameState = game.gameState;
 	const OriginalInt2 displayedCoords = GameWorldUiModel::getOriginalPlayerPosition(player.getEyePosition(), gameState.getActiveMapType());
 
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string str = exeData.ui.currentWorldPosition;
 
 	size_t index = str.find("%d");
@@ -251,7 +251,7 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 
 std::optional<GameWorldUiButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
 {
-	const auto &options = game.options;
+	const Options &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (modernInterface)
 	{
@@ -755,7 +755,7 @@ Int2 GameWorldUiView::getKeyPosition(int keyIndex)
 
 Int2 GameWorldUiView::getTriggerTextPosition(Game &game, int gameWorldInterfaceTextureHeight)
 {
-	const auto &options = game.options;
+	const Options &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	const int textX = ArenaRenderUtils::SCREEN_WIDTH / 2;
@@ -1213,14 +1213,14 @@ UiTextureID GameWorldUiView::allocKeyTexture(int keyIndex, TextureManager &textu
 void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 {
 	const Window &window = game.window;
-	auto &renderer = game.renderer;
+	Renderer &renderer = game.renderer;
 	const int selectionDim = 3;
 	const Int2 windowDims = window.getPixelDimensions();
 
 	constexpr int xOffset = 16;
 	constexpr int yOffset = 16;
 
-	const auto &gameState = game.gameState;
+	const GameState &gameState = game.gameState;
 	if (!gameState.isActiveMapValid())
 	{
 		return;
@@ -1333,7 +1333,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		case RayCastHitType::Entity:
 		{
 			const RayCastEntityHit &entityHit = hit.entityHit;
-			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+			const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 			const EntityInstance &entityInst = entityChunkManager.entities.get(entityHit.id);

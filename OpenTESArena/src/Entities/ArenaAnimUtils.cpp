@@ -256,7 +256,7 @@ namespace ArenaAnimUtils
 	{
 		DebugAssert(outAnimDef != nullptr);
 
-		const auto &exeData = binaryAssetLibrary.getExeData();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
 		int humanFilenameTypeIndex;
 		ArenaAnimUtils::getHumanEnemyProperties(originalClassIndex, charClassLibrary, exeData, &humanFilenameTypeIndex);
 
@@ -409,7 +409,7 @@ namespace ArenaAnimUtils
 		constexpr int direction = 1;
 		constexpr bool isMirrored = false;
 
-		const auto &exeData = binaryAssetLibrary.getExeData();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
 		int humanFilenameTypeIndex;
 		ArenaAnimUtils::getHumanEnemyProperties(originalClassIndex, charClassLibrary, exeData, &humanFilenameTypeIndex);
 
@@ -1255,7 +1255,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaFlatIndex flatIndex, const s
 {
 	DebugAssert(outAnimDef != nullptr);
 
-	const auto &exeData = binaryAssetLibrary.getExeData();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const INFFlat &flatData = inf.getFlat(flatIndex);
 	const std::optional<ArenaItemIndex> &optItemIndex = flatData.itemIndex;
 	if (!optItemIndex.has_value())

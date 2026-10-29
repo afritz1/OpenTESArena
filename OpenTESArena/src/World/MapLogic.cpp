@@ -179,7 +179,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	const ArenaWeatherType weatherType = gameState.getWeatherForLocation(provinceDefID, locationID);
 
 	const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
-	auto &renderer = game.renderer;
+	Renderer &renderer = game.renderer;
 
 	const LocationCityDefinition &cityDef = locationDef.city;
 	Buffer<uint8_t> reservedBlocks = [&cityDef]()
@@ -258,9 +258,9 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 	const RayCastVoxelHit &voxelHit = hit.voxelHit;
 	const CoordInt3 hitVoxelCoord = voxelHit.voxelCoord;
 
-	auto &gameState = game.gameState;
-	auto &textureManager = game.textureManager;
-	auto &renderer = game.renderer;
+	GameState &gameState = game.gameState;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const MapType activeMapType = activeMapDef.getMapType();
 
@@ -449,7 +449,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					}
 				}();
 
-				const auto &exeData = binaryAssetLibrary.getExeData();
+				const ExeData &exeData = binaryAssetLibrary.getExeData();
 				Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
 				MapGenerationWildInfo wildGenInfo;

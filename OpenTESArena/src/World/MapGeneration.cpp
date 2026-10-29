@@ -1932,7 +1932,7 @@ namespace MapGeneration
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
 		LevelInfoDefinition *outLevelInfoDef)
 	{
-		const auto &exeData = binaryAssetLibrary.getExeData();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
 		const Int2 localCityPoint = ArenaLocationUtils::getLocalCityPoint(citySeed);
 
 		auto tryGetInteriorType = [outLevelDef, outLevelInfoDef](SNInt x, WEInt z) -> std::optional<ArenaInteriorType>
@@ -2207,7 +2207,7 @@ namespace MapGeneration
 		const BinaryAssetLibrary &binaryAssetLibrary, MapGenerationWildChunkBuildingNameInfo *outBuildingNameInfo,
 		LevelInfoDefinition *outLevelInfoDef, ArenaBuildingNameMappingCache *buildingNameMappings)
 	{
-		const auto &exeData = binaryAssetLibrary.getExeData();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
 
 		// Lambda for searching for an interior entrance voxel of the given type in the chunk
 		// and generating a name for it if found.
