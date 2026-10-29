@@ -1754,19 +1754,11 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoIndex];
 	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
 
-	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	const CharacterRaceDefinitionID raceDefID = CharacterRaceLibrary::getInstance().findDefinitionIdIf(
-		[&provinceDef](const CharacterRaceDefinition &raceDef)
-	{
-		return raceDef.originalRaceIndex == provinceDef.originalProvinceIndex;
-	});
-
 	const LocationDefinition &locationDef = this->getLocationDefinition();
-	const LocationDefinitionType locationDefType = locationDef.type;
-
-	const std::optional<CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(mapType, raceDefID, locationDef);
+	const std::optional<CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(mapType, this->provinceDefID, locationDef);
 
 	// For loot generation.
+	const LocationDefinitionType locationDefType = locationDef.type;
 	ArenaCityType lootCityType = ArenaCityType::CityState;
 	ArenaInteriorType lootInteriorType = ArenaInteriorType::Crypt;
 

@@ -30,13 +30,13 @@ namespace
 }
 
 void CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID, const EntityDefinition *maleEntityDef,
-	const EntityDefinition *femaleEntityDef, CharacterRaceDefinitionID raceDefID)
+	const EntityDefinition *femaleEntityDef, ProvinceDefinitionID provinceDefID)
 {
 	this->maleEntityDefID = maleEntityDefID;
 	this->femaleEntityDefID = femaleEntityDefID;
 	this->maleEntityDef = maleEntityDef;
 	this->femaleEntityDef = femaleEntityDef;
-	this->raceDefID = raceDefID;
+	this->provinceDefID = provinceDefID;
 }
 
 int CitizenUtils::getMaxCitizenCountForScene(int chunkCount)
@@ -51,7 +51,7 @@ bool CitizenUtils::canMapTypeSpawnCitizens(MapType mapType)
 	return (mapType == MapType::City) || (mapType == MapType::Wilderness);
 }
 
-CitizenGenInfo CitizenUtils::makeCitizenGenInfo(CharacterRaceDefinitionID raceDefID, ArenaClimateType climateType)
+CitizenGenInfo CitizenUtils::makeCitizenGenInfo(ProvinceDefinitionID provinceDefID, ArenaClimateType climateType)
 {
 	// Citizen entity definitions are level-independent and stored in a library beforehand.
 	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinitionType::Citizen));
@@ -73,11 +73,11 @@ CitizenGenInfo CitizenUtils::makeCitizenGenInfo(CharacterRaceDefinitionID raceDe
 	const EntityDefinition &femaleEntityDef = entityDefLibrary.getDefinition(femaleEntityDefID);
 
 	CitizenGenInfo citizenGenInfo;
-	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef, raceDefID);
+	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef, provinceDefID);
 	return citizenGenInfo;
 }
 
-std::optional<CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapType, CharacterRaceDefinitionID raceDefID, const LocationDefinition &locationDef)
+std::optional<CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapType, ProvinceDefinitionID provinceDefID, const LocationDefinition &locationDef)
 {
 	if (!CitizenUtils::canMapTypeSpawnCitizens(mapType))
 	{
@@ -92,7 +92,7 @@ std::optional<CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapTyp
 	
 	const LocationCityDefinition &cityDef = locationDef.city;
 	const ArenaClimateType climateType = cityDef.climateType;
-	return CitizenUtils::makeCitizenGenInfo(raceDefID, climateType);
+	return CitizenUtils::makeCitizenGenInfo(provinceDefID, climateType);
 }
 
 CardinalDirectionName CitizenUtils::getCitizenDirectionNameByIndex(int index)

@@ -6,8 +6,8 @@
 #include "EntityUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/TextureUtils.h"
-#include "../Stats/CharacterRaceLibrary.h"
 #include "../World/Coord.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 class EntityChunkManager;
 class LocationDefinition;
@@ -24,10 +24,10 @@ struct CitizenGenInfo
 	EntityDefID femaleEntityDefID;
 	const EntityDefinition *maleEntityDef;
 	const EntityDefinition *femaleEntityDef;
-	CharacterRaceDefinitionID raceDefID;
+	ProvinceDefinitionID provinceDefID; // Can't be race def in case of center province.
 
 	void init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID, const EntityDefinition *maleEntityDef,
-		const EntityDefinition *femaleEntityDef, CharacterRaceDefinitionID raceDefID);
+		const EntityDefinition *femaleEntityDef, ProvinceDefinitionID provinceDefID);
 };
 
 namespace CitizenUtils
@@ -38,8 +38,8 @@ namespace CitizenUtils
 	int getMaxCitizenCountForScene(int chunkCount);
 
 	bool canMapTypeSpawnCitizens(MapType mapType);
-	CitizenGenInfo makeCitizenGenInfo(CharacterRaceDefinitionID raceDefID, ArenaClimateType climateType);
-	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, CharacterRaceDefinitionID raceDefID, const LocationDefinition &locationDef);
+	CitizenGenInfo makeCitizenGenInfo(ProvinceDefinitionID provinceDefID, ArenaClimateType climateType);
+	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, ProvinceDefinitionID provinceDefID, const LocationDefinition &locationDef);
 
 	// Helper functions for determining a citizen's walking direction.
 	CardinalDirectionName getCitizenDirectionNameByIndex(int index);
