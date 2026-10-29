@@ -25,6 +25,7 @@
 #include "../Utilities/Color.h"
 #include "../Utilities/Endian.h"
 #include "../Utilities/Palette.h"
+#include "../Utilities/Platform.h"
 #include "../World/ChunkUtils.h"
 
 #include "components/debug/Debug.h"
@@ -3741,6 +3742,11 @@ namespace
 	void WorkerFunc(int workerIndex)
 	{
 		Worker &worker = g_workers.get(workerIndex);
+
+		char threadName[16];
+		std::snprintf(threadName, sizeof(threadName), "SwRender %d", workerIndex);
+		Platform::setThreadName(threadName);
+
 		std::unique_lock<std::mutex> workerLock(g_mutex);
 
 		while (true)

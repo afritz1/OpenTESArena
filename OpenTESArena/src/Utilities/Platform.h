@@ -46,4 +46,7 @@ namespace Platform
 
 	// Gets CPU support for 8-wide float vector intrinsics.
 	bool hasAVX();
+
+	// Sets the name of the current thread.
+	void setThreadName(const char *name);
 }

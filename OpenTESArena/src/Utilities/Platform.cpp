@@ -1,8 +1,13 @@
+#include <cstdio>
 #include <filesystem>
 #include <thread>
 
 #ifdef _WIN32
 #include <windows.h>
+#endif
+
+#if defined(__linux__) || defined(__APPLE__)
+#include <pthread.h>
 #endif
 
 #include "SDL.h"
@@ -63,7 +68,7 @@ namespace Platform
 		const char *xdgEnv = SDL_getenv(Platform::XDGConfigHome.c_str());
 		if (xdgEnv != nullptr)
 		{
-			return xdgEnv;			
+			return xdgEnv;
 		}
 
 		return Platform::getHomeEnv() + "/.config";
@@ -416,4 +421,28 @@ bool Platform::hasSSE()
 bool Platform::hasAVX()
 {
 	return SDL_HasAVX() && SDL_HasAVX2();
+}
+
+void Platform::setThreadName(const char *name)
+{
+#ifdef _WIN32
+	const HANDLE handle = GetCurrentThread();
+	if (handle == nullptr)
+	{
+		return;
+	}
+
+	WCHAR nameBuffer[64];
+	MultiByteToWideChar(CP_UTF8, 0, name, -1, nameBuffer, sizeof(nameBuffer) / sizeof(nameBuffer[0]));
+	SetThreadDescription(handle, nameBuffer);
+#elif defined(__linux__)
+	const pthread_t handle = pthread_self();
+	char nameBuffer[16]; // Can't be longer than this.
+	std::snprintf(nameBuffer, sizeof(nameBuffer), "%s", name);
+	pthread_setname_np(handle, nameBuffer);
+#elif defined(__APPLE__)
+	pthread_setname_np(name);
+#else
+	static_cast<void>(name);
+#endif
 }

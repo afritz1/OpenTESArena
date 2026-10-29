@@ -22,6 +22,7 @@
 #include "../Math/Matrix4.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
+#include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Span.h"
@@ -223,6 +224,8 @@ private:
 	 */
 	void backgroundProc()
 	{
+		Platform::setThreadName("Music");
+
 		/* Temporary storage to read samples into, before passing to OpenAL.
 		 * Kept here to avoid reallocating it during playback.
 		 */
