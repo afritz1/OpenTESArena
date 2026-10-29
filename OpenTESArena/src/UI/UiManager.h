@@ -109,6 +109,8 @@ public:
 	std::string getTextBoxText(UiElementInstanceID elementInstID) const;
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void setTextBoxColor(UiElementInstanceID elementInstID, Color color);
+	Int2 getTextBoxMinimumDimensions(UiElementInstanceID elementInstID) const;
+	void resizeTextBox(UiElementInstanceID elementInstID, int newWidth, int newHeight, Renderer &renderer);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
 	UiElementInstanceID createListBox(const UiElementInitInfo &initInfo, const UiListBoxInitInfo &listBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);

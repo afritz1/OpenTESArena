@@ -283,10 +283,9 @@ int ChooseClassQuestionsUI::getMaxScrollAmount()
 	const Rect textBoxRect = uiManager.getTransformGlobalRect(textBoxElementInstID);
 	const Rect textBoxClipRect = uiManager.getElementClipRect(textBoxElementInstID);
 
-	// @todo currently the text box is initialized with worstCaseText so this will never be a perfect fit.
-	// Need text box texture resize support.
+	const int extraBottomWhitespace = 8; // Some padding at the bottom equal to font character height.
 
-	const int maxScrollAmount = std::max(textBoxRect.height - textBoxClipRect.height, 0);
+	const int maxScrollAmount = std::max(textBoxRect.height - textBoxClipRect.height + extraBottomWhitespace, 0);
 	return maxScrollAmount;
 }
 
@@ -396,7 +395,13 @@ void ChooseClassQuestionsUI::setQuestionsTextBoxContent(const CharacterQuestion 
 	text += question.c.text;
 
 	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
+	const Rect textBoxOldRect = uiManager.getTransformGlobalRect(textBoxElementInstID);
 	uiManager.setTextBoxText(textBoxElementInstID, text.c_str());
+
+	// Update max scroll height.
+	const Int2 textBoxOldDims = textBoxOldRect.getSize();
+	const Int2 textBoxMinimumDims = uiManager.getTextBoxMinimumDimensions(textBoxElementInstID);
+	uiManager.resizeTextBox(textBoxElementInstID, textBoxOldDims.x, textBoxMinimumDims.y, game.renderer);
 }
 
 void ChooseClassQuestionsUI::updateBackgroundTexture()

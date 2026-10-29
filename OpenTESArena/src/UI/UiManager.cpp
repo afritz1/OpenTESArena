@@ -568,6 +568,45 @@ void UiManager::setTextBoxColor(UiElementInstanceID elementInstID, Color color)
 	textBox.dirty = true;
 }
 
+Int2 UiManager::getTextBoxMinimumDimensions(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::TextBox);
+	const UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+	const FontDefinition &fontDef = FontLibrary::getInstance().getDefinition(textBox.fontDefIndex);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(textBox.text, fontDef, textBox.shadowInfo, textBox.lineSpacing);
+	return Int2(textureGenInfo.width, textureGenInfo.height);
+}
+
+void UiManager::resizeTextBox(UiElementInstanceID elementInstID, int newWidth, int newHeight, Renderer &renderer)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::TextBox);
+	UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+
+	if (newWidth <= 0 || newHeight <= 0)
+	{
+		DebugLogErrorFormat("Can't resize text box \"%s\" to invalid dimensions %dx%d.", element.name, newWidth, newHeight);
+		return;
+	}
+
+	if ((textBox.textureWidth != newWidth) || (textBox.textureHeight != newHeight))
+	{
+		if (textBox.textureID >= 0)
+		{
+			renderer.freeUiTexture(textBox.textureID);
+		}
+
+		textBox.textureID = renderer.createUiTexture(newWidth, newHeight);
+		textBox.textureWidth = newWidth;
+		textBox.textureHeight = newHeight;
+	}
+
+	textBox.dirty = true;
+}
+
 void UiManager::freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer)
 {
 	UiElement *element = this->elements.tryGet(elementInstID);
