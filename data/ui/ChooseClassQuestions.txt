@@ -3,7 +3,10 @@ ContextName=ChooseClassQuestions
 
 ##################################
 
-# Background is handled in code due to palette shifting for constellations.
+# Background texture is handled by code due to how constellations work.
+[ChooseClassQuestionsBackground]
+Type=Image
+Size=320,200
 
 ##################################
 

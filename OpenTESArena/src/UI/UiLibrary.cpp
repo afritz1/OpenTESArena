@@ -1038,7 +1038,7 @@ void UiElementDefinition::clear()
 
 UiImageDefinition::UiImageDefinition()
 {
-	this->type = static_cast<UiImageDefinitionType>(-1);
+	this->type = UiImageDefinitionType::Empty;
 	this->generatedWidth = -1;
 	this->generatedHeight = -1;
 }

@@ -388,7 +388,7 @@ bool Game::init()
 		return false;
 	}
 
-	if (!this->uiManager.init())
+	if (!this->uiManager.init(this->renderer))
 	{
 		DebugLogError("Couldn't init UI manager.");
 		return false;

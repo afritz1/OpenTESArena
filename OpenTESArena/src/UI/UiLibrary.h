@@ -38,6 +38,7 @@ struct UiElementDefinition
 
 enum class UiImageDefinitionType
 {
+	Empty,
 	Asset,
 	Generated
 };

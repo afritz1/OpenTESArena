@@ -67,6 +67,7 @@ private:
 
 	std::vector<LoadedUiTexture> loadedTextures;
 	std::vector<GeneratedUiTexture> generatedTextures;
+	UiTextureID invalidTextureID; // For empty image elements.
 
 	std::unordered_map<std::string, UiContextBeginCallback> beginContextCallbacks;
 	std::unordered_map<std::string, UiContextUpdateCallback> updateContextCallbacks;
@@ -81,7 +82,7 @@ private:
 	void setEndContextCallback(const char *contextName, const UiContextEndCallback &callback);
 	void setUpdateContextCallback(const char *contextName, const UiContextUpdateCallback &callback);
 public:
-	bool init();
+	bool init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
 	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);

@@ -85,7 +85,7 @@ UiCursorOverrideState::UiCursorOverrideState(UiTextureID textureID, UiPivotType 
 	this->pivotType = pivotType;
 }
 
-bool UiManager::init()
+bool UiManager::init(Renderer &renderer)
 {
 	REGISTER_SCOPE_CALLBACKS(AutomapUI);
 	REGISTER_SCOPE_CALLBACKS(CharacterUI);
@@ -111,6 +111,19 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(ProvinceMapUI);
 	REGISTER_SCOPE_CALLBACKS(TextCinematicUI);
 	REGISTER_SCOPE_CALLBACKS(WorldMapUI);
+
+	constexpr int invalidTextureDim = 4;
+	constexpr uint32_t invalidTextureColors[] =
+	{
+		Colors::MagentaRGBA, Colors::BlackRGBA, Colors::MagentaRGBA, Colors::BlackRGBA,
+		Colors::BlackRGBA, Colors::MagentaRGBA, Colors::BlackRGBA, Colors::MagentaRGBA,
+		Colors::MagentaRGBA, Colors::BlackRGBA, Colors::MagentaRGBA, Colors::BlackRGBA,
+		Colors::BlackRGBA, Colors::MagentaRGBA, Colors::BlackRGBA, Colors::MagentaRGBA
+	};
+
+	this->invalidTextureID = renderer.createUiTexture(invalidTextureDim, invalidTextureDim);
+	renderer.populateUiTextureNoPalette(this->invalidTextureID, Span2D<const uint32_t>(invalidTextureColors, invalidTextureDim, invalidTextureDim));
+
 	return true;
 }
 
@@ -137,6 +150,12 @@ void UiManager::shutdown(Renderer &renderer)
 	}
 
 	this->generatedTextures.clear();
+
+	if (this->invalidTextureID >= 0)
+	{
+		renderer.freeUiTexture(this->invalidTextureID);
+		this->invalidTextureID = -1;
+	}
 
 	this->beginContextCallbacks.clear();
 	this->updateContextCallbacks.clear();
@@ -401,6 +420,12 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
+	}
+
+	// Allow placeholder texture if one is not provided.
+	if (textureID < 0)
+	{
+		textureID = this->invalidTextureID;
 	}
 
 	UiImage &image = this->images.get(imageInstID);
@@ -1232,6 +1257,9 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		UiTextureID textureID = -1;
 		switch (imageDef.type)
 		{
+		case UiImageDefinitionType::Empty:
+			textureID = this->invalidTextureID;
+			break;
 		case UiImageDefinitionType::Asset:
 			textureID = this->getOrAddTexture(imageDef.texture, imageDef.palette, textureManager, renderer);
 			break;

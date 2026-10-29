@@ -82,9 +82,8 @@ void ChooseClassQuestionsUI::create(Game &game)
 	state.bgImagePaletteID = *bgImagePaletteID;
 	state.bgImageTextureID = renderer.createUiTexture(bgImageTextureBuilder.width, bgImageTextureBuilder.height);
 
-	UiElementInitInfo bgImageElementInitInfo;
-	bgImageElementInitInfo.name = "ChooseClassQuestionsBackground";
-	uiManager.createImage(bgImageElementInitInfo, state.bgImageTextureID, state.contextInstID, renderer);
+	const UiElementInstanceID bgImageElementInstID = uiManager.getElementByName("ChooseClassQuestionsBackground");
+	uiManager.setImageTexture(bgImageElementInstID, state.bgImageTextureID);
 
 	UiContextInitInfo initialPopUpContextInitInfo;
 	initialPopUpContextInitInfo.name = ContextName_InitialPopUp;
