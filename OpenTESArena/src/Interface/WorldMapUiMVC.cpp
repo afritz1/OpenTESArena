@@ -144,7 +144,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, ProvinceDefinit
 
 			// Replace second %s with location name.
 			index = text.find("%s", index);
-			text.replace(index, 2, locationDef.getName());
+			text.replace(index, 2, locationDef.name);
 
 			// Replace third %s with province name.
 			index = text.find("%s", index);
@@ -223,7 +223,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, ProvinceDefinit
 
 				// Replace %cn with city name.
 				size_t index = description.find("%cn");
-				description.replace(index, 3, locationDef.getName());
+				description.replace(index, 3, locationDef.name);
 
 				const CityDataFile &cityData = binaryAssetLibrary.getCityDataFile();
 				const ArenaProvinceData &province = cityData.getProvinceData(provinceDef.originalProvinceIndex);
@@ -405,13 +405,13 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 	TextureManager &textureManager = game.textureManager;
 
 	// Decide how to load the location.
-	if (travelLocationDef.getType() == LocationDefinitionType::City)
+	if (travelLocationDef.type == LocationDefinitionType::City)
 	{
 		// Get weather type from game state.
-		const LocationCityDefinition &cityDef = travelLocationDef.getCityDefinition();
+		const LocationCityDefinition &cityDef = travelLocationDef.city;
 		const ArenaWeatherType weatherType = [&game, &gameState, &travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
-			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
+			const Int2 localPoint(travelLocationDef.screenX, travelLocationDef.screenY);
 			const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, travelProvinceDef.getGlobalRect());
 
 			const CityDataFile &cityData = BinaryAssetLibrary::getInstance().getCityDataFile();
@@ -470,7 +470,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, textureManager))
 		{
-			DebugCrash("Couldn't init MapDefinition for city \"" + travelLocationDef.getName() + "\".");
+			DebugCrashFormat("Couldn't init MapDefinition for city \"%s\".", travelLocationDef.name.c_str());
 			return;
 		}
 
@@ -517,13 +517,13 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 		gameWorldInitInfo.init(FastTravelUiModel::getCityArrivalMessage(game, targetProvinceDefID, targetLocationID, travelDays));
 		game.setNextContext(GameWorldUI::ContextName);
 	}
-	else if (travelLocationDef.getType() == LocationDefinitionType::Dungeon)
+	else if (travelLocationDef.type == LocationDefinitionType::Dungeon)
 	{
 		// Named dungeon.
 		constexpr bool isArtifactDungeon = false;
 		const ProvinceDefinition &travelProvinceDef = provinceLibrary.getDefinition(targetProvinceDefID);
 		const LocationDefinition &travelLocationDef = travelProvinceDef.locations[targetLocationID];
-		const LocationDungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
+		const LocationDungeonDefinition &dungeonDef = travelLocationDef.dungeon;
 
 		MapGenerationInteriorInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
@@ -537,7 +537,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 		{
-			DebugCrash("Couldn't init MapDefinition for named dungeon \"" + travelLocationDef.getName() + "\".");
+			DebugCrashFormat("Couldn't init MapDefinition for named dungeon \"%s\".", travelLocationDef.name.c_str());
 			return;
 		}
 
@@ -561,10 +561,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 
 		game.setNextContext(GameWorldUI::ContextName);
 	}
-	else if (travelLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
+	else if (travelLocationDef.type == LocationDefinitionType::MainQuestDungeon)
 	{
 		// Main quest dungeon. The staff dungeons have a splash image before going to the game world UI.
-		const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = travelLocationDef.getMainQuestDungeonDefinition();
+		const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = travelLocationDef.mainQuest;
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
 		const std::string interiorDisplayName; // Unused.
@@ -579,7 +579,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
 		{
-			DebugLogError("Couldn't init MapDefinition for main quest interior \"" + travelLocationDef.getName() + "\".");
+			DebugLogErrorFormat("Couldn't init MapDefinition for main quest interior \"%s\".", travelLocationDef.name.c_str());
 			return;
 		}
 
@@ -614,6 +614,6 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 	}
 	else
 	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(travelLocationDef.getType())));
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(travelLocationDef.type)));
 	}
 }

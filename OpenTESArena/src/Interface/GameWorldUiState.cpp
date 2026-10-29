@@ -2278,7 +2278,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		Span<const uint8_t> drinkGoldPrices = exeData.services.tavernDrinkGoldPrices;
 
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+		const LocationCityDefinition &locationCityDef = locationDef.city;
 		ArenaRandom tempRandom(locationCityDef.citySeed); // @todo use interior seed from the entrance XY
 
 		constexpr int maxAvailableDrinkCount = 10;
@@ -2517,7 +2517,7 @@ int GameWorldUI::getCurrentServiceQuality(ArenaRandom &arenaRandom)
 	GameState &gameState = game.gameState;
 
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDef.city;
 	const ArenaCityType cityType = cityDef.type;
 
 	const MapDefinitionInterior &mapDefinitionInterior = gameState.getActiveMapDef().getSubDefinition().interior;

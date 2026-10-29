@@ -92,14 +92,14 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID 
 			if (srcProvinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
 			{
 				// Determine whether to use the city format or dungeon format.
-				if (dstLocationDef.getType() == LocationDefinitionType::City)
+				if (dstLocationDef.type == LocationDefinitionType::City)
 				{
 					// City format.
 					const int locationFormatTextsIndex = 2;
 					std::string text = locationFormatTexts[locationFormatTextsIndex];
 
 					// Replace first %s with location type.
-					const LocationCityDefinition &cityDef = dstLocationDef.getCityDefinition();
+					const LocationCityDefinition &cityDef = dstLocationDef.city;
 					const std::string_view locationTypeName = cityDef.typeDisplayName;
 
 					size_t index = text.find("%s");
@@ -115,8 +115,8 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID 
 
 					return text;
 				}
-				else if ((dstLocationDef.getType() == LocationDefinitionType::Dungeon) ||
-					(dstLocationDef.getType() == LocationDefinitionType::MainQuestDungeon))
+				else if ((dstLocationDef.type == LocationDefinitionType::Dungeon) ||
+					(dstLocationDef.type == LocationDefinitionType::MainQuestDungeon))
 				{
 					// Dungeon format.
 					const int locationFormatTextsIndex = 0;
@@ -134,7 +134,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID 
 				}
 				else
 				{
-					DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(dstLocationDef.getType())));
+					DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(dstLocationDef.type)));
 				}
 			}
 			else
@@ -231,9 +231,9 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID 
 		const Rect srcProvinceRect = srcProvinceDef.getGlobalRect();
 		const Rect dstProvinceRect = dstProvinceDef.getGlobalRect();
 		const Int2 srcLocationGlobalPoint = ArenaLocationUtils::getGlobalPoint(
-			Int2(srcLocationDef.getScreenX(), srcLocationDef.getScreenY()), srcProvinceRect);
+			Int2(srcLocationDef.screenX, srcLocationDef.screenY), srcProvinceRect);
 		const Int2 dstLocationGlobalPoint = ArenaLocationUtils::getGlobalPoint(
-			Int2(dstLocationDef.getScreenX(), dstLocationDef.getScreenY()), dstProvinceRect);
+			Int2(dstLocationDef.screenX, dstLocationDef.screenY), dstProvinceRect);
 		return ArenaLocationUtils::getMapDistance(srcLocationGlobalPoint, dstLocationGlobalPoint);
 	}();
 
@@ -363,7 +363,7 @@ Int2 ProvinceMapUiView::getLocationCenterPoint(Game &game, ProvinceDefinitionID 
 	const GameState &gameState = game.gameState;
 	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
 	const LocationDefinition &locationDef = provinceDef.locations[locationID];
-	return Int2(locationDef.getScreenX(), locationDef.getScreenY());
+	return Int2(locationDef.screenX, locationDef.screenY);
 }
 
 Int2 ProvinceMapUiView::getLocationTextClampedCenter(const Rect &unclampedRect)

@@ -181,7 +181,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
 	auto &renderer = game.renderer;
 
-	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDef.city;
 	Buffer<uint8_t> reservedBlocks = [&cityDef]()
 	{
 		const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
@@ -227,7 +227,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	MapDefinition mapDefinition;
 	if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.textureManager))
 	{
-		DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
+		DebugLogErrorFormat("Couldn't init MapDefinition for city \"%s\".", locationDef.name.c_str());
 		return;
 	}
 
@@ -265,8 +265,8 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 	const MapType activeMapType = activeMapDef.getMapType();
 
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	DebugAssert(locationDef.getType() == LocationDefinitionType::City);
-	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	DebugAssert(locationDef.type == LocationDefinitionType::City);
+	const LocationCityDefinition &cityDef = locationDef.city;
 
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
@@ -297,7 +297,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			if (gameState.getActiveMapDef().getMapType() == MapType::City)
 			{
 				const LocationDefinition &locationDef = gameState.getLocationDefinition();
-				const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+				const LocationCityDefinition &locationCityDef = locationDef.city;
 				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Jingle, game.random,
 					[&locationCityDef](const MusicDefinition &def)
 				{
@@ -476,7 +476,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				MapDefinition mapDefinition;
 				if (!mapDefinition.initWild(wildGenInfo, skyGenInfo, textureManager))
 				{
-					DebugLogError("Couldn't init MapDefinition for switch from city to wilderness for \"" + locationDef.getName() + "\".");
+					DebugLogErrorFormat("Couldn't init MapDefinition for switch from city to wilderness for \"%s\".", locationDef.name.c_str());
 					return;
 				}
 
@@ -522,7 +522,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				MapDefinition mapDefinition;
 				if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, textureManager))
 				{
-					DebugLogError("Couldn't init MapDefinition for switch from wilderness to city for \"" + locationDef.getName() + "\".");
+					DebugLogErrorFormat("Couldn't init MapDefinition for switch from wilderness to city for \"%s\".", locationDef.name.c_str());
 					return;
 				}
 
@@ -530,8 +530,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			}
 			else
 			{
-				DebugLogError("Map type \"" + std::to_string(static_cast<int>(activeMapType)) +
-					"\" does not support city gate transitions.");
+				DebugLogErrorFormat("Map type %d does not support city gate transitions.", activeMapType);
 				return;
 			}
 
@@ -697,9 +696,9 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 	{
 		bool isStartDungeon = false;
 		const LocationDefinition &currentLocationDef = gameState.getLocationDefinition();
-		if (currentLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
+		if (currentLocationDef.type == LocationDefinitionType::MainQuestDungeon)
 		{
-			const LocationMainQuestDungeonDefinition &locationMainQuestDungeonDef = currentLocationDef.getMainQuestDungeonDefinition();
+			const LocationMainQuestDungeonDefinition &locationMainQuestDungeonDef = currentLocationDef.mainQuest;
 			if (locationMainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
 			{
 				isStartDungeon = true;
@@ -707,7 +706,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		}
 
 		bool isCityWildernessDungeon = false;
-		if (currentLocationDef.getType() == LocationDefinitionType::City)
+		if (currentLocationDef.type == LocationDefinitionType::City)
 		{
 			if (gameState.isActiveMapNested())
 			{

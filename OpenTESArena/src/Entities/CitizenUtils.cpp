@@ -84,13 +84,13 @@ std::optional<CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapTyp
 		return std::nullopt;
 	}
 
-	const LocationDefinitionType locationDefType = locationDef.getType();
+	const LocationDefinitionType locationDefType = locationDef.type;
 	if (locationDefType != LocationDefinitionType::City)
 	{
 		return std::nullopt;
 	}
 	
-	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDef.city;
 	const ArenaClimateType climateType = cityDef.climateType;
 	return CitizenUtils::makeCitizenGenInfo(raceDefID, climateType);
 }

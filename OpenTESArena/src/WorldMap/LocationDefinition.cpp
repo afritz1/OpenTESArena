@@ -70,12 +70,11 @@ void LocationMainQuestDungeonDefinition::init(LocationMainQuestDungeonDefinition
 	std::snprintf(this->mapFilename, std::size(this->mapFilename), "%s", mapFilename);
 }
 
-void LocationDefinition::init(LocationDefinitionType type, const std::string &name,
-	int x, int y, double latitude)
+void LocationDefinition::init(LocationDefinitionType type, const std::string &name, int screenX, int screenY, double latitude)
 {
 	this->name = name;
-	this->x = x;
-	this->y = y;
+	this->screenX = screenX;
+	this->screenY = screenY;
 	this->latitude = latitude;
 	this->visibleByDefault = (type == LocationDefinitionType::City) && (name.size() > 0);
 	this->type = type;
@@ -214,11 +213,8 @@ void LocationDefinition::initDungeon(int localDungeonID, int originalProvinceInd
 {
 	DebugAssert((localDungeonID >= 2) && (localDungeonID < 16));
 
-	const double latitude = [&locationData, &provinceData]()
-	{
-		const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
-		return ArenaLocationUtils::getLatitude(globalPoint);
-	}();
+	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(Int2(locationData.x, locationData.y), provinceData.getGlobalRect());	
+	const double latitude = ArenaLocationUtils::getLatitude(globalPoint);
 
 	this->init(LocationDefinitionType::Dungeon, locationData.name, locationData.x, locationData.y, latitude);
 
@@ -229,8 +225,8 @@ void LocationDefinition::initDungeon(int localDungeonID, int originalProvinceInd
 	this->dungeon.init(dungeonSeed, widthChunkCount, heightChunkCount);
 }
 
-void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocalDungeonID,
-	int originalProvinceIndex, LocationMainQuestDungeonDefinitionType type, const BinaryAssetLibrary &binaryAssetLibrary)
+void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocalDungeonID, int originalProvinceIndex,
+	LocationMainQuestDungeonDefinitionType type, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const CityDataFile &cityData = binaryAssetLibrary.getCityDataFile();
 	const ArenaProvinceData &provinceData = cityData.getProvinceData(originalProvinceIndex);
@@ -250,7 +246,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 		case LocationMainQuestDungeonDefinitionType::Staff:
 		{
 			const int locationID = ArenaLocationUtils::dungeonToLocationID(*optLocalDungeonID);
-			const auto &locationData = provinceData.getLocationData(locationID);
+			const ArenaLocationData &locationData = provinceData.getLocationData(locationID);
 			return locationData.name;
 		}
 		default:
@@ -268,7 +264,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 	else
 	{
 		const int locationID = ArenaLocationUtils::dungeonToLocationID(*optLocalDungeonID);
-		const auto &locationData = provinceData.getLocationData(locationID);
+		const ArenaLocationData &locationData = provinceData.getLocationData(locationID);
 		localPointX = locationData.x;
 		localPointY = locationData.y;
 	}
@@ -283,7 +279,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 		else
 		{
 			const int locationID = ArenaLocationUtils::dungeonToLocationID(*optLocalDungeonID);
-			const auto &locationData = provinceData.getLocationData(locationID);
+			const ArenaLocationData &locationData = provinceData.getLocationData(locationID);
 			const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(
 				Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
 			return ArenaLocationUtils::getLatitude(globalPoint);
@@ -315,56 +311,8 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 	this->mainQuest.init(type, mapFilename.c_str());
 }
 
-const std::string &LocationDefinition::getName() const
-{
-	return this->name;
-}
-
-int LocationDefinition::getScreenX() const
-{
-	return this->x;
-}
-
-int LocationDefinition::getScreenY() const
-{
-	return this->y;
-}
-
-double LocationDefinition::getLatitude() const
-{
-	return this->latitude;
-}
-
-bool LocationDefinition::isVisibleByDefault() const
-{
-	return this->visibleByDefault;
-}
-
-LocationDefinitionType LocationDefinition::getType() const
-{
-	return this->type;
-}
-
-const LocationCityDefinition &LocationDefinition::getCityDefinition() const
-{
-	DebugAssert(this->type == LocationDefinitionType::City);
-	return this->city;
-}
-
-const LocationDungeonDefinition &LocationDefinition::getDungeonDefinition() const
-{
-	DebugAssert(this->type == LocationDefinitionType::Dungeon);
-	return this->dungeon;
-}
-
-const LocationMainQuestDungeonDefinition &LocationDefinition::getMainQuestDungeonDefinition() const
-{
-	DebugAssert(this->type == LocationDefinitionType::MainQuestDungeon);
-	return this->mainQuest;
-}
-
 bool LocationDefinition::matches(const LocationDefinition &other) const
 {
 	// Can't have two different locations on the same province pixel.
-	return (this->name == other.name) && (this->x == other.x) && (this->y == other.y);
+	return (this->name == other.name) && (this->screenX == other.screenX) && (this->screenY == other.screenY);
 }

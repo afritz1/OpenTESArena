@@ -27,12 +27,12 @@ namespace
 
 	std::string GetLocationIconImageElementName(const LocationDefinition &locationDef)
 	{
-		return String::format("ProvinceMapLocationIconImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
+		return String::format("ProvinceMapLocationIconImage %s(%d, %d)", locationDef.name.c_str(), locationDef.screenX, locationDef.screenY);
 	}
 
 	std::string GetLocationIconHighlightImageElementName(const LocationDefinition &locationDef)
 	{
-		return String::format("ProvinceMapLocationIconHighlightImage %s(%d, %d)", locationDef.getName().c_str(), locationDef.getScreenX(), locationDef.getScreenY());
+		return String::format("ProvinceMapLocationIconHighlightImage %s(%d, %d)", locationDef.name.c_str(), locationDef.screenX, locationDef.screenY);
 	}
 }
 
@@ -394,10 +394,10 @@ void ProvinceMapUI::initLocationIconUI(ProvinceDefinitionID provinceDefID)
 
 		const ProvinceMapLocationTextures *locationTexturesPtr = [&state, &locationDef]() -> const ProvinceMapLocationTextures*
 		{
-			const LocationDefinitionType locationDefType = locationDef.getType();
+			const LocationDefinitionType locationDefType = locationDef.type;
 			if (locationDefType == LocationDefinitionType::City)
 			{
-				const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+				const LocationCityDefinition &cityDef = locationDef.city;
 				const ArenaCityType cityType = cityDef.type;
 				switch (cityType)
 				{
@@ -418,7 +418,7 @@ void ProvinceMapUI::initLocationIconUI(ProvinceDefinitionID provinceDefID)
 			}
 			else if (locationDefType == LocationDefinitionType::MainQuestDungeon)
 			{
-				const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+				const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.mainQuest;
 				const LocationMainQuestDungeonDefinitionType mainQuestDungeonType = mainQuestDungeonDef.type;
 				switch (mainQuestDungeonType)
 				{
@@ -441,7 +441,7 @@ void ProvinceMapUI::initLocationIconUI(ProvinceDefinitionID provinceDefID)
 
 		UiElementInitInfo locationIconImageElementInitInfo;
 		locationIconImageElementInitInfo.name = GetLocationIconImageElementName(locationDef);
-		locationIconImageElementInitInfo.position = Int2(locationDef.getScreenX(), locationDef.getScreenY());
+		locationIconImageElementInitInfo.position = Int2(locationDef.screenX, locationDef.screenY);
 		locationIconImageElementInitInfo.pivotType = UiPivotType::Middle;
 		locationIconImageElementInitInfo.drawOrder = 1;
 		uiManager.createImage(locationIconImageElementInitInfo, locationTexturesPtr->textureID, state.contextInstID, renderer);
@@ -528,7 +528,7 @@ void ProvinceMapUI::updateHoveredLocationID(Int2 originalPosition)
 		if (locationInst.visible)
 		{
 			const LocationDefinition &locationDef = provinceDef.locations[locationInst.locationDefIndex];
-			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
+			const Int2 point(locationDef.screenX, locationDef.screenY);
 
 			if (closerThanCurrentClosest(point))
 			{
@@ -626,7 +626,7 @@ void ProvinceMapUI::trySelectLocation(int selectedLocationID)
 	{
 		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
 		{
-			const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
+			const Int2 localPoint(locationDef.screenX, locationDef.screenY);
 			return ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
 		};
 

@@ -642,7 +642,7 @@ namespace PlayerLogic
 						const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;
 
 						const LocationDefinition &locationDef = gameState.getLocationDefinition();
-						const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+						const LocationCityDefinition &cityDef = locationDef.city;
 						const ArenaCityType cityType = cityDef.type;
 						int pickpocketGoldAmount;
 						int pickpocketResultTemplateDatIndex;

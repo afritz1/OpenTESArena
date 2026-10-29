@@ -98,12 +98,16 @@ struct LocationMainQuestDungeonDefinition
 	void init(LocationMainQuestDungeonDefinitionType type, const char *mapFilename);
 };
 
-class LocationDefinition
+struct LocationDefinition
 {
-private:
 	std::string name;
-	int x, y;
+	int screenX, screenY; // Pixel coordinates.
+
+	// Latitude of the location in normalized [-1, 1] range across the world map's height,
+	// where 0 is at the equator and 1.0 is at the north pole.
 	double latitude;
+
+	// Whether the location needs to be discovered for it to be visible on the map.
 	bool visibleByDefault;
 
 	// Determines union access.
@@ -117,36 +121,14 @@ private:
 	};
 
 	// Internal init method for original game state.
-	void init(LocationDefinitionType type, const std::string &name, int x, int y, double latitude);
-public:
+	void init(LocationDefinitionType type, const std::string &name, int screenX, int screenY, double latitude);
+
 	// Initialize from original game data.
 	void initCity(int localCityID, int originalProvinceIndex, bool coastal, bool premade, ArenaCityType type, const BinaryAssetLibrary &binaryAssetLibrary);
 	void initDungeon(int localDungeonID, int originalProvinceIndex, const ArenaLocationData &locationData, const ArenaProvinceData &provinceData);
 	void initMainQuestDungeon(const std::optional<int> &optLocalDungeonID, int originalProvinceIndex,
 		LocationMainQuestDungeonDefinitionType type, const BinaryAssetLibrary &binaryAssetLibrary);
 	// @todo: eventually have init(const char *filename) for custom locations.
-
-	// Gets the display name of the location.
-	const std::string &getName() const;
-
-	// Pixel coordinates of the location.
-	int getScreenX() const;
-	int getScreenY() const;
-
-	// Latitude of the location in normalized [-1, 1] range across the world map's height,
-	// where 0 is at the equator and 1.0 is at the north pole.
-	double getLatitude() const;
-
-	// Whether the location needs to be discovered for it to be visible on the map.
-	bool isVisibleByDefault() const;
-
-	// Gets the location type (city, dungeon, etc.). Determines union access.
-	LocationDefinitionType getType() const;
-
-	// Type-specific location fields, accessible by the location type.
-	const LocationCityDefinition &getCityDefinition() const;
-	const LocationDungeonDefinition &getDungeonDefinition() const;
-	const LocationMainQuestDungeonDefinition &getMainQuestDungeonDefinition() const;
 
 	// Returns whether the two definitions reference the same location in a province.
 	bool matches(const LocationDefinition &other) const;

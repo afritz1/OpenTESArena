@@ -95,7 +95,7 @@ std::string DialogueFunctions::get_cn(Game &game)
 	else
 	{
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		return locationDef.getName();
+		return locationDef.name;
 	}
 }
 
@@ -105,13 +105,13 @@ std::string DialogueFunctions::get_cn2(Game &game)
 
 	auto getLocationGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
 	{
-		const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
+		const Int2 localPoint(locationDef.screenX, locationDef.screenY);
 		return ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
 	};
 
 	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
 	const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
-	const LocationCityDefinition &playerCityDef = playerLocationDef.getCityDefinition();
+	const LocationCityDefinition &playerCityDef = playerLocationDef.city;
 	const Int2 playerGlobalPoint = getLocationGlobalPoint(playerLocationDef, playerProvinceDef);
 
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
@@ -122,12 +122,12 @@ std::string DialogueFunctions::get_cn2(Game &game)
 		const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceIndex);
 		for (const LocationDefinition &locationDef : provinceDef.locations)
 		{
-			if (locationDef.getType() != LocationDefinitionType::City)
+			if (locationDef.type != LocationDefinitionType::City)
 			{
 				continue;
 			}
 
-			const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+			const LocationCityDefinition &locationCityDef = locationDef.city;
 			if (locationCityDef.type != playerCityDef.type)
 			{
 				continue;
@@ -159,11 +159,11 @@ std::string DialogueFunctions::get_cn2(Game &game)
 
 	if (closestLocationDef == nullptr)
 	{
-		DebugLogErrorFormat("Couldn't find closest matching location to %s.", playerLocationDef.getName().c_str());
+		DebugLogErrorFormat("Couldn't find closest matching location to %s.", playerLocationDef.name.c_str());
 		return std::string();
 	}
 
-	return closestLocationDef->getName();
+	return closestLocationDef->name;
 }
 
 std::string DialogueFunctions::get_cp(Game &game)
@@ -175,12 +175,12 @@ std::string DialogueFunctions::get_ct(Game &game)
 {
 	const GameState &gameState = game.gameState;
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	if (locationDef.getType() != LocationDefinitionType::City)
+	if (locationDef.type != LocationDefinitionType::City)
 	{
 		return std::string();
 	}
 
-	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDef.city;
 	return cityDef.typeDisplayNameLowercase;
 }
 
@@ -524,7 +524,7 @@ std::string DialogueFunctions::get_rcn(Game &game)
 	ArenaRandom tempRandom(game.arenaRandom.getSeed());
 	const int randomCityStateIndex = tempRandom.next(8);
 	const LocationDefinition &selectedLocationDef = provinceDef.locations[randomCityStateIndex];
-	return selectedLocationDef.getName();
+	return selectedLocationDef.name;
 }
 
 std::string DialogueFunctions::get_rf(Game &game)
@@ -532,7 +532,7 @@ std::string DialogueFunctions::get_rf(Game &game)
 	const GameState &gameState = game.gameState;
 	const int originalProvinceIndex = gameState.getProvinceDefinition().originalProvinceIndex;
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDef.city;
 	const bool isRulerMale = cityDef.rulerIsMale;
 	ArenaRandom tempRandom(cityDef.rulerSeed);
 
@@ -582,7 +582,7 @@ std::string DialogueFunctions::get_st(Game &game)
 	const GameState &gameState = game.gameState;
 	const DialogueManager &dialogueManager = game.dialogueManager;
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDef.city;
 	const Span<const ArenaWeatherType> globalWeathers = gameState.getWorldMapWeathers();
 
 	// War/peace depends on weather which in theory is a slow-changing global variable.
@@ -611,7 +611,7 @@ std::string DialogueFunctions::get_t(Game &game)
 	const GameState &gameState = game.gameState;
 	const int originalProvinceIndex = gameState.getProvinceDefinition().originalProvinceIndex;
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	const LocationCityDefinition &cityDef = locationDef.city;
 	const int localCityID = gameState.getLocationIndex();
 	const ArenaLocationType locationType = ArenaLocationUtils::getCityType(localCityID);
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();

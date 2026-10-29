@@ -69,7 +69,7 @@ void AutomapUI::create(Game &game)
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
 	const LocationInstance &locationInst = gameState.getLocationInstance();
 	const SceneManager &sceneManager = game.sceneManager;
-	const LocationDefinitionType locationDefType = locationDef.getType();
+	const LocationDefinitionType locationDefType = locationDef.type;
 	const bool isCity = locationDefType == LocationDefinitionType::City;
 	const bool isMainQuestDungeon = locationDefType == LocationDefinitionType::MainQuestDungeon;
 

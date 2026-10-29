@@ -807,12 +807,12 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			const int startDungeonLocationIndex = provinceDef.findLocationIndexIf(
 				[&provinceDef](const LocationDefinition &locationDef)
 			{
-				if (locationDef.getType() != LocationDefinitionType::MainQuestDungeon)
+				if (locationDef.type != LocationDefinitionType::MainQuestDungeon)
 				{
 					return false;
 				}
 
-				const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+				const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.mainQuest;
 				return mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start;
 			});
 
@@ -820,7 +820,7 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 
 			// Load starting dungeon.
 			const LocationDefinition &locationDef = provinceDef.locations[startDungeonLocationIndex];
-			const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+			const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.mainQuest;
 			const std::string mifName = mainQuestDungeonDef.mapFilename;
 
 			constexpr std::optional<bool> rulerIsMale; // Not needed.

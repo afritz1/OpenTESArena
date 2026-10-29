@@ -293,8 +293,8 @@ void GameState::init(ArenaRandom &random)
 			const LocationDefinition &locationDef = provinceDef.locations[locationInst.locationDefIndex];
 			const std::string &locationName = locationInst.getName(locationDef);
 
-			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinitionType::MainQuestDungeon;
-			const bool isStartDungeon = isMainQuestDungeon && (locationDef.getMainQuestDungeonDefinition().type == LocationMainQuestDungeonDefinitionType::Start);
+			const bool isMainQuestDungeon = locationDef.type == LocationDefinitionType::MainQuestDungeon;
+			const bool isStartDungeon = isMainQuestDungeon && (locationDef.mainQuest.type == LocationMainQuestDungeonDefinitionType::Start);
 			const bool shouldSetVisible = (locationName.size() > 0) && isMainQuestDungeon && !isStartDungeon && !locationInst.visible;
 
 			if (shouldSetVisible)
@@ -550,7 +550,7 @@ ArenaEnvironmentType GameState::getEnvironmentType() const
 	else if (mapType == MapType::Interior)
 	{
 		const LocationDefinition &locationDef = this->getLocationDefinition();
-		const LocationDefinitionType locationType = locationDef.getType();
+		const LocationDefinitionType locationType = locationDef.type;
 		if (locationType == LocationDefinitionType::MainQuestDungeon)
 		{
 			environmentType = ArenaEnvironmentType::MainQuestDungeon;
@@ -629,7 +629,7 @@ int GameState::getLocationGlobalQuarter(ProvinceDefinitionID provinceDefID, int 
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 	const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceDefID);
 	const LocationDefinition &locationDef = provinceDef.locations[locationIndex];
-	const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
+	const Int2 localPoint(locationDef.screenX, locationDef.screenY);
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
 	const CityDataFile &cityDataFile = BinaryAssetLibrary::getInstance().getCityDataFile();
 	return ArenaLocationUtils::getGlobalQuarter(globalPoint, cityDataFile);
@@ -644,10 +644,10 @@ ArenaWeatherType GameState::getWeatherForLocation(ProvinceDefinitionID provinceD
 	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
 	ArenaWeatherType weatherType = this->worldMapWeathers[quarterIndex];
 
-	if (locationDef.getType() == LocationDefinitionType::City)
+	if (locationDef.type == LocationDefinitionType::City)
 	{
 		// Filter the possible weathers in case it's trying to have snow in a desert.
-		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
+		const LocationCityDefinition &locationCityDef = locationDef.city;
 		const ArenaClimateType climateType = locationCityDef.climateType;
 		weatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, climateType);
 	}
@@ -990,7 +990,7 @@ void GameState::queueCityGuardEncounter(Game &game, bool isViolence)
 		}		
 
 		const LocationDefinition &locationDef = this->getLocationDefinition();
-		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+		const LocationCityDefinition &cityDef = locationDef.city;
 		const ArenaCityType cityType = cityDef.type;
 		const int guardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
 		const int guardLevel = ArenaEntityUtils::getGuardLevel(cityType, guardType, exeData, arenaRandom);
@@ -1407,7 +1407,7 @@ void GameState::tickSky(double dt, Game &game)
 	const LocationDefinition &locationDef = this->getLocationDefinition();
 
 	SkyInstance &skyInst = sceneManager.skyInstance;
-	skyInst.update(dt, locationDef.getLatitude(), this->getDayPercent(), this->weatherInst, game.random);
+	skyInst.update(dt, locationDef.latitude, this->getDayPercent(), this->weatherInst, game.random);
 }
 
 void GameState::tickWeather(double dt, Game &game)
@@ -1762,7 +1762,7 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	});
 
 	const LocationDefinition &locationDef = this->getLocationDefinition();
-	const LocationDefinitionType locationDefType = locationDef.getType();
+	const LocationDefinitionType locationDefType = locationDef.type;
 
 	const std::optional<CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(mapType, raceDefID, locationDef);
 
@@ -1772,7 +1772,7 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 
 	if (locationDefType == LocationDefinitionType::City)
 	{
-		lootCityType = locationDef.getCityDefinition().type;
+		lootCityType = locationDef.city.type;
 	}
 
 	if (mapSubDef.type == MapType::Interior)
