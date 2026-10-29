@@ -33,7 +33,7 @@ std::string IntroUiModel::prepareStartupContext(Game &game)
 		if (!metadataID.has_value())
 		{
 			DebugLogErrorFormat("Couldn't get texture file metadata for start-up cinematic \"%s\".", sequenceFilename.c_str());
-			return nullptr;
+			return std::string();
 		}
 
 		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
