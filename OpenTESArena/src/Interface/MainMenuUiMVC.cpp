@@ -737,11 +737,11 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 				ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(worldMapLocationIDs.provinceDefID);
 				LocationInstance &locationInst = provinceInst.locations[worldMapLocationIDs.locationID];
-				locationInst.setNameOverride("Test Dungeon");
+				locationInst.nameOverride = "Test Dungeon";
 
-				if (!locationInst.isVisible())
+				if (!locationInst.visible)
 				{
-					locationInst.toggleVisibility();
+					locationInst.visible = true;
 				}
 			}
 			else if (mifName == MainMenuUiModel::RandomWildDungeon)

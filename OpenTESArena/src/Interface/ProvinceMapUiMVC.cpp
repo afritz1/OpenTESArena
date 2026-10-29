@@ -46,8 +46,7 @@ std::string ProvinceMapUiModel::getLocationName(Game &game, ProvinceDefinitionID
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceFromDefinition(provinceDefID);
 	const ProvinceDefinition &provinceDef = provinceLibrary.getDefinition(provinceDefID);
 	const LocationInstance &locationInst = provinceInst.locations[locationID];
-	const int locationDefIndex = locationInst.getLocationDefIndex();
-	const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
+	const LocationDefinition &locationDef = provinceDef.locations[locationInst.locationDefIndex];
 	return locationInst.getName(locationDef);
 }
 
@@ -65,8 +64,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID 
 	const LocationInstance &dstLocationInst = dstProvinceInst.locations[dstLocationIndex];
 
 	const ProvinceDefinition &dstProvinceDef = provinceLibrary.getDefinition(dstProvinceDefID);
-	const int dstLocationDefIndex = dstLocationInst.getLocationDefIndex();
-	const LocationDefinition &dstLocationDef = dstProvinceDef.locations[dstLocationDefIndex];
+	const LocationDefinition &dstLocationDef = dstProvinceDef.locations[dstLocationInst.locationDefIndex];
 	const std::string &dstLocationName = dstLocationInst.getName(dstLocationDef);
 
 	const Date &currentDate = gameState.getDate();
@@ -290,10 +288,9 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 		const LocationInstance &locationInst = provinceInst.locations[i];
 
 		// Only check visible locations.
-		if (locationInst.isVisible())
+		if (locationInst.visible)
 		{
-			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
+			const LocationDefinition &locationDef = provinceDef.locations[locationInst.locationDefIndex];
 			const std::string &curLocationName = locationInst.getName(locationDef);
 
 			// See if the location names are an exact match.
@@ -327,7 +324,7 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 		for (int i = 0; i < provinceInst.locations.getCount(); i++)
 		{
 			const LocationInstance &locationInst = provinceInst.locations[i];
-			if (locationInst.isVisible())
+			if (locationInst.visible)
 			{
 				locationIndices.emplace_back(i);
 			}
@@ -351,11 +348,8 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 	{
 		const LocationInstance &locationInstA = provinceInst.locations[a];
 		const LocationInstance &locationInstB = provinceInst.locations[b];
-		const int locationDefIndexA = locationInstA.getLocationDefIndex();
-		const int locationDefIndexB = locationInstB.getLocationDefIndex();
-		const LocationDefinition &locationDefA = provinceDef.locations[locationDefIndexA];
-		const LocationDefinition &locationDefB = provinceDef.locations[locationDefIndexB];
-
+		const LocationDefinition &locationDefA = provinceDef.locations[locationInstA.locationDefIndex];
+		const LocationDefinition &locationDefB = provinceDef.locations[locationInstB.locationDefIndex];
 		const std::string &aName = locationInstA.getName(locationDefA);
 		const std::string &bName = locationInstB.getName(locationDefB);
 		return aName.compare(bName) < 0;

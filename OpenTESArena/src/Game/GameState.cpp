@@ -290,17 +290,16 @@ void GameState::init(ArenaRandom &random)
 		for (int locationIndex = 0; locationIndex < locationCount; locationIndex++)
 		{
 			LocationInstance &locationInst = provinceInst.locations[locationIndex];
-			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
+			const LocationDefinition &locationDef = provinceDef.locations[locationInst.locationDefIndex];
 			const std::string &locationName = locationInst.getName(locationDef);
 
 			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinitionType::MainQuestDungeon;
 			const bool isStartDungeon = isMainQuestDungeon && (locationDef.getMainQuestDungeonDefinition().type == LocationMainQuestDungeonDefinitionType::Start);
-			const bool shouldSetVisible = (locationName.size() > 0) && isMainQuestDungeon && !isStartDungeon && !locationInst.isVisible();
+			const bool shouldSetVisible = (locationName.size() > 0) && isMainQuestDungeon && !isStartDungeon && !locationInst.visible;
 
 			if (shouldSetVisible)
 			{
-				locationInst.toggleVisibility();
+				locationInst.visible = true;
 			}
 		}
 	}

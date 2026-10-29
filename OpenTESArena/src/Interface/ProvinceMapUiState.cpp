@@ -385,13 +385,12 @@ void ProvinceMapUI::initLocationIconUI(ProvinceDefinitionID provinceDefID)
 	for (int i = 0; i < provinceInst.locations.getCount(); i++)
 	{
 		const LocationInstance &locationInst = provinceInst.locations[i];
-		if (!locationInst.isVisible())
+		if (!locationInst.visible)
 		{
 			continue;
 		}
 
-		const int locationDefIndex = locationInst.getLocationDefIndex();
-		const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
+		const LocationDefinition &locationDef = provinceDef.locations[locationInst.locationDefIndex];
 
 		const ProvinceMapLocationTextures *locationTexturesPtr = [&state, &locationDef]() -> const ProvinceMapLocationTextures*
 		{
@@ -526,10 +525,9 @@ void ProvinceMapUI::updateHoveredLocationID(Int2 originalPosition)
 	for (int i = 0; i < provinceInst.locations.getCount(); i++)
 	{
 		const LocationInstance &locationInst = provinceInst.locations[i];
-		if (locationInst.isVisible())
+		if (locationInst.visible)
 		{
-			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
+			const LocationDefinition &locationDef = provinceDef.locations[locationInst.locationDefIndex];
 			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
 
 			if (closerThanCurrentClosest(point))
@@ -574,7 +572,7 @@ void ProvinceMapUI::updateLocationHighlights()
 	{
 		const LocationDefinition &locationDef = provinceDef.locations[i];
 		const LocationInstance &locationInst = provinceInst.locations[i];
-		if (!locationInst.isVisible())
+		if (!locationInst.visible)
 		{
 			continue;
 		}
@@ -1063,8 +1061,7 @@ void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValu
 		for (const int locationIndex : matchingLocationIndices)
 		{
 			const LocationInstance &locationInst = provinceInst.locations[locationIndex];
-			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.locations[locationDefIndex];
+			const LocationDefinition &locationDef = provinceDef.locations[locationInst.locationDefIndex];
 
 			UiListBoxItemCallback listBoxItemCallback = [locationIndex](MouseButtonType)
 			{
