@@ -388,6 +388,7 @@ bool ExeDataCharacterCreation::init(Span<const std::byte> exeBytes, const KeyVal
 	const auto chooseAttributesRerollPair = GetExeAddressAndLength(*section, "ChooseAttributesReroll");
 	const auto chooseAttributesBonusPointsRemainingOffset = GetExeAddress(*section, "ChooseAttributesBonusPointsRemaining");
 	const auto chooseAppearancePair = GetExeAddressAndLength(*section, "ChooseAppearance");
+	const auto constellationColorsOffset = GetExeAddress(*section, "ConstellationColors");
 
 	this->chooseClassCreation = GetExeStringFixedLength(exeBytes, chooseClassCreationPair);
 	this->chooseClassCreationGenerate = GetExeStringFixedLength(exeBytes, chooseClassCreationGeneratePair);
@@ -411,6 +412,7 @@ bool ExeDataCharacterCreation::init(Span<const std::byte> exeBytes, const KeyVal
 	this->chooseAttributesReroll = GetExeStringFixedLength(exeBytes, chooseAttributesRerollPair);
 	this->chooseAttributesBonusPointsRemaining = GetExeStringNullTerminated(exeBytes, chooseAttributesBonusPointsRemainingOffset);
 	this->chooseAppearance = GetExeStringFixedLength(exeBytes, chooseAppearancePair);
+	initInt8Array(this->constellationColors, exeBytes, constellationColorsOffset);
 
 	return true;
 }

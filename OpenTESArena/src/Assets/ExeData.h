@@ -106,6 +106,8 @@ struct ExeDataCharacterCreation
 	std::string chooseAttributesBonusPointsRemaining;
 	std::string chooseAppearance;
 
+	uint8_t constellationColors[3]; // Class category colors to replace as questions are answered.
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

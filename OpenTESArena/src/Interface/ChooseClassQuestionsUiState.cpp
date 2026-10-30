@@ -410,12 +410,15 @@ void ChooseClassQuestionsUI::updateBackgroundTexture()
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
 
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	Span<const uint8_t> classCategoryColors = exeData.charCreation.constellationColors;
+	constexpr int classCategorySwapIndices[] = { 2, 1, 0 }; // Category order doesn't match .exe color order.
+
 	// Modify background palette based on constellation intensities.
 	Palette palette = textureManager.getPaletteHandle(state.bgImagePaletteID);
-	constexpr uint8_t classCategoryColors[] = { 128, 160, 192 };
 	for (int i = 0; i < static_cast<int>(std::size(classCategoryColors)); i++)
 	{
-		const uint8_t classCategoryColor = classCategoryColors[i];
+		const uint8_t classCategoryColor = classCategoryColors[classCategorySwapIndices[i]];
 		const uint8_t replacementColor = 60 + state.categoryAnswerCounts[i];
 		DebugAssertIndex(palette, classCategoryColor);
 		DebugAssertIndex(palette, replacementColor);
