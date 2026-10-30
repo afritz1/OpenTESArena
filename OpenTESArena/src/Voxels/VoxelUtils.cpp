@@ -241,7 +241,7 @@ Double3 VoxelUtils::getVoxelCenter(const Int3 &voxel)
 	return VoxelUtils::getVoxelCenter(voxel, ceilingScale);
 }
 
-Double2 VoxelUtils::getVoxelCenter(const Int2 &voxel)
+Double2 VoxelUtils::getVoxelCenter(Int2 voxel)
 {
 	return Double2(
 		static_cast<double>(voxel.x) + 0.50,

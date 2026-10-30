@@ -912,7 +912,7 @@ PlayerInputAcceleration::PlayerInputAcceleration()
 	this->shouldResetVelocity = false;
 }
 
-Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, Span<const Rect> nativeCursorRegions)
+Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, Int2 mouseDelta, Span<const Rect> nativeCursorRegions)
 {
 	if (!game.canPlayerMoveAndTurn())
 	{
@@ -1065,7 +1065,7 @@ bool PlayerLogic::canHearCreatureSound(const Double3 &playerPosition, const Doub
 	return soundDistanceSqr <= maxSoundDistanceSqr;
 }
 
-bool PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta, const Int2 &windowDims, CardinalDirectionName *outDirectionName)
+bool PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(Int2 mouseDelta, Int2 windowDims, CardinalDirectionName *outDirectionName)
 {
 	// Get smaller screen dimension so mouse delta is relative to a square.
 	const int minDimension = std::min(windowDims.x, windowDims.y);
@@ -1085,7 +1085,7 @@ bool PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta
 	return true;
 }
 
-void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
+void PlayerLogic::handleAttack(Game &game, Int2 mouseDelta)
 {
 	if (!game.canPlayerMoveAndTurn())
 	{
@@ -1235,7 +1235,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	}
 }
 
-void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool isPrimaryInteraction, bool debugFadeVoxel)
+void PlayerLogic::handleScreenToWorldInteraction(Game &game, Int2 nativePoint, bool isPrimaryInteraction, bool debugFadeVoxel)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;

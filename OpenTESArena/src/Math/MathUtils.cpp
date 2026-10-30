@@ -482,7 +482,7 @@ double MathUtils::distanceBetweenLineSegments(const Double3 &p0, const Double3 &
 	return (Psc - Qtc).length();
 }
 
-std::vector<Int2> MathUtils::bresenhamLine(const Int2 &p1, const Int2 &p2)
+std::vector<Int2> MathUtils::bresenhamLine(Int2 p1, Int2 p2)
 {
 	const int dx = std::abs(p2.x - p1.x);
 	const int dy = std::abs(p2.y - p1.y);

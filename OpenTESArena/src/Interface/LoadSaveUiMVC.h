@@ -37,7 +37,7 @@ namespace LoadSaveUiModel
 	Rect getSlotRect(int index);
 
 	// Returns the index of a save's clicked area, if any.
-	std::optional<int> getClickedIndex(const Int2 &originalPoint);
+	std::optional<int> getClickedIndex(Int2 originalPoint);
 }
 
 namespace LoadSaveUiView

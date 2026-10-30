@@ -506,7 +506,7 @@ void ProvinceMapUI::updateHoveredLocationID(Int2 originalPosition)
 	const ProvinceDefinition &provinceDef = ProvinceLibrary::getInstance().getDefinition(provinceDefID);
 
 	std::optional<Int2> closestPosition;
-	auto closerThanCurrentClosest = [&originalPosition, &closestPosition](const Int2 &point)
+	auto closerThanCurrentClosest = [&originalPosition, &closestPosition](Int2 point)
 	{
 		if (!closestPosition.has_value())
 		{
@@ -1108,7 +1108,7 @@ void ProvinceMapUI::onSearchInputBackspaceInputAction(const InputActionCallbackV
 	}
 }
 
-void ProvinceMapUI::onSearchResultsMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
+void ProvinceMapUI::onSearchResultsMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position)
 {
 	UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_SearchResultsListBox);

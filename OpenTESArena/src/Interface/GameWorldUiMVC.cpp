@@ -330,7 +330,7 @@ void GameWorldUiModel::setFreeLookActive(Game &game, bool active)
 	window.warpMouse(logicalDims.x / 2, logicalDims.y / 2);
 }
 
-Double3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 &windowPoint)
+Double3 GameWorldUiModel::screenToWorldRayDirection(Game &game, Int2 windowPoint)
 {
 	const Options &options = game.options;
 	const Window &window = game.window;

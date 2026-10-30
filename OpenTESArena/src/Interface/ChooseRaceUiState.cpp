@@ -185,7 +185,7 @@ void ChooseRaceUI::update(double dt)
 	// @todo unravel animation
 }
 
-void ChooseRaceUI::onMouseButtonChanged(Game &game, MouseButtonType mouseButtonType, const Int2 &position, bool pressed)
+void ChooseRaceUI::onMouseButtonChanged(Game &game, MouseButtonType mouseButtonType, Int2 position, bool pressed)
 {
 	if (mouseButtonType == MouseButtonType::Left)
 	{

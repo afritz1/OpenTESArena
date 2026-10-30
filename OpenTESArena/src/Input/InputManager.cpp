@@ -624,7 +624,7 @@ bool InputManager::isInTextEntryMode() const
 void InputManager::handleHeldInputs(Game &game, Span<const InputActionMap*> activeMaps,
 	Span<const InputActionListenerEntry*> enabledInputActionListeners, 
 	Span<const MouseButtonHeldListenerEntry*> enabledMouseButtonHeldListeners,
-	uint32_t mouseState, const Int2 &mousePosition, double dt)
+	uint32_t mouseState, Int2 mousePosition, double dt)
 {
 	auto handleHeldMouseButton = [this, &game, enabledMouseButtonHeldListeners, mouseState, &mousePosition, dt](MouseButtonType buttonType)
 	{

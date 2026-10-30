@@ -54,8 +54,8 @@ struct UiDrawCall
 	UiDrawCall(const UiDrawCallInitInfo &initInfo);
 
 	static UiDrawCallTextureFunc makeTextureFunc(UiTextureID id);
-	static UiDrawCallPositionFunc makePositionFunc(const Int2 &position);
-	static UiDrawCallSizeFunc makeSizeFunc(const Int2 &size);
+	static UiDrawCallPositionFunc makePositionFunc(Int2 position);
+	static UiDrawCallSizeFunc makeSizeFunc(Int2 size);
 	static UiDrawCallPivotFunc makePivotFunc(UiPivotType pivotType);
 	static bool defaultActiveFunc();
 };

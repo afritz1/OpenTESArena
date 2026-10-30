@@ -74,7 +74,7 @@ namespace ProvinceMapUI
 	void onSearchInputBackInputAction(const InputActionCallbackValues &values);
 	void onSearchInputBackspaceInputAction(const InputActionCallbackValues &values);
 
-	void onSearchResultsMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
+	void onSearchResultsMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position);
 
 	void onSearchResultsBackInputAction(const InputActionCallbackValues &values);
 

@@ -28,7 +28,7 @@ namespace ChooseRaceUI
 {
 	DECLARE_UI_CONTEXT(ChooseRace);
 
-	void onMouseButtonChanged(Game &game, MouseButtonType mouseButtonType, const Int2 &position, bool pressed);
+	void onMouseButtonChanged(Game &game, MouseButtonType mouseButtonType, Int2 position, bool pressed);
 
 	void onBackInputAction(const InputActionCallbackValues &values);
 

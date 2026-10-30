@@ -32,7 +32,7 @@ namespace ChooseClassUI
 	void onListBoxItemSelected(int index);
 	void updateListBoxHoveredIndex();
 
-	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
+	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position);
 	void onMouseMotion(Game &game, int dx, int dy);
 
 	void onScrollUpButtonSelected(MouseButtonType mouseButtonType);

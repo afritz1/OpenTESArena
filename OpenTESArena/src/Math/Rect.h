@@ -20,7 +20,7 @@ struct Rect
 		this->height = height;
 	}
 
-	constexpr Rect(const Int2 &center, int width, int height)
+	constexpr Rect(Int2 center, int width, int height)
 		: Rect(center.x - (width / 2), center.y - (height / 2), width, height) { }
 
 	constexpr Rect()
@@ -39,9 +39,9 @@ struct Rect
 	Int2 getSize() const;
 	SDL_Rect getSdlRect() const;
 
-	bool contains(const Int2 &point) const;
+	bool contains(Int2 point) const;
 	bool contains(const Rect &rectangle) const;
-	bool containsInclusive(const Int2 &point) const;
+	bool containsInclusive(Int2 point) const;
 	bool containsInclusive(const Rect &rectangle) const;
 	bool intersects(const Rect &rectangle) const;
 };

@@ -1097,7 +1097,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 
 	uiManager.addInputActionListener(InputActionName::Back, lootPopUpBackInputActionCallback, ContextName_LootPopUp, inputManager);
 
-	auto lootPopUpMouseWheelScrollChangedCallback = [&uiManager, listBoxElementInstID](Game &game, MouseWheelScrollType type, const Int2 &position)
+	auto lootPopUpMouseWheelScrollChangedCallback = [&uiManager, listBoxElementInstID](Game &game, MouseWheelScrollType type, Int2 position)
 	{
 		if (type == MouseWheelScrollType::Down)
 		{
@@ -2436,7 +2436,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 	uiManager.addInputActionListener(InputActionName::Back, backInputActionCallback, ContextName_ConversationModal, inputManager);
 
-	MouseScrollChangedCallback mouseScrollChangedListener = [&uiManager, listBoxElementInstID](Game &game, MouseWheelScrollType type, const Int2 &position)
+	MouseScrollChangedCallback mouseScrollChangedListener = [&uiManager, listBoxElementInstID](Game &game, MouseWheelScrollType type, Int2 position)
 	{
 		if (type == MouseWheelScrollType::Down)
 		{
@@ -3034,7 +3034,7 @@ void GameWorldUI::resetEffectTextDuration()
 	state.effectTextRemainingSeconds = 0.0;
 }
 
-void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed)
+void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, Int2 position, bool pressed)
 {
 	const GameWorldUiState &state = GameWorldUI::state;
 	const Rect &centerCursorRegion = state.nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
@@ -3096,7 +3096,7 @@ void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const I
 	}
 }
 
-void GameWorldUI::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt)
+void GameWorldUI::onMouseButtonHeld(Game &game, MouseButtonType type, Int2 position, double dt)
 {
 	const GameWorldUiState &state = GameWorldUI::state;
 	const Options &options = game.options;

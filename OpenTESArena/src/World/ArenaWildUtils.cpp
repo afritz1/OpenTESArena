@@ -267,7 +267,7 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildBlockID wildBlockID,
 	}
 }
 
-OriginalInt2 ArenaWildUtils::getRelativeWildOrigin(const Int2 &voxel)
+OriginalInt2 ArenaWildUtils::getRelativeWildOrigin(Int2 voxel)
 {
 	return OriginalInt2(
 		voxel.x - (voxel.x % (RMDFile::WIDTH * 2)),

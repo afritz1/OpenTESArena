@@ -266,7 +266,7 @@ Rect Window::getLetterboxRect() const
 	return rect;
 }
 
-Int2 Window::nativeToOriginal(const Int2 &nativePoint) const
+Int2 Window::nativeToOriginal(Int2 nativePoint) const
 {
 	const Rect letterboxRect = this->getLetterboxRect();
 	const Int2 letterboxPoint(
@@ -298,7 +298,7 @@ Rect Window::nativeToOriginal(const Rect &nativeRect) const
 		newBottomRight.y - newTopLeft.y);
 }
 
-Int2 Window::originalToNative(const Int2 &originalPoint) const
+Int2 Window::originalToNative(Int2 originalPoint) const
 {
 	// From original point to letterbox point.
 	const double originalXPercent = static_cast<double>(originalPoint.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
@@ -332,7 +332,7 @@ Rect Window::originalToNative(const Rect &originalRect) const
 		newBottomRight.y - newTopLeft.y);
 }
 
-bool Window::letterboxContains(const Int2 &nativePoint) const
+bool Window::letterboxContains(Int2 nativePoint) const
 {
 	const Rect letterboxRect = this->getLetterboxRect();
 	return letterboxRect.contains(nativePoint);

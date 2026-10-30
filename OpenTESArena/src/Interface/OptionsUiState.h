@@ -35,7 +35,7 @@ namespace OptionsUI
 	DECLARE_UI_CONTEXT(Options);
 
 	void onMouseMotion(Game &game, int dx, int dy);
-	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
+	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position);
 
 	void onTabButtonSelected(OptionsUiModel::Tab tab);
 	void onGraphicsButtonSelected(MouseButtonType mouseButtonType);

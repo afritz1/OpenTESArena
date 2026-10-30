@@ -67,7 +67,7 @@ SDL_Rect Rect::getSdlRect() const
 	return rect;
 }
 
-bool Rect::contains(const Int2 &point) const
+bool Rect::contains(Int2 point) const
 {
 	return (point.x >= this->getLeft()) &&
 		(point.y >= this->getTop()) &&
@@ -83,7 +83,7 @@ bool Rect::contains(const Rect &rectangle) const
 		(rectangle.getBottom() < this->getBottom());
 }
 
-bool Rect::containsInclusive(const Int2 &point) const
+bool Rect::containsInclusive(Int2 point) const
 {
 	return (point.x >= this->getLeft()) &&
 		(point.y >= this->getTop()) &&

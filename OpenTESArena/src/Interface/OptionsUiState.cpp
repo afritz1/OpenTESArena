@@ -190,7 +190,7 @@ void OptionsUI::onMouseMotion(Game &game, int dx, int dy)
 	}
 }
 
-void OptionsUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
+void OptionsUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position)
 {
 	UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_OptionsListBox);

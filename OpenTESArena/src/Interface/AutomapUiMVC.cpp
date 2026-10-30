@@ -487,7 +487,7 @@ void AutomapUiController::onBackToGameInputAction(const InputActionCallbackValue
 	}
 }
 
-void AutomapUiController::onMouseButtonHeld(Game &game, MouseButtonType buttonType, const Int2 &position,
+void AutomapUiController::onMouseButtonHeld(Game &game, MouseButtonType buttonType, Int2 position,
 	double dt, Double2 *automapOffset)
 {
 	// Listen for when the LMB is held on a compass direction.

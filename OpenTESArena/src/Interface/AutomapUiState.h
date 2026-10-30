@@ -31,7 +31,7 @@ namespace AutomapUI
 {
 	DECLARE_UI_CONTEXT(Automap);
 
-	void onMouseButtonHeld(Game &game, MouseButtonType buttonType, const Int2 &position, double dt);
+	void onMouseButtonHeld(Game &game, MouseButtonType buttonType, Int2 position, double dt);
 
 	void onExitButtonSelected(MouseButtonType mouseButtonType);
 

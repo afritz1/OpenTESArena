@@ -64,7 +64,7 @@ Rect LoadSaveUiModel::getSlotRect(int index)
 		clickHeight);
 }
 
-std::optional<int> LoadSaveUiModel::getClickedIndex(const Int2 &originalPoint)
+std::optional<int> LoadSaveUiModel::getClickedIndex(Int2 originalPoint)
 {
 	constexpr int x = 2;
 	constexpr int clickWidth = 316;

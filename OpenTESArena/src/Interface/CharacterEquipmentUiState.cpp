@@ -619,7 +619,7 @@ void CharacterEquipmentUI::showDropItemMessageBox(const char *titleText, const s
 	uiManager.setContextEnabled(state.dropItemModalContextInstID, true);
 }
 
-void CharacterEquipmentUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
+void CharacterEquipmentUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position)
 {
 	if (type == MouseWheelScrollType::Down)
 	{

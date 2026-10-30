@@ -605,7 +605,7 @@ void ChooseClassQuestionsUI::showSuggestedClassPopUp(const CharacterClassDefinit
 	uiManager.setContextEnabled(state.suggestedClassPopUpContextInstID, true);
 }
 
-void ChooseClassQuestionsUI::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt)
+void ChooseClassQuestionsUI::onMouseButtonHeld(Game &game, MouseButtonType type, Int2 position, double dt)
 {
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
 	if (state.vfxClassCategoryID >= 0)
@@ -639,7 +639,7 @@ void ChooseClassQuestionsUI::onMouseButtonHeld(Game &game, MouseButtonType type,
 	}
 }
 
-void ChooseClassQuestionsUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
+void ChooseClassQuestionsUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position)
 {
 	ChooseClassQuestionsUiState &state = ChooseClassQuestionsUI::state;
 	if (state.vfxClassCategoryID >= 0)

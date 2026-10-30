@@ -219,7 +219,7 @@ void WorldMapUI::update(double dt)
 	uiManager.setImageTexture(fastTravelAnimImageElementInstID, newFastTravelAnimTextureID);
 }
 
-void WorldMapUI::onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed)
+void WorldMapUI::onMouseButtonChanged(Game &game, MouseButtonType type, Int2 position, bool pressed)
 {
 	const WorldMapUiState &state = WorldMapUI::state;
 	if (state.isFastTravelling)

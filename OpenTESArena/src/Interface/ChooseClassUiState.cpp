@@ -133,7 +133,7 @@ void ChooseClassUI::updateListBoxHoveredIndex()
 	}
 }
 
-void ChooseClassUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
+void ChooseClassUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position)
 {
 	const UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ListBoxElementName);

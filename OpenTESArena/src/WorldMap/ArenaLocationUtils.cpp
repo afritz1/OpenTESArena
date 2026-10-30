@@ -105,14 +105,14 @@ std::string ArenaLocationUtils::getMainQuestDungeonMifName(uint32_t dungeonSeed)
 	return mifName;
 }
 
-Int2 ArenaLocationUtils::getGlobalPoint(const Int2 &localPoint, const Rect &provinceRect)
+Int2 ArenaLocationUtils::getGlobalPoint(Int2 localPoint, const Rect &provinceRect)
 {
 	const int globalX = ((localPoint.x * ((provinceRect.width * 100) / 320)) / 100) + provinceRect.getLeft();
 	const int globalY = ((localPoint.y * ((provinceRect.height * 100) / 200)) / 100) + provinceRect.getTop();
 	return Int2(globalX, globalY);
 }
 
-Int2 ArenaLocationUtils::getLocalPoint(const Int2 &globalPoint, const Rect &provinceRect)
+Int2 ArenaLocationUtils::getLocalPoint(Int2 globalPoint, const Rect &provinceRect)
 {
 	const int localX = ((globalPoint.x - provinceRect.getLeft()) * 100) / ((provinceRect.width * 100) / 320);
 	const int localY = ((globalPoint.y - provinceRect.getTop()) * 100) / ((provinceRect.height * 100) / 200);
@@ -124,7 +124,7 @@ Int2 ArenaLocationUtils::getLocalCityPoint(uint32_t citySeed)
 	return Int2(citySeed >> 16, citySeed & 0xFFFF);
 }
 
-int ArenaLocationUtils::getGlobalQuarter(const Int2 &globalPoint, const CityDataFile &cityData)
+int ArenaLocationUtils::getGlobalQuarter(Int2 globalPoint, const CityDataFile &cityData)
 {
 	int originalProvinceIndex = -1;
 	Rect provinceRect;
@@ -168,7 +168,7 @@ int ArenaLocationUtils::getGlobalQuarter(const Int2 &globalPoint, const CityData
 	return globalQuarter;
 }
 
-double ArenaLocationUtils::getLatitude(const Int2 &globalPoint)
+double ArenaLocationUtils::getLatitude(Int2 globalPoint)
 {
 	return (100.0 - static_cast<double>(globalPoint.y)) / 100.0;
 }
@@ -178,7 +178,7 @@ int ArenaLocationUtils::getMapDistance(Int2 globalSrc, Int2 globalDst)
 	return ArenaMathUtils::getApproximateEuclideanDistance(globalSrc, globalDst);
 }
 
-int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint, int month,
+int ArenaLocationUtils::getTravelDays(Int2 startGlobalPoint, Int2 endGlobalPoint, int month,
 	Span<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();
@@ -187,7 +187,7 @@ int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &
 	const std::vector<Int2> points = MathUtils::bresenhamLine(startGlobalPoint, endGlobalPoint);
 
 	int totalTime = 0;
-	for (const Int2 &point : points)
+	for (const Int2 point : points)
 	{
 		const int monthIndex = (month + (totalTime / 3000)) % 12;
 		const int weatherIndex = [worldMapWeathers, &cityData, &point]()
@@ -271,14 +271,14 @@ uint32_t ArenaLocationUtils::getWildernessSeed(int localCityID, const ArenaProvi
 	return Bytes::getLE32(ptr);
 }
 
-uint32_t ArenaLocationUtils::getRulerSeed(const Int2 &localPoint, const Rect &provinceRect)
+uint32_t ArenaLocationUtils::getRulerSeed(Int2 localPoint, const Rect &provinceRect)
 {
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceRect);
 	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
 	return Bytes::rol(seed, 16);
 }
 
-uint32_t ArenaLocationUtils::getSkySeed(const Int2 &localPoint, int originalProvinceIndex, const Rect &provinceRect)
+uint32_t ArenaLocationUtils::getSkySeed(Int2 localPoint, int originalProvinceIndex, const Rect &provinceRect)
 {
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceRect);
 	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);

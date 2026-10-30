@@ -65,15 +65,15 @@ struct Window
 
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original (320x200) point or rectangle.
 	// Points outside the letterbox will either be negative or outside the 320x200 limit when returned.
-	Int2 nativeToOriginal(const Int2 &nativePoint) const;
+	Int2 nativeToOriginal(Int2 nativePoint) const;
 	Rect nativeToOriginal(const Rect &nativeRect) const;
 
 	// Does the opposite of nativeToOriginal().
-	Int2 originalToNative(const Int2 &originalPoint) const;
+	Int2 originalToNative(Int2 originalPoint) const;
 	Rect originalToNative(const Rect &originalRect) const;
 
 	// Returns true if the letterbox contains a native point.
-	bool letterboxContains(const Int2 &nativePoint) const;
+	bool letterboxContains(Int2 nativePoint) const;
 
 	void setMode(RenderWindowMode mode);
 	void setIcon(const Surface &icon);

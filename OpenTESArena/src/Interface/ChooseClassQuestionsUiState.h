@@ -56,8 +56,8 @@ namespace ChooseClassQuestionsUI
 	void showInitialPopUp();
 	void showSuggestedClassPopUp(const CharacterClassDefinition &charClassDef);
 
-	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt);
-	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
+	void onMouseButtonHeld(Game &game, MouseButtonType type, Int2 position, double dt);
+	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position);
 
 	void onScrollDownButtonSelected(MouseButtonType mouseButtonType);
 	void onScrollUpButtonSelected(MouseButtonType mouseButtonType);

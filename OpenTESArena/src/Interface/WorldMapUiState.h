@@ -34,7 +34,7 @@ namespace WorldMapUI
 {
 	DECLARE_UI_CONTEXT(WorldMap);
 
-	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed);
+	void onMouseButtonChanged(Game &game, MouseButtonType type, Int2 position, bool pressed);
 
 	void onBackButtonSelected(MouseButtonType mouseButtonType);
 

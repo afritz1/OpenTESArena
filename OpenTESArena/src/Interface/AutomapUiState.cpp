@@ -180,7 +180,7 @@ void AutomapUI::update(double dt)
 	}
 }
 
-void AutomapUI::onMouseButtonHeld(Game &game, MouseButtonType buttonType, const Int2 &position, double dt)
+void AutomapUI::onMouseButtonHeld(Game &game, MouseButtonType buttonType, Int2 position, double dt)
 {
 	AutomapUiState &state = AutomapUI::state;
 	AutomapUiController::onMouseButtonHeld(game, buttonType, position, dt, &state.automapOffset);

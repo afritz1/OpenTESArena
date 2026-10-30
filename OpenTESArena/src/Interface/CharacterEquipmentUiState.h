@@ -30,7 +30,7 @@ namespace CharacterEquipmentUI
 	void showItemDetail(const char *text, Color textColor);
 	void showDropItemMessageBox(const char *titleText, const std::function<void()> &confirmCallback);
 
-	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
+	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, Int2 position);
 
 	void onInventoryListBoxUpButtonSelected(MouseButtonType mouseButtonType);
 	void onInventoryListBoxDownButtonSelected(MouseButtonType mouseButtonType);

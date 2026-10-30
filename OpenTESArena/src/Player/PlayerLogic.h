@@ -27,7 +27,7 @@ namespace PlayerLogic
 {
 	// Determines how much to turn the player by, given user input and delta time.
 	// @todo: make these be Radians instead of "units".
-	Double2 makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, Span<const Rect> nativeCursorRegions);
+	Double2 makeTurningAngularValues(Game &game, double dt, Int2 mouseDelta, Span<const Rect> nativeCursorRegions);
 
 	// Gets movement values based on player input.
 	PlayerInputAcceleration getInputAcceleration(Game &game, Span<const Rect> nativeCursorRegions);
@@ -37,12 +37,12 @@ namespace PlayerLogic
 	bool canHearCreatureSound(const Double3 &playerPosition, const Double3 &soundPosition);
 
 	// Can fail if mouse moves too slowly.
-	bool tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta, const Int2 &windowDims, CardinalDirectionName *outDirectionName);
+	bool tryGetMeleeSwingDirectionFromMouseDelta(Int2 mouseDelta, Int2 windowDims, CardinalDirectionName *outDirectionName);
 
 	// Handles input for the player's attack. Takes the change in mouse position since the previous frame.
-	void handleAttack(Game &game, const Int2 &mouseDelta);
+	void handleAttack(Game &game, Int2 mouseDelta);
 
 	// Handles the behavior of the player clicking in the game world. "primaryInteraction" is true for left clicks,
 	// false for right clicks.
-	void handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool primaryInteraction, bool debugFadeVoxel);
+	void handleScreenToWorldInteraction(Game &game, Int2 nativePoint, bool primaryInteraction, bool debugFadeVoxel);
 }

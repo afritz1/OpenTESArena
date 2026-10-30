@@ -76,12 +76,12 @@ UiDrawCallTextureFunc UiDrawCall::makeTextureFunc(UiTextureID id)
 	return [id]() { return id; };
 }
 
-UiDrawCallPositionFunc UiDrawCall::makePositionFunc(const Int2 &position)
+UiDrawCallPositionFunc UiDrawCall::makePositionFunc(Int2 position)
 {
 	return [position]() { return position; };
 }
 
-UiDrawCallSizeFunc UiDrawCall::makeSizeFunc(const Int2 &size)
+UiDrawCallSizeFunc UiDrawCall::makeSizeFunc(Int2 size)
 {
 	return [size]() { return size; };
 }

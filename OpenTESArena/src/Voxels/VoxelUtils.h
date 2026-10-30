@@ -71,7 +71,7 @@ namespace VoxelUtils
 	// Adds half of a voxel to the voxel coordinate to get its center point.
 	Double3 getVoxelCenter(const Int3 &voxel, double ceilingScale);
 	Double3 getVoxelCenter(const Int3 &voxel);
-	Double2 getVoxelCenter(const Int2 &voxel);
+	Double2 getVoxelCenter(Int2 voxel);
 
 	// Gets the normal associated with a voxel facing.
 	Double3 getNormal(VoxelFacing2D facing);

@@ -170,8 +170,8 @@ namespace GameWorldUI
 	void resetActionTextDuration();
 	void resetEffectTextDuration();
 
-	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed);
-	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt);
+	void onMouseButtonChanged(Game &game, MouseButtonType type, Int2 position, bool pressed);
+	void onMouseButtonHeld(Game &game, MouseButtonType type, Int2 position, double dt);
 	void onWindowResized(int width, int height);
 
 	void onCharacterSheetButtonSelected(MouseButtonType mouseButtonType);

@@ -22,7 +22,7 @@ namespace WorldMapUiModel
 	const WorldMapMask &getMask(const Game &game, int maskID);
 
 	// Gets the province ID or exit button ID of the hovered pixel on the world map.
-	std::optional<int> getMaskID(Game &game, const Int2 &mousePosition, bool ignoreCenterProvince, bool ignoreExitButton);
+	std::optional<int> getMaskID(Game &game, Int2 mousePosition, bool ignoreCenterProvince, bool ignoreExitButton);
 }
 
 namespace FastTravelUiModel
