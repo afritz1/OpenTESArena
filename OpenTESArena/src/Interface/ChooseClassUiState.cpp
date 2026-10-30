@@ -1,3 +1,5 @@
+#include <numeric>
+
 #include "CharacterCreationUiMVC.h"
 #include "ChooseClassUiState.h"
 #include "../Game/Game.h"
@@ -43,22 +45,21 @@ void ChooseClassUI::create(Game &game)
 	uiManager.setTextBoxText(titleTextBoxElementInstID, titleText.c_str());
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	state.charClasses = std::vector<CharacterClassDefinition>(charClassLibrary.getDefinitionCount());
-	for (int i = 0; i < static_cast<int>(state.charClasses.size()); i++)
-	{
-		state.charClasses[i] = charClassLibrary.getDefinition(i);
-	}
+	state.charClassDefIDs = std::vector<CharacterClassDefinitionID>(charClassLibrary.getDefinitionCount());
+	std::iota(state.charClassDefIDs.begin(), state.charClassDefIDs.end(), 0);
 
-	std::sort(state.charClasses.begin(), state.charClasses.end(),
-		[](const CharacterClassDefinition &a, const CharacterClassDefinition &b)
+	std::sort(state.charClassDefIDs.begin(), state.charClassDefIDs.end(),
+		[&charClassLibrary](const CharacterClassDefinitionID a, const CharacterClassDefinitionID b)
 	{
-		return StringView::compare(a.name, b.name) < 0;
+		const CharacterClassDefinition &aDef = charClassLibrary.getDefinition(a);
+		const CharacterClassDefinition &bDef = charClassLibrary.getDefinition(b);
+		return StringView::compare(aDef.name, bDef.name) < 0;
 	});
 
 	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ListBoxElementName);
-	for (int i = 0; i < static_cast<int>(state.charClasses.size()); i++)
+	for (int i = 0; i < static_cast<int>(state.charClassDefIDs.size()); i++)
 	{
-		const CharacterClassDefinition &charClassDef = state.charClasses[i];
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(state.charClassDefIDs[i]);
 
 		UiListBoxItem listBoxItem;
 		listBoxItem.init(std::string(charClassDef.name), std::nullopt, [i](MouseButtonType) { ChooseClassUI::onListBoxItemSelected(i); });
@@ -84,7 +85,7 @@ void ChooseClassUI::destroy()
 		state.contextInstID = -1;
 	}
 
-	state.charClasses.clear();
+	state.charClassDefIDs.clear();
 	state.hoveredListBoxItemIndex = -1;
 }
 
@@ -103,16 +104,8 @@ void ChooseClassUI::onListBoxItemSelected(int index)
 {
 	ChooseClassUiState &state = ChooseClassUI::state;
 	Game &game = *state.game;
-	const CharacterClassDefinition &charClassDef = state.charClasses[index];
 
-	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const CharacterClassDefinitionID charClassDefID = charClassLibrary.tryGetDefinitionID(charClassDef);
-	if (charClassDefID < 0)
-	{
-		DebugLogErrorFormat("Couldn't get character class definition ID for \"%s\".", charClassDef.name);
-		return;
-	}
-
+	const CharacterClassDefinitionID charClassDefID = state.charClassDefIDs[index];
 	ChooseClassUiController::onItemButtonSelected(game, charClassDefID);
 }
 
@@ -130,8 +123,9 @@ void ChooseClassUI::updateListBoxHoveredIndex()
 
 		if (hoveredItemIndex >= 0)
 		{
-			DebugAssertIndex(state.charClasses, hoveredItemIndex);
-			const CharacterClassDefinition &charClassDef = state.charClasses[hoveredItemIndex];
+			DebugAssertIndex(state.charClassDefIDs, hoveredItemIndex);
+			const CharacterClassDefinitionID charClassDefID = state.charClassDefIDs[hoveredItemIndex];
+			const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(charClassDefID);
 			const std::string text = ChooseClassUiModel::getFullTooltipText(charClassDef, game);
 			const UiElementInstanceID descriptionTextBoxElementInstID = uiManager.getElementByName(ClassDescriptionElementName);
 			uiManager.setTextBoxText(descriptionTextBoxElementInstID, text.c_str());

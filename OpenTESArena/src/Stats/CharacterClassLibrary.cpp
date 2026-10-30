@@ -221,17 +221,3 @@ CharacterClassDefinitionID CharacterClassLibrary::findDefinitionIdIf(const Chara
 
 	return -1;
 }
-
-CharacterClassDefinitionID CharacterClassLibrary::tryGetDefinitionID(const CharacterClassDefinition &def) const
-{
-	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)
-	{
-		const CharacterClassDefinition &charClassDef = this->defs[i];
-		if (StringView::equals(charClassDef.name, def.name))
-		{
-			return i;
-		}
-	}
-
-	return -1;
-}

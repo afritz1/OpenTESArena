@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "../Stats/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"
@@ -17,7 +17,7 @@ struct ChooseClassUiState
 	Game *game;
 	UiContextInstanceID contextInstID;
 
-	std::vector<CharacterClassDefinition> charClasses;
+	std::vector<CharacterClassDefinitionID> charClassDefIDs;
 	int hoveredListBoxItemIndex;
 
 	ChooseClassUiState();

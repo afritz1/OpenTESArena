@@ -23,5 +23,4 @@ public:
 	int getDefinitionCount() const;
 	const CharacterClassDefinition &getDefinition(CharacterClassDefinitionID id) const;
 	CharacterClassDefinitionID findDefinitionIdIf(const CharacterClassPredicate &predicate) const;
-	CharacterClassDefinitionID tryGetDefinitionID(const CharacterClassDefinition &def) const;
 };
