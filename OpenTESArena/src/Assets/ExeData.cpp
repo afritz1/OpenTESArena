@@ -389,6 +389,7 @@ bool ExeDataCharacterCreation::init(Span<const std::byte> exeBytes, const KeyVal
 	const auto chooseAttributesBonusPointsRemainingOffset = GetExeAddress(*section, "ChooseAttributesBonusPointsRemaining");
 	const auto chooseAppearancePair = GetExeAddressAndLength(*section, "ChooseAppearance");
 	const auto constellationColorsOffset = GetExeAddress(*section, "ConstellationColors");
+	const auto constellationIntensitiesOffset = GetExeAddress(*section, "ConstellationIntensities");
 
 	this->chooseClassCreation = GetExeStringFixedLength(exeBytes, chooseClassCreationPair);
 	this->chooseClassCreationGenerate = GetExeStringFixedLength(exeBytes, chooseClassCreationGeneratePair);
@@ -413,6 +414,7 @@ bool ExeDataCharacterCreation::init(Span<const std::byte> exeBytes, const KeyVal
 	this->chooseAttributesBonusPointsRemaining = GetExeStringNullTerminated(exeBytes, chooseAttributesBonusPointsRemainingOffset);
 	this->chooseAppearance = GetExeStringFixedLength(exeBytes, chooseAppearancePair);
 	initInt8Array(this->constellationColors, exeBytes, constellationColorsOffset);
+	initInt8Array(this->constellationIntensities, exeBytes, constellationIntensitiesOffset);
 
 	return true;
 }

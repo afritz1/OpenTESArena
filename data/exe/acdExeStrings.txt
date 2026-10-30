@@ -66,6 +66,7 @@ ChooseAttributesReroll=0x3F9B5,16
 ChooseAttributesBonusPointsRemaining=0x3F817
 ChooseAppearance=0x35F84,174
 ConstellationColors=0x3FAE4
+ConstellationIntensities=0x3FADA
 
 [CityGeneration]
 CoastalCityList=0x401E2

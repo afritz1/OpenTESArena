@@ -107,6 +107,7 @@ struct ExeDataCharacterCreation
 	std::string chooseAppearance;
 
 	uint8_t constellationColors[3]; // Class category colors to replace as questions are answered.
+	uint8_t constellationIntensities[10]; // Increasing intensities depending on answer count.
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
