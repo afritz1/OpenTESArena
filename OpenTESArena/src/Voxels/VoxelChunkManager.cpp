@@ -940,6 +940,44 @@ void VoxelChunkManager::update(double dt, Span<const ChunkInt2> newChunkPosition
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		this->updateChunkDoorVisibilityInsts(*chunkPtr, playerCoord);
 	}
+
+	// Update fog of war around player.
+	const WorldDouble3 playerWorldPosition = VoxelUtils::coordToWorldPoint(playerCoord);
+	const WorldDouble2 playerWorldPositionXZ = playerWorldPosition.getXZ();
+	const WorldInt2 playerWorldVoxelXZ = VoxelUtils::pointToVoxel(playerWorldPositionXZ);
+
+	constexpr double fogOfWarVisibilityRadius = 4.25;
+	constexpr int fogOfWarVisibilityRadiusInteger = static_cast<int>(fogOfWarVisibilityRadius);
+	const WorldInt2 fogOfWarVisibilityWorldVoxelStart = playerWorldVoxelXZ - Int2(fogOfWarVisibilityRadiusInteger, fogOfWarVisibilityRadiusInteger);
+	const WorldInt2 fogOfWarVisibilityWorldVoxelEnd = playerWorldVoxelXZ + Int2(fogOfWarVisibilityRadiusInteger, fogOfWarVisibilityRadiusInteger);
+
+	VoxelChunk *currentChunk = nullptr;
+	for (WEInt z = fogOfWarVisibilityWorldVoxelStart.y; z <= fogOfWarVisibilityWorldVoxelEnd.y; z++)
+	{
+		for (SNInt x = fogOfWarVisibilityWorldVoxelStart.x; x <= fogOfWarVisibilityWorldVoxelEnd.x; x++)
+		{
+			const WorldInt2 fogOfWarWorldVoxelXZ(x, z);
+			const WorldDouble2 fogOfWarWorldVoxelCenterXZ = VoxelUtils::getVoxelCenter(fogOfWarWorldVoxelXZ);
+			const double playerToFogOfWarWorldVoxelCenterDist = (fogOfWarWorldVoxelCenterXZ - playerWorldPositionXZ).length();
+			const double fogOfWarPercent = std::clamp(playerToFogOfWarWorldVoxelCenterDist / fogOfWarVisibilityRadius, 0.0, 1.0);
+
+			const CoordInt2 fogOfWarVoxelCoord = VoxelUtils::worldVoxelToCoord(fogOfWarWorldVoxelXZ);
+			const ChunkInt2 fogOfWarChunkPos = fogOfWarVoxelCoord.chunk;
+			if (currentChunk == nullptr || currentChunk->position != fogOfWarChunkPos)
+			{
+				currentChunk = this->findChunkAtPosition(fogOfWarChunkPos);
+				if (currentChunk == nullptr)
+				{
+					continue;
+				}
+			}
+
+			const VoxelInt2 fogOfWarVoxelXZ = fogOfWarVoxelCoord.voxel;
+			const double oldFogOfWarPercent = currentChunk->fogOfWar.get(fogOfWarVoxelXZ.x, fogOfWarVoxelXZ.y);
+			const double newFogOfWarPercent = std::min(oldFogOfWarPercent, fogOfWarPercent);
+			currentChunk->fogOfWar.set(fogOfWarVoxelXZ.x, fogOfWarVoxelXZ.y, newFogOfWarPercent);
+		}
+	}
 }
 
 void VoxelChunkManager::endFrame()

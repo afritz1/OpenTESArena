@@ -90,6 +90,7 @@ struct VoxelChunk final : public Chunk
 	std::vector<VoxelChasmWallInstance> chasmWallInsts;
 	std::vector<VoxelDoorVisibilityInstance> doorVisInsts;
 	std::vector<VoxelTriggerInstance> triggerInsts;
+	Buffer2D<double> fogOfWar; // 0.0 = visible, 1.0 = fogged.
 
 	// Destroyed animations to be cleaned up at end of frame. This was added so it's less confusing when
 	// a voxel says it was dirtied (by animating) but there is no anim inst available.

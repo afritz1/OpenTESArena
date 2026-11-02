@@ -41,6 +41,9 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	this->dirtyVoxelTypes.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
 	this->dirtyShapeDefPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
+
+	this->fogOfWar.init(Chunk::WIDTH, Chunk::DEPTH);
+	this->fogOfWar.fill(1.0);
 }
 
 void VoxelChunk::getAdjacentShapeDefIDs(const VoxelInt3 &voxel, VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID,
@@ -642,6 +645,7 @@ void VoxelChunk::clear()
 	this->chasmWallInsts.clear();
 	this->doorVisInsts.clear();
 	this->triggerInsts.clear();
+	this->fogOfWar.clear();
 	this->destroyedDoorAnimInsts.clear();
 	this->destroyedFadeAnimInsts.clear();
 }

@@ -33,6 +33,17 @@ namespace
 		{ CardinalDirectionName::West, { Int2(1, 0), Int2(0, 1), Int2(1, 2) } },
 		{ CardinalDirectionName::NorthWest, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(0, 1), Int2(0, 2) } }
 	};
+
+	Color GetNearestFogOfWarColor(Span<const Color> fogOfWarColors, double fogOfWarPercent)
+	{
+		if (fogOfWarPercent == 1.0)
+		{
+			return AutomapUiView::ColorFloor;
+		}
+
+		const int index = MathUtils::getRealIndex(fogOfWarColors.getCount(), fogOfWarPercent);
+		return fogOfWarColors[index];
+	}
 }
 
 Double2 AutomapUiModel::makeAutomapOffset(const VoxelInt2 &voxel)
@@ -67,8 +78,8 @@ TextureAsset AutomapUiView::getCursorPaletteTextureAsset()
 	return TextureAsset(ArenaTextureName::Automap);
 }
 
-const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
-	const TransitionDefinition *transitionDef)
+Color AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
+	const TransitionDefinition *transitionDef, double fogOfWarPercent)
 {
 	const ArenaVoxelType floorType = floorDef.type;
 	const ArenaVoxelType wallType = wallDef.type;
@@ -80,29 +91,50 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 		if (chasmType == ArenaChasmType::Dry)
 		{
 			// Dry chasms are a different color if a wall is over them.
-			return (wallType == ArenaVoxelType::Wall) ? AutomapUiView::ColorRaised : AutomapUiView::ColorDryChasm;
+			if (wallType == ArenaVoxelType::Wall)
+			{
+				return GetNearestFogOfWarColor(AutomapUiView::ColorRaisedFogOfWar, fogOfWarPercent);
+			}
+			else
+			{
+				return GetNearestFogOfWarColor(AutomapUiView::ColorDryChasmFogOfWar, fogOfWarPercent);
+			}
 		}
 		else if (chasmType == ArenaChasmType::Lava)
 		{
 			// Lava chasms ignore all but raised platforms.
-			return (wallType == ArenaVoxelType::Raised) ? AutomapUiView::ColorRaised : AutomapUiView::ColorLavaChasm;
+			if (wallType == ArenaVoxelType::Raised)
+			{
+				return GetNearestFogOfWarColor(AutomapUiView::ColorRaisedFogOfWar, fogOfWarPercent);
+			}
+			else
+			{
+				return GetNearestFogOfWarColor(AutomapUiView::ColorLavaChasmFogOfWar, fogOfWarPercent);
+			}
 		}
 		else if (chasmType == ArenaChasmType::Wet)
 		{
 			// Water chasms ignore all but raised platforms.
-			return (wallType == ArenaVoxelType::Raised) ? AutomapUiView::ColorRaised : AutomapUiView::ColorWetChasm;
+			if (wallType == ArenaVoxelType::Raised)
+			{
+				return GetNearestFogOfWarColor(AutomapUiView::ColorRaisedFogOfWar, fogOfWarPercent);
+			}
+			else
+			{
+				return GetNearestFogOfWarColor(AutomapUiView::ColorWetChasmFogOfWar, fogOfWarPercent);
+			}
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized chasm type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
+			DebugLogWarningFormat("Unrecognized chasm type \"%d\".", chasmType);
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
 	else if (floorType == ArenaVoxelType::Floor)
 	{
-		// If nothing is over the floor, return transparent. Otherwise, choose from a number of cases.
 		if (wallType == ArenaVoxelType::None)
 		{
+			// Nothing is on top of the floor.
 			return AutomapUiView::ColorFloor;
 		}
 		else if (wallType == ArenaVoxelType::Wall)
@@ -110,7 +142,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 			if (transitionDef == nullptr)
 			{
 				// Not a transition.
-				return AutomapUiView::ColorWall;
+				return GetNearestFogOfWarColor(AutomapUiView::ColorWallFogOfWar, fogOfWarPercent);
 			}
 			else
 			{
@@ -119,23 +151,30 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 					(transitionType == TransitionType::EnterInterior) ||
 					(transitionType == TransitionType::ExitInterior))
 				{
-					return AutomapUiView::ColorDoor;
+					return GetNearestFogOfWarColor(AutomapUiView::ColorDoorFogOfWar, fogOfWarPercent);
 				}
 				else if (transitionType == TransitionType::InteriorLevelChange)
 				{
 					const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef->interiorLevelChange;
-					return levelChangeDef.isLevelUp ? AutomapUiView::ColorLevelUp : AutomapUiView::ColorLevelDown;
+					if (levelChangeDef.isLevelUp)
+					{
+						return GetNearestFogOfWarColor(AutomapUiView::ColorLevelUpFogOfWar, fogOfWarPercent);
+					}
+					else
+					{
+						return GetNearestFogOfWarColor(AutomapUiView::ColorLevelDownFogOfWar, fogOfWarPercent);
+					}
 				}
 				else
 				{
-					DebugLogWarning("Unrecognized transition type \"" + std::to_string(static_cast<int>(transitionType)) + "\".");
+					DebugLogWarningFormat("Unrecognized transition type \"%d\".", transitionType);
 					return AutomapUiView::ColorNotImplemented;
 				}
 			}
 		}
 		else if (wallType == ArenaVoxelType::Raised)
 		{
-			return AutomapUiView::ColorRaised;
+			return GetNearestFogOfWarColor(AutomapUiView::ColorRaisedFogOfWar, fogOfWarPercent);
 		}
 		else if (wallType == ArenaVoxelType::Diagonal)
 		{
@@ -143,32 +182,39 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 		}
 		else if (wallType == ArenaVoxelType::Door)
 		{
-			return AutomapUiView::ColorDoor;
+			return GetNearestFogOfWarColor(AutomapUiView::ColorDoorFogOfWar, fogOfWarPercent);
 		}
 		else if (wallType == ArenaVoxelType::TransparentWall)
 		{
 			// Transparent walls with collision (hedges) are shown, while ones without collision (archways) are not.
 			const VoxelTraitsTransparentWallDefinition &transparentWall = wallDef.transparentWall;
-			return transparentWall.collider ? AutomapUiView::ColorWall : AutomapUiView::ColorFloor;
+			if (transparentWall.collider)
+			{
+				return GetNearestFogOfWarColor(AutomapUiView::ColorWallFogOfWar, fogOfWarPercent);
+			}
+			else
+			{
+				return AutomapUiView::ColorFloor;
+			}
 		}
 		else if (wallType == ArenaVoxelType::Edge)
 		{
-			return AutomapUiView::ColorWall;
+			return GetNearestFogOfWarColor(AutomapUiView::ColorWallFogOfWar, fogOfWarPercent);
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized wall data type \"" + std::to_string(static_cast<int>(wallType)) + "\".");
+			DebugLogWarningFormat("Unrecognized wall data type \"%d\".", wallType);
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
 	else
 	{
-		DebugLogWarning("Unrecognized floor data type \"" + std::to_string(static_cast<int>(floorType)) + "\".");
+		DebugLogWarningFormat("Unrecognized floor data type \"%d\".", floorType);
 		return AutomapUiView::ColorNotImplemented;
 	}
 }
 
-const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
+Color AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
 	const TransitionDefinition *transitionDef)
 {
 	// The wilderness automap focuses more on displaying floor voxels than wall voxels.
@@ -185,21 +231,21 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 		if (chasmType == ArenaChasmType::Dry)
 		{
 			// Dry chasms are a different color if a wall is over them.
-			return (wallType == ArenaVoxelType::Wall) ? AutomapUiView::ColorWildWall : AutomapUiView::ColorDryChasm;
+			return (wallType == ArenaVoxelType::Wall) ? AutomapUiView::ColorWildWall : AutomapUiView::ColorDryChasmFogOfWar[0];
 		}
 		else if (chasmType == ArenaChasmType::Lava)
 		{
 			// Lava chasms ignore all but raised platforms.
-			return (wallType == ArenaVoxelType::Raised) ? AutomapUiView::ColorWildWall : AutomapUiView::ColorLavaChasm;
+			return (wallType == ArenaVoxelType::Raised) ? AutomapUiView::ColorWildWall : AutomapUiView::ColorLavaChasmFogOfWar[0];
 		}
 		else if (chasmType == ArenaChasmType::Wet)
 		{
 			// Water chasms ignore all but raised platforms.
-			return (wallType == ArenaVoxelType::Raised) ? AutomapUiView::ColorWildWall : AutomapUiView::ColorWetChasm;
+			return (wallType == ArenaVoxelType::Raised) ? AutomapUiView::ColorWildWall : AutomapUiView::ColorWetChasmFogOfWar[0];
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized chasm type \"" + std::to_string(static_cast<int>(chasmType)) + "\".");
+			DebugLogWarningFormat("Unrecognized chasm type \"%d\".", chasmType);
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
@@ -242,11 +288,18 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 				else if (transitionType == TransitionType::InteriorLevelChange)
 				{
 					const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef->interiorLevelChange;
-					return levelChangeDef.isLevelUp ? AutomapUiView::ColorLevelUp : AutomapUiView::ColorLevelDown;
+					if (levelChangeDef.isLevelUp)
+					{
+						return AutomapUiView::ColorLevelUpFogOfWar[0];
+					}
+					else
+					{
+						return AutomapUiView::ColorLevelDownFogOfWar[0];
+					}
 				}
 				else
 				{
-					DebugLogWarning("Unrecognized transition type \"" + std::to_string(static_cast<int>(transitionType)) + "\".");
+					DebugLogWarningFormat("Unrecognized transition type \"%d\".", transitionType);
 					return AutomapUiView::ColorNotImplemented;
 				}
 			}
@@ -287,21 +340,19 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 		}
 		else
 		{
-			DebugLogWarning("Unrecognized wall data type \"" +
-				std::to_string(static_cast<int>(wallType)) + "\".");
+			DebugLogWarningFormat("Unrecognized wall data type \"%d\".", wallType);
 			return AutomapUiView::ColorNotImplemented;
 		}
 	}
 	else
 	{
-		DebugLogWarning("Unrecognized floor data type \"" +
-			std::to_string(static_cast<int>(floorType)) + "\".");
+		DebugLogWarningFormat("Unrecognized floor data type \"%d\".", floorType);
 		return AutomapUiView::ColorNotImplemented;
 	}
 }
 
 Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
-	bool isWild, const WorldInt2 &levelDims, const VoxelChunkManager &voxelChunkManager)
+	bool isWild, bool allowFogOfWar, const WorldInt2 &levelDims, const VoxelChunkManager &voxelChunkManager)
 {
 	// Create scratch surface triple the size of the voxel area so that all directions of the player's arrow
 	// are representable in the same texture. This may change in the future for memory optimization.
@@ -368,6 +419,12 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 						transitionDef = &chunk.transitionDefs[transitionDefID];
 					}
 
+					double fogOfWarPercent = 0.0;
+					if (allowFogOfWar)
+					{
+						fogOfWarPercent = chunk.fogOfWar.get(x, z);
+					}
+
 					// Decide which color to use for the automap pixel.
 					Color color;
 					if (isWild)
@@ -384,7 +441,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 
 						if (isInsideLevelBounds)
 						{
-							color = AutomapUiView::getPixelColor(floorVoxelTraitsDef, wallVoxelTraitsDef, transitionDef);
+							color = AutomapUiView::getPixelColor(floorVoxelTraitsDef, wallVoxelTraitsDef, transitionDef, fogOfWarPercent);
 						}
 						else
 						{
@@ -439,12 +496,14 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 {
 	const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-	const bool isWild = activeMapDef.getMapType() == MapType::Wilderness;
+	const MapType activeMapType = activeMapDef.getMapType();
+	const bool isWild = activeMapType == MapType::Wilderness;
+	const bool allowFogOfWar = (activeMapType == MapType::Interior) && (activeMapDef.getSubDefinition().interior.interiorType == ArenaInteriorType::Dungeon);
 	const Span<const LevelDefinition> levelDefs = activeMapDef.getLevels();
 	const LevelDefinition &activeLevelDef = levelDefs[gameState.getActiveLevelIndex()];
 	const WorldInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
 
-	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, levelDims, voxelChunkManager);
+	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, allowFogOfWar, levelDims, voxelChunkManager);
 	const UiTextureID textureID = renderer.createUiTexture(automapBuffer.getWidth(), automapBuffer.getWidth());
 	if (textureID < 0)
 	{
