@@ -755,45 +755,53 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 	const VoxelChunk &playerVoxelChunk = voxelChunkManager.getChunkAtPosition(playerVoxelCoord.chunk);
 	
-	bool isPlayerVoxelValidForDroppingItem = true;
-	
-	const bool isPlayerVoxelValid = playerVoxelChunk.isValidVoxel(playerVoxel.x, playerVoxel.y, playerVoxel.z);
-	isPlayerVoxelValidForDroppingItem &= isPlayerVoxelValid && (playerVoxel.y == 1);
-
-	if (isPlayerVoxelValidForDroppingItem)
+	bool isVoxelTypeValidForItemDrop = playerVoxelChunk.isValidVoxel(playerVoxel.x, playerVoxel.y, playerVoxel.z) && (playerVoxel.y == 1);
+	if (isVoxelTypeValidForItemDrop)
 	{
 		const VoxelShapeDefID playerVoxelShapeDefID = playerVoxelChunk.shapeDefIDs.get(playerVoxel.x, playerVoxel.y, playerVoxel.z);
 		const VoxelShapeDefinition &playerVoxelShapeDef = playerVoxelChunk.shapeDefs[playerVoxelShapeDefID];
-		isPlayerVoxelValidForDroppingItem &= playerVoxelShapeDef.mesh.isEmpty();
+		isVoxelTypeValidForItemDrop &= playerVoxelShapeDef.mesh.isEmpty();
 
 		const VoxelTraitsDefID floorVoxelTraitsDefID = playerVoxelChunk.traitsDefIDs.get(playerVoxel.x, 0, playerVoxel.z);
 		const VoxelTraitsDefinition &floorVoxelTraitsDef = playerVoxelChunk.traitsDefs[floorVoxelTraitsDefID];
-		isPlayerVoxelValidForDroppingItem &= floorVoxelTraitsDef.type == ArenaVoxelType::Floor;
+		isVoxelTypeValidForItemDrop &= floorVoxelTraitsDef.type == ArenaVoxelType::Floor;
 	}
-	
+
+	if (!isVoxelTypeValidForItemDrop)
+	{
+		CharacterEquipmentUI::showItemDetail(exeData.equipment.dropItemNoRoom.c_str(), CharacterEquipmentUiView::ItemDetailErrorTextColor);
+		return;
+	}
+
 	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	EntityInstanceID occupyingEntityInstID = -1;
+	bool isOccupyingEntityValidContainer = false;
 
-	if (isPlayerVoxelValidForDroppingItem)
+	std::unordered_map<WorldInt2, EntityInstanceID> &occupiedVoxels = entityChunkManager.occupiedVoxels;
+	const auto occupiedVoxelIter = occupiedVoxels.find(playerWorldVoxelXZ);
+	if (occupiedVoxelIter != occupiedVoxels.end())
 	{
-		bool isOccupyingEntityValidContainer = false;
+		occupyingEntityInstID = occupiedVoxelIter->second;
 
-		std::unordered_map<WorldInt2, EntityInstanceID> &occupiedVoxels = entityChunkManager.occupiedVoxels;
-		const auto occupiedVoxelIter = occupiedVoxels.find(playerWorldVoxelXZ);
-		if (occupiedVoxelIter != occupiedVoxels.end())
+		const EntityInstance &occupyingEntityInst = entityChunkManager.entities.get(occupyingEntityInstID);
+		isOccupyingEntityValidContainer = occupyingEntityInst.isTransformStatic() && occupyingEntityInst.hasInventory();
+		if (occupyingEntityInst.canBeLocked())
 		{
-			occupyingEntityInstID = occupiedVoxelIter->second;
-
-			const EntityInstance &occupyingEntityInst = entityChunkManager.entities.get(occupyingEntityInstID);
-			bool isValidContainer = occupyingEntityInst.isTransformStatic() && occupyingEntityInst.hasInventory();
-			if (occupyingEntityInst.canBeLocked())
-			{
-				const EntityLockState &lockState = entityChunkManager.lockStates.get(occupyingEntityInst.lockStateID);
-				isValidContainer &= !lockState.isLocked;
-			}
-
-			isOccupyingEntityValidContainer = isValidContainer;
+			const EntityLockState &lockState = entityChunkManager.lockStates.get(occupyingEntityInst.lockStateID);
+			isOccupyingEntityValidContainer &= !lockState.isLocked;
 		}
+	}
+	
+	if (occupyingEntityInstID >= 0 && !isOccupyingEntityValidContainer)
+	{
+		CharacterEquipmentUI::showItemDetail(exeData.equipment.dropItemNoRoom.c_str(), CharacterEquipmentUiView::ItemDetailErrorTextColor);
+		return;
+	}
+
+	auto dropItemIntoContainerCallback = [&game, ceilingScale, highlightedItemDefID, playerWorldVoxelXZ, &entityChunkManager, occupyingEntityInstID,
+		&occupiedVoxels, occupiedVoxelIter, removeItemFromInventoryCallback]()
+	{
+		EntityInstanceID containerEntityInstID = occupyingEntityInstID;
 
 		if (occupyingEntityInstID < 0)
 		{
@@ -820,27 +828,14 @@ void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)
 			containerEntityInitInfo.initialAnimStateIndex = *containerAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 			containerEntityInitInfo.isSensorCollider = true;
 			containerEntityInitInfo.hasInventory = true;
-			occupyingEntityInstID = entityChunkManager.createEntity(containerEntityInitInfo, game.random, game.physicsSystem, game.renderer);
+			containerEntityInstID = entityChunkManager.createEntity(containerEntityInitInfo, game.random, game.physicsSystem, game.renderer);
 
-			// Have to manually update occupied voxels while in the UI in case player drops multiple items at once, otherwise we get N piles.
+			// Manually update occupied voxels while in the UI in case player drops multiple items at once, otherwise we get N piles.
 			DebugAssert(occupiedVoxelIter == occupiedVoxels.end());
-			occupiedVoxels.emplace(playerWorldVoxelXZ, occupyingEntityInstID);
-
-			isOccupyingEntityValidContainer = true;
+			occupiedVoxels.emplace(playerWorldVoxelXZ, containerEntityInstID);
 		}
 
-		isPlayerVoxelValidForDroppingItem &= isOccupyingEntityValidContainer;
-	}
-	
-	if (!isPlayerVoxelValidForDroppingItem)
-	{
-		CharacterEquipmentUI::showItemDetail(exeData.equipment.dropItemNoRoom.c_str(), CharacterEquipmentUiView::ItemDetailErrorTextColor);
-		return;
-	}
-
-	auto dropItemIntoContainerCallback = [highlightedItemDefID, &entityChunkManager, occupyingEntityInstID, removeItemFromInventoryCallback]()
-	{
-		const EntityInstance &containerEntityInst = entityChunkManager.entities.get(occupyingEntityInstID);
+		const EntityInstance &containerEntityInst = entityChunkManager.entities.get(containerEntityInstID);
 		ItemInventory &containerInventory = entityChunkManager.itemInventories.get(containerEntityInst.itemInventoryInstID);
 		containerInventory.insert(highlightedItemDefID);
 		removeItemFromInventoryCallback();
