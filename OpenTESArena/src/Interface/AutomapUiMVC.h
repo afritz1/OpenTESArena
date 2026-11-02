@@ -15,7 +15,6 @@
 #include "components/utilities/Buffer.h"
 
 class Game;
-class GameState;
 class Renderer;
 class VoxelChunkManager;
 
@@ -96,7 +95,7 @@ namespace AutomapUiView
 		bool isWild, bool allowFogOfWar, const WorldInt2 &levelDims, const VoxelChunkManager &voxelChunkManager);
 
 	// Texture allocation functions (must be freed when done).
-	UiTextureID allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,
+	UiTextureID allocMapTexture(const Game &game, const CoordInt2 &playerCoordXZ,
 		const VoxelDouble2 &playerDirection, const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }

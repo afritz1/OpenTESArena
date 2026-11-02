@@ -192,6 +192,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_STRING(Misc, OptionsSaveOverridePath)
 	OPTION_BOOL(Misc, GhostMode)
 	OPTION_BOOL(Misc, ImmuneToDamage)
+	OPTION_BOOL(Misc, DisableFogOfWar)
 	OPTION_INT(Misc, ProfilerLevel, MIN_PROFILER_LEVEL, MAX_PROFILER_LEVEL)
 	OPTION_BOOL(Misc, ShowIntro)
 	OPTION_BOOL(Misc, ShowCompass)

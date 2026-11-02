@@ -614,6 +614,16 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 		options.setMisc_ImmuneToDamage(value);
 	});
 
+	auto disableFogOfWarOption = std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::DISABLE_FOG_OF_WAR_NAME,
+		"Displays the player's automap as fully explored.",
+		options.getMisc_DisableFogOfWar(),
+		[&game](bool value)
+	{
+		Options &options = game.options;
+		options.setMisc_DisableFogOfWar(value);
+	});
+
 	auto profilerLevelOption = std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::PROFILER_LEVEL_NAME,
 		"Displays varying levels of profiler information in the game world.",
@@ -640,6 +650,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 	OptionGroup group;
 	group.emplace_back(std::move(ghostModeOption));
 	group.emplace_back(std::move(immuneToDamageOption));
+	group.emplace_back(std::move(disableFogOfWarOption));
 	group.emplace_back(std::move(profilerLevelOption));
 	group.emplace_back(std::move(enableValidationLayersOption));
 	return group;

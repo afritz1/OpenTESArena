@@ -89,7 +89,7 @@ void AutomapUiState::init(Game &game)
 	const SceneManager &sceneManager = game.sceneManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	Renderer &renderer = game.renderer;
-	this->mapTextureID = AutomapUiView::allocMapTexture(game.gameState, playerCoordXZ, player.getGroundDirectionXZ(), voxelChunkManager, renderer);
+	this->mapTextureID = AutomapUiView::allocMapTexture(game, playerCoordXZ, player.getGroundDirectionXZ(), voxelChunkManager, renderer);
 
 	TextureManager &textureManager = game.textureManager;
 	this->cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);

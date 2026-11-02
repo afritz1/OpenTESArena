@@ -102,6 +102,9 @@ GhostMode=false
 # Whether the player takes damage in combat.
 ImmuneToDamage=false
 
+# Whether the player's automap is fully explored.
+DisableFogOfWar=false
+
 # Shows the opening cinematic on engine start.
 ShowIntro=true
 

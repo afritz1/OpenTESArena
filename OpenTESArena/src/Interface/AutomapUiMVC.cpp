@@ -491,14 +491,16 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 	return dstBuffer;
 }
 
-UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,
+UiTextureID AutomapUiView::allocMapTexture(const Game &game, const CoordInt2 &playerCoordXZ,
 	const VoxelDouble2 &playerDirection, const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
+	const GameState &gameState = game.gameState;
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const MapType activeMapType = activeMapDef.getMapType();
 	const bool isWild = activeMapType == MapType::Wilderness;
-	const bool allowFogOfWar = (activeMapType == MapType::Interior) && (activeMapDef.getSubDefinition().interior.interiorType == ArenaInteriorType::Dungeon);
+	const bool allowFogOfWar = !game.options.getMisc_DisableFogOfWar() && (activeMapType == MapType::Interior) &&
+		(activeMapDef.getSubDefinition().interior.interiorType == ArenaInteriorType::Dungeon);
 	const Span<const LevelDefinition> levelDefs = activeMapDef.getLevels();
 	const LevelDefinition &activeLevelDef = levelDefs[gameState.getActiveLevelIndex()];
 	const WorldInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
