@@ -332,6 +332,7 @@ void GameState::clearSession()
 	this->campingState.clear();
 	this->tavernRentedRoomState.clear();
 	this->automapDirectionsDetailEntries.clear();
+	this->automapNoteEntries.clear();
 }
 
 bool GameState::hasPendingLevelIndexChange() const
@@ -1052,6 +1053,25 @@ void GameState::clearAutomapDirectionsDetailEntries()
 	this->automapDirectionsDetailEntries.clear();
 }
 
+Span<const AutomapNoteEntry> GameState::getAutomapNoteEntries() const
+{
+	return this->automapNoteEntries;
+}
+
+void GameState::addAutomapNoteEntry(Int2 position, const std::string &text, bool inGameWorld)
+{
+	AutomapNoteEntry entry;
+	entry.position = position;
+	entry.text = text;
+	entry.inGameWorld = inGameWorld;
+	this->automapNoteEntries.emplace_back(std::move(entry));
+}
+
+void GameState::clearAutomapNoteEntries()
+{
+	this->automapNoteEntries.clear();
+}
+
 void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt)
 {
 	Player &player = game.player;
@@ -1203,6 +1223,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	this->queuedEntityInitInfos.clear();
 	this->guardSpawnState.clearQueue();
 	this->automapDirectionsDetailEntries.clear();
+	this->automapNoteEntries.clear();
 
 	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
 	RenderCamera renderCamera;

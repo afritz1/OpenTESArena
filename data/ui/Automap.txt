@@ -5,15 +5,13 @@ ContextName=Automap
 
 ##################################
 
-# Background
-
 [AutomapBackground]
 Type=Image
 Texture=AUTOMAP.IMG
 
 ##################################
 
-# Location
+# Title
 
 [AutomapLocationTextBox]
 Type=TextBox
@@ -41,12 +39,22 @@ Callback=AutomapUI.onExitButtonSelected
 
 # Hotkeys
 
+[AutomapAcceptInputAction]
+Type=InputListener
+InputActionName=Accept
+Callback=AutomapUI.onAcceptInputAction
+
 [AutomapToggleInputAction]
 Type=InputListener
 InputActionName=Automap
-Callback=AutomapUI.onExitInputAction
+Callback=AutomapUI.onBackInputAction
 
-[AutomapExitInputAction]
+[AutomapBackInputAction]
 Type=InputListener
 InputActionName=Back
-Callback=AutomapUI.onExitInputAction
+Callback=AutomapUI.onBackInputAction
+
+[AutomapBackspaceInputAction]
+Type=InputListener
+InputActionName=Backspace
+Callback=AutomapUI.onBackspaceInputAction

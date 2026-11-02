@@ -470,6 +470,12 @@ InputListenerID InputManager::addTextInputListener(const TextInputCallback &call
 		this->textInputListeners, this->freedTextInputListenerIndices);
 }
 
+bool InputManager::isInTextEntryMode() const
+{
+	const SDL_bool inTextEntryMode = SDL_IsTextInputActive();
+	return inTextEntryMode == SDL_TRUE;
+}
+
 void InputManager::setTextInputMode(bool active)
 {
 	if (active)
@@ -613,12 +619,6 @@ void InputManager::setRelativeMouseMode(bool active)
 {
 	const SDL_bool enabled = active ? SDL_TRUE : SDL_FALSE;
 	SDL_SetRelativeMouseMode(enabled);
-}
-
-bool InputManager::isInTextEntryMode() const
-{
-	const SDL_bool inTextEntryMode = SDL_IsTextInputActive();
-	return inTextEntryMode == SDL_TRUE;
 }
 
 void InputManager::handleHeldInputs(Game &game, Span<const InputActionMap*> activeMaps,

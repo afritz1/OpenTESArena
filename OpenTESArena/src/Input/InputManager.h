@@ -178,8 +178,6 @@ private:
 
 	InputListenerID getNextListenerID();
 
-	bool isInTextEntryMode() const;
-
 	template<typename EntryType, typename CallbackType>
 	InputListenerID addListenerInternal(CallbackType &&callback, InputListenerType listenerType, const std::string &contextName,
 		std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices);
@@ -235,6 +233,8 @@ public:
 
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);
+
+	bool isInTextEntryMode() const;
 
 	// Sets whether keyboard input is interpreted as text input or hotkeys.
 	void setTextInputMode(bool active);

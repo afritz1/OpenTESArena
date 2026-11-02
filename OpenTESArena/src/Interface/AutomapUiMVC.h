@@ -56,21 +56,28 @@ namespace AutomapUiView
 	constexpr Rect DrawingArea(25, 40, 179, 125);
 
 	// Colors for automap pixels. Ground pixels (y == 0) are transparent.
-	const Color ColorPlayer(247, 255, 0);
-	const Color ColorFloor(0, 0, 0, 0);
-	const Color ColorWall(130, 89, 48);
-	const Color ColorRaised(97, 85, 60);
-	const Color ColorDoor(146, 0, 0);
-	const Color ColorLevelUp(0, 105, 0);
-	const Color ColorLevelDown(0, 0, 255);
-	const Color ColorDryChasm(20, 40, 40);
-	const Color ColorWetChasm(109, 138, 174);
-	const Color ColorLavaChasm(255, 0, 0);
-	const Color ColorNotImplemented(255, 0, 255);
+	constexpr Color ColorPlayer(247, 255, 0);
+	constexpr Color ColorFloor(0, 0, 0, 0);
+	constexpr Color ColorWall(130, 89, 48);
+	constexpr Color ColorRaised(97, 85, 60);
+	constexpr Color ColorDoor(146, 0, 0);
+	constexpr Color ColorLevelUp(0, 105, 0);
+	constexpr Color ColorLevelDown(0, 0, 255);
+	constexpr Color ColorDryChasm(20, 40, 40);
+	constexpr Color ColorWetChasm(109, 138, 174);
+	constexpr Color ColorLavaChasm(255, 0, 0);
+	constexpr Color ColorNotImplemented(255, 0, 255);
 
 	// Colors for wilderness automap pixels.
-	const Color ColorWildWall(109, 69, 32);
-	const Color ColorWildDoor(255, 0, 0);
+	constexpr Color ColorWildWall(109, 69, 32);
+	constexpr Color ColorWildDoor(255, 0, 0);
+
+	// Color for player-authored notes.
+	constexpr Color ColorNote(56, 16, 12);
+	constexpr Color ColorNoteEditing(93, 52, 24);
+
+	constexpr int DialogueDirectionsDetailDrawOrder = 2;
+	constexpr int NoteDrawOrder = DialogueDirectionsDetailDrawOrder + 1;
 
 	TextureAsset getCursorTextureAsset();
 	TextureAsset getCursorPaletteTextureAsset();
@@ -91,12 +98,4 @@ namespace AutomapUiView
 	UiTextureID allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,
 		const VoxelDouble2 &playerDirection, const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
-}
-
-namespace AutomapUiController
-{
-	void onBackToGameButtonSelected(Game &game);
-	void onBackToGameInputAction(const InputActionCallbackValues &values);
-
-	void onMouseButtonHeld(Game &game, MouseButtonType buttonType, Int2 position, double dt, Double2 *automapOffset);
 }
