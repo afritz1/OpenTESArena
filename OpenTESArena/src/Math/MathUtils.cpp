@@ -24,28 +24,30 @@ size_t MathUtils::hashCombine(size_t hash, size_t otherHash)
 	return hash ^ (otherHash + goldenRatioConstant + shiftedHashSum);
 }
 
-double MathUtils::getRealIndex(int bufferSize, double percent)
+int MathUtils::getInterpolatedIndex(int elementCount, double percent)
 {
-	DebugAssert(bufferSize > 0);
-	const double bufferSizeReal = static_cast<double>(bufferSize);
+	if (elementCount <= 0)
+	{
+		return 0;
+	}
 
-	// Keep the real index in the same array bounds (i.e. if bufferSize is 5, the max is 4.999...).
-	const double maxRealIndex = std::max(0.0, bufferSizeReal - Constants::Epsilon);
-	return std::clamp(bufferSizeReal * percent, 0.0, maxRealIndex);
+	const double realIndex = static_cast<double>(elementCount) * percent;
+	const int index = std::clamp(static_cast<int>(realIndex), 0, elementCount - 1);
+	return index;
 }
 
-int MathUtils::getWrappedIndex(int bufferSize, int index)
+int MathUtils::getWrappedIndex(int elementCount, int index)
 {
-	DebugAssert(bufferSize > 0);
+	DebugAssert(elementCount > 0);
 
-	while (index >= bufferSize)
+	while (index >= elementCount)
 	{
-		index -= bufferSize;
+		index -= elementCount;
 	}
 
 	while (index < 0)
 	{
-		index += bufferSize;
+		index += elementCount;
 	}
 
 	return index;

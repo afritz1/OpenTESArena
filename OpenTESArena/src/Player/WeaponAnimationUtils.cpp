@@ -30,6 +30,6 @@ int WeaponAnimationUtils::getFrameIndex(const WeaponAnimationInstance &animInst,
 {
 	DebugAssertIndex(animDef.states, animInst.currentStateIndex);
 	const WeaponAnimationDefinitionState &state = animDef.states[animInst.currentStateIndex];
-	const double realIndex = MathUtils::getRealIndex(state.frameCount, animInst.progressPercent);
-	return state.framesIndex + std::clamp(static_cast<int>(realIndex), 0, state.frameCount - 1);
+	const int interpolatedIndex = MathUtils::getInterpolatedIndex(state.frameCount, animInst.progressPercent);
+	return state.framesIndex + interpolatedIndex;
 }

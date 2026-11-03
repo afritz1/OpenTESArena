@@ -200,7 +200,7 @@ void ChooseClassQuestionsUI::update(double dt)
 	const std::optional<TextureFileMetadataID> scrollAnimTextureFileMetadataID = textureManager.tryGetMetadataID(scrollAnimFilename);
 	const TextureFileMetadata &scrollAnimTextureFileMetadata = textureManager.getMetadataHandle(*scrollAnimTextureFileMetadataID);
 	const int scrollAnimFrameCount = scrollAnimTextureFileMetadata.getTextureCount();
-	const int scrollAnimFrameIndex = MathUtils::getRealIndex(scrollAnimFrameCount, scrollAnimSubPercent);
+	const int scrollAnimFrameIndex = MathUtils::getInterpolatedIndex(scrollAnimFrameCount, scrollAnimSubPercent);
 	const TextureAsset scrollAnimTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
 	const TextureAsset scrollAnimPaletteAsset(ArenaTextureName::CharacterCreation);
 	const UiTextureID scrollAnimTextureID = uiManager.getOrAddTexture(scrollAnimTextureAsset, scrollAnimPaletteAsset, textureManager, renderer);
@@ -237,7 +237,7 @@ void ChooseClassQuestionsUI::update(double dt)
 		const int vfxFrameCount = vfxTextureFileMetadata.getTextureCount();
 		const double vfxTargetSeconds = vfxTextureFileMetadata.getSecondsPerFrame() * vfxFrameCount;
 		const double vfxAnimPercent = std::clamp(state.vfxCurrentSeconds / vfxTargetSeconds, 0.0, 1.0);
-		const int vfxTextureIndex = MathUtils::getRealIndex(vfxFrameCount, vfxAnimPercent);
+		const int vfxTextureIndex = MathUtils::getInterpolatedIndex(vfxFrameCount, vfxAnimPercent);
 		const TextureAsset vfxAnimTextureAsset(vfxSequenceName, vfxTextureIndex);
 		const TextureAsset vfxAnimPaletteAsset(ArenaTextureName::CharacterCreation);
 		const UiTextureID vfxAnimTextureID = uiManager.getOrAddTexture(vfxAnimTextureAsset, vfxAnimPaletteAsset, textureManager, renderer);

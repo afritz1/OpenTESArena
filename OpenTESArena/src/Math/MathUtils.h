@@ -128,12 +128,11 @@ namespace MathUtils
 
 	size_t hashCombine(size_t hash, size_t otherHash);
 
-	// Gets a real (not integer) index in an array from the given percent.
-	double getRealIndex(int bufferSize, double percent);
+	// Gets the integer index of how far into the range the percent reaches.
+	int getInterpolatedIndex(int elementCount, double percent);
 
-	// Gets the wrapped index within the buffer's range. I.e., if the buffer size is 5
-	// and the index is 5, it will return 0.
-	int getWrappedIndex(int bufferSize, int index);
+	// Wraps the index within the range (i.e. if the element count is 5 and the index is 5, it returns 0).
+	int getWrappedIndex(int elementCount, int index);
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	Radians fullAtan2(double y, double x);

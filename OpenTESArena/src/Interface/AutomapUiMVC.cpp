@@ -41,7 +41,7 @@ namespace
 			return AutomapUiView::ColorFloor;
 		}
 
-		const int index = MathUtils::getRealIndex(fogOfWarColors.getCount(), fogOfWarPercent);
+		const int index = MathUtils::getInterpolatedIndex(fogOfWarColors.getCount(), fogOfWarPercent);
 		return fogOfWarColors[index];
 	}
 }
