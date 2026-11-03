@@ -412,6 +412,7 @@ void ChooseClassQuestionsUI::updateBackgroundTexture()
 
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	Span<const uint8_t> classCategoryColors = exeData.charCreation.constellationColors;
+	Span<const uint8_t> constellationIntensities = exeData.charCreation.constellationIntensities;
 	constexpr int classCategorySwapIndices[] = { 2, 1, 0 }; // Category order doesn't match .exe color order.
 
 	// Modify background palette based on constellation intensities.
@@ -419,10 +420,19 @@ void ChooseClassQuestionsUI::updateBackgroundTexture()
 	for (int i = 0; i < static_cast<int>(std::size(classCategoryColors)); i++)
 	{
 		const uint8_t classCategoryColor = classCategoryColors[classCategorySwapIndices[i]];
-		const uint8_t replacementColor = 60 + state.categoryAnswerCounts[i];
+		Color constellationColor = palette[60];
+
+		const int categoryAnswerCount = state.categoryAnswerCounts[i];
+		if (categoryAnswerCount > 0)
+		{
+			const int intensityIndex = categoryAnswerCount - 1;
+			const uint8_t constellationIntensity6Bit = constellationIntensities[intensityIndex];
+			const uint8_t constellationIntensity8Bit = (constellationIntensity6Bit << 2) | (constellationIntensity6Bit >> 4);
+			constellationColor.b = constellationIntensity8Bit;
+		}
+
 		DebugAssertIndex(palette, classCategoryColor);
-		DebugAssertIndex(palette, replacementColor);
-		palette[classCategoryColor] = palette[replacementColor];
+		palette[classCategoryColor] = constellationColor;
 	}
 
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(state.bgImageTextureBuilderID);
