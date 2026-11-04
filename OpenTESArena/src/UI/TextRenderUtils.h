@@ -15,6 +15,8 @@
 
 enum class TextAlignment;
 
+struct Rect;
+
 // Data for generating a texture for rendering text into.
 struct TextRenderTextureGenInfo
 {
@@ -95,6 +97,7 @@ namespace TextRenderUtils
 	// - draw text
 	// - render
 	void drawChar(const FontDefinitionCharacter &fontChar, int dstX, int dstY, Color textColor, Span2D<uint32_t> outBuffer);
+	void drawCursor(const Rect &rect, Color textColor, Span2D<uint32_t> outBuffer);
 	void drawTextLine(Span<const FontDefinitionCharacterID> charIDs, const FontDefinition &fontDef,
 		int dstX, int dstY, Color textColor, Span<const TextRenderTabColorOverrideEntry> tabColorOverrideEntries,
 		const TextRenderShadowInfo *shadow, Span2D<uint32_t> outBuffer);
@@ -102,5 +105,5 @@ namespace TextRenderUtils
 		Color textColor, const Palette *tabColorPalette, const TextRenderShadowInfo *shadow, Span2D<uint32_t> outBuffer);
 	void drawTextLines(Span<const std::string_view> textLines, const FontDefinition &fontDef, int dstX, int dstY,
 		Color textColor, const Palette *tabColorPalette, TextAlignment alignment, int lineSpacing, const TextRenderShadowInfo *shadow,
-		Span2D<uint32_t> outBuffer);
+		bool isCursorVisible, Span2D<uint32_t> outBuffer);
 }

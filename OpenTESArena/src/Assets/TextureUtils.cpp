@@ -343,7 +343,8 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 	const Palette *palette = nullptr; // No tab colors supported in tooltips.
 	constexpr TextAlignment alignment = TextAlignment::TopLeft;
 	const TextRenderShadowInfo *shadow = nullptr;
-	TextRenderUtils::drawTextLines(textLines, fontDef, dstX, dstY, textColor, palette, alignment, lineSpacing, shadow, surfacePixels);
+	constexpr bool isCursorVisible = false;
+	TextRenderUtils::drawTextLines(textLines, fontDef, dstX, dstY, textColor, palette, alignment, lineSpacing, shadow, isCursorVisible, surfacePixels);
 	
 	return surface;
 }

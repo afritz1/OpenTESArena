@@ -35,6 +35,7 @@ DrawOrder=3
 WorstCaseText=WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 FontName=FONT_A.DAT
 TextColor=48,12,12,255
+HasCursor=true
 
 ##################################
 

@@ -42,6 +42,8 @@
 
 namespace
 {
+	static constexpr double TEXT_BOX_CURSOR_PERIOD_SECONDS = 1.0;
+
 	Int2 GetImageContentSize(const UiImage &image, const Renderer &renderer)
 	{
 		const std::optional<Int2> size = renderer.tryGetUiTextureDims(image.textureID);
@@ -544,7 +546,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	const UiTextureID textBoxTextureID = renderer.createUiTexture(textureGenInfo.width, textureGenInfo.height);
 
 	UiTextBox &textBox = this->textBoxes.get(textBoxInstID);
-	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.tabColorPaletteID, textBoxInitInfo.alignment, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
+	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.tabColorPaletteID, textBoxInitInfo.alignment, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing, textBoxInitInfo.hasCursor);
 	textBox.text = textBoxInitInfo.text;
 
 	Int2 contentSize = initInfo.size;
@@ -579,7 +581,15 @@ void UiManager::setTextBoxText(UiElementInstanceID elementInstID, const char *st
 
 	DebugAssert(element.type == UiElementType::TextBox);
 	UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+
+	const bool isTextGrowing = std::strlen(str) > textBox.text.length();
 	textBox.text = str;
+
+	if (textBox.hasCursor && isTextGrowing)
+	{
+		textBox.cursorCurrentSeconds = 0.0; // Reset blink for visual stability.
+	}
+
 	textBox.dirty = true;
 }
 
@@ -629,6 +639,16 @@ void UiManager::resizeTextBox(UiElementInstanceID elementInstID, int newWidth, i
 		textBox.textureHeight = newHeight;
 	}
 
+	textBox.dirty = true;
+}
+
+void UiManager::setTextBoxHasCursor(UiElementInstanceID elementInstID, bool hasCursor)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::TextBox);
+	UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+	textBox.hasCursor = hasCursor;
 	textBox.dirty = true;
 }
 
@@ -1223,6 +1243,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		initInfo.alignment = def.alignment;
 		initInfo.shadowInfo = def.shadowInfo;
 		initInfo.lineSpacing = def.lineSpacing;
+		initInfo.hasCursor = def.hasCursor;
 		return initInfo;
 	};
 
@@ -1601,6 +1622,24 @@ void UiManager::update(double dt, Game &game)
 	// Update dirty text boxes.
 	for (UiTextBox &textBox : this->textBoxes.values)
 	{
+		constexpr double cursorPeriodSeconds = TEXT_BOX_CURSOR_PERIOD_SECONDS;
+		if (textBox.hasCursor)
+		{
+			const double oldCursorSeconds = textBox.cursorCurrentSeconds;
+			textBox.cursorCurrentSeconds += dt;
+			const double newCursorSeconds = textBox.cursorCurrentSeconds;
+
+			constexpr double cursorHalfPeriodSeconds = cursorPeriodSeconds / 2.0;
+			const bool isCursorTurningOn = (oldCursorSeconds < cursorPeriodSeconds) && (newCursorSeconds >= cursorPeriodSeconds);
+			const bool isCursorTurningOff = (oldCursorSeconds < cursorHalfPeriodSeconds) && (newCursorSeconds >= cursorHalfPeriodSeconds);
+			textBox.dirty |= isCursorTurningOn || isCursorTurningOff;
+
+			if (textBox.cursorCurrentSeconds >= cursorPeriodSeconds)
+			{
+				textBox.cursorCurrentSeconds = std::fmod(textBox.cursorCurrentSeconds, cursorPeriodSeconds);
+			}
+		}
+
 		if (!textBox.dirty)
 		{
 			continue;
@@ -1617,16 +1656,21 @@ void UiManager::update(double dt, Game &game)
 		Span2D<uint32_t> texels = lockedTexture.getTexels32();
 		texels.fill(0);
 
-		if (!textBox.text.empty())
-		{
-			const FontLibrary &fontLibrary = FontLibrary::getInstance();
-			const FontDefinition &fontDef = fontLibrary.getDefinition(textBox.fontDefIndex);
+		const FontLibrary &fontLibrary = FontLibrary::getInstance();
+		const FontDefinition &fontDef = fontLibrary.getDefinition(textBox.fontDefIndex);
 
-			const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(textBox.text);
-			const Palette *tabColorPalette = (textBox.tabColorPaletteID >= 0) ? &textureManager.getPaletteHandle(textBox.tabColorPaletteID) : nullptr;
-			const TextRenderShadowInfo *shadowInfoPtr = textBox.shadowInfo.has_value() ? &(*textBox.shadowInfo) : nullptr;
-			TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, textBox.defaultColor, tabColorPalette, textBox.alignment, textBox.lineSpacing, shadowInfoPtr, texels);
+		const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(textBox.text);
+		const Palette *tabColorPalette = (textBox.tabColorPaletteID >= 0) ? &textureManager.getPaletteHandle(textBox.tabColorPaletteID) : nullptr;
+		const TextRenderShadowInfo *shadowInfoPtr = textBox.shadowInfo.has_value() ? &(*textBox.shadowInfo) : nullptr;
+
+		bool isCursorVisible = false;
+		if (textBox.hasCursor)
+		{
+			const double cursorPeriodPercent = std::clamp(textBox.cursorCurrentSeconds / cursorPeriodSeconds, 0.0, 1.0);
+			isCursorVisible = cursorPeriodPercent < 0.50;
 		}
+
+		TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, textBox.defaultColor, tabColorPalette, textBox.alignment, textBox.lineSpacing, shadowInfoPtr, isCursorVisible, texels);
 
 		renderer.unlockUiTexture(textBoxTextureID);
 		textBox.dirty = false;

@@ -3,6 +3,7 @@
 
 #include "TextAlignment.h"
 #include "TextRenderUtils.h"
+#include "../Math/Rect.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -270,6 +271,8 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(Span<const std::string_view> 
 
 void TextRenderUtils::drawChar(const FontDefinitionCharacter &fontChar, int dstX, int dstY, Color textColor, Span2D<uint32_t> outBuffer)
 {
+	const uint32_t dstColor = textColor.toRGBA();
+
 	// @todo: clip loop ranges instead of checking in loop.
 	for (int y = dstY; y < (dstY + fontChar.getHeight()); y++)
 	{
@@ -282,9 +285,24 @@ void TextRenderUtils::drawChar(const FontDefinitionCharacter &fontChar, int dstX
 				const bool srcPixelIsColored = fontChar.get(srcX, srcY);
 				if (srcPixelIsColored)
 				{
-					const uint32_t dstPixel = textColor.toRGBA();
-					outBuffer.set(x, y, dstPixel);
+					outBuffer.set(x, y, dstColor);
 				}
+			}
+		}
+	}
+}
+
+void TextRenderUtils::drawCursor(const Rect &rect, Color textColor, Span2D<uint32_t> outBuffer)
+{
+	const uint32_t dstColor = textColor.toRGBA();
+
+	for (int y = rect.getTop(); y < rect.getBottom(); y++)
+	{
+		for (int x = rect.getLeft(); x < rect.getRight(); x++)
+		{
+			if ((x >= 0) && (x < outBuffer.getWidth()) && (y >= 0) && (y < outBuffer.getHeight()))
+			{
+				outBuffer.set(x, y, dstColor);
 			}
 		}
 	}
@@ -352,7 +370,8 @@ void TextRenderUtils::drawTextLine(const std::string_view line, const FontDefini
 }
 
 void TextRenderUtils::drawTextLines(Span<const std::string_view> textLines, const FontDefinition &fontDef, int dstX, int dstY,
-	Color textColor, const Palette *tabColorPalette, TextAlignment alignment, int lineSpacing, const TextRenderShadowInfo *shadow, Span2D<uint32_t> outBuffer)
+	Color textColor, const Palette *tabColorPalette, TextAlignment alignment, int lineSpacing, const TextRenderShadowInfo *shadow,
+	bool isCursorVisible, Span2D<uint32_t> outBuffer)
 {
 	// @todo: should pass std::optional parameter instead
 	std::optional<TextRenderShadowInfo> shadowInfo;
@@ -373,5 +392,35 @@ void TextRenderUtils::drawTextLines(Span<const std::string_view> textLines, cons
 		const std::string_view textLine = textLines[i];
 		const Int2 offset = offsets[i];
 		TextRenderUtils::drawTextLine(textLine, fontDef, dstX + offset.x, dstY + offset.y, textColor, tabColorPalette, shadow, outBuffer);
+	}
+
+	if (isCursorVisible)
+	{
+		Int2 cursorOffset(dstX, dstY);
+
+		if (textLines.getCount() > 0)
+		{
+			const Int2 lastOffset = offsets[offsets.getCount() - 1];
+			cursorOffset.x += lastOffset.x;
+			cursorOffset.y += lastOffset.y;
+
+			const std::string_view lastTextLine = textLines[textLines.getCount() - 1];
+			const Buffer<FontDefinitionCharacterID> lastLineCharIDs = TextRenderUtils::getLineFontCharIDs(lastTextLine, fontDef);
+			for (const FontDefinitionCharacterID charID : lastLineCharIDs)
+			{
+				cursorOffset.x += fontDef.getCharacter(charID).getWidth();
+			}
+		}
+
+		FontDefinitionCharacterID spaceFontDefCharID;
+		if (!fontDef.tryGetCharacterID(" ", &spaceFontDefCharID))
+		{
+			DebugLogErrorFormat("Couldn't get font character for drawing cursor.");
+			return;
+		}
+
+		const FontDefinitionCharacter &spaceFontDefChar = fontDef.getCharacter(spaceFontDefCharID);
+		const Rect cursorRect(cursorOffset.x, cursorOffset.y, spaceFontDefChar.getWidth(), spaceFontDefChar.getHeight());
+		TextRenderUtils::drawCursor(cursorRect, textColor, outBuffer);
 	}
 }

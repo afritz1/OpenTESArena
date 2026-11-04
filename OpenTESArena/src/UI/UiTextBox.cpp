@@ -10,6 +10,7 @@ UiTextBoxInitInfo::UiTextBoxInitInfo()
 	this->tabColorPaletteID = -1;
 	this->alignment = TextAlignment::TopLeft;
 	this->lineSpacing = 0;
+	this->hasCursor = false;
 }
 
 UiTextBox::UiTextBox()
@@ -22,10 +23,13 @@ UiTextBox::UiTextBox()
 	this->tabColorPaletteID = -1;
 	this->alignment = TextAlignment::TopLeft;
 	this->lineSpacing = -1;
+	this->hasCursor = false;
+	this->cursorCurrentSeconds = 0.0;
 }
 
 void UiTextBox::init(UiTextureID textureID, int textureWidth, int textureHeight, int fontDefIndex, const Color &defaultColor,
-	PaletteID tabColorPaletteID, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing)
+	PaletteID tabColorPaletteID, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing,
+	bool hasCursor)
 {
 	DebugAssert(textureID >= 0);
 	DebugAssert(textureWidth > 0);
@@ -42,6 +46,8 @@ void UiTextBox::init(UiTextureID textureID, int textureWidth, int textureHeight,
 	this->alignment = alignment;
 	this->shadowInfo = shadowInfo;
 	this->lineSpacing = lineSpacing;
+	this->hasCursor = hasCursor;
+	this->cursorCurrentSeconds = 0.0;
 }
 
 void UiTextBox::free(Renderer &renderer)

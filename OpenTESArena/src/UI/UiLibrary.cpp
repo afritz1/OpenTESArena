@@ -68,7 +68,8 @@ namespace
 	const std::string Keyword_TextBoxAlignment = "TextAlignment";
 	const std::string Keyword_TextBoxShadowInfo = "Shadow";
 	const std::string Keyword_TextBoxLineSpacing = "LineSpacing";
-	const std::string ValidTextBoxKeys[] = { Keyword_TextBoxWorstCaseText, Keyword_TextBoxText, Keyword_TextBoxFontName, Keyword_TextBoxDefaultColor, Keyword_TextBoxAlignment, Keyword_TextBoxShadowInfo, Keyword_TextBoxLineSpacing };
+	const std::string Keyword_TextBoxHasCursor = "HasCursor";
+	const std::string ValidTextBoxKeys[] = { Keyword_TextBoxWorstCaseText, Keyword_TextBoxText, Keyword_TextBoxFontName, Keyword_TextBoxDefaultColor, Keyword_TextBoxAlignment, Keyword_TextBoxShadowInfo, Keyword_TextBoxLineSpacing, Keyword_TextBoxHasCursor };
 
 	const std::string Keyword_ListBoxTextureSize = "TextureSize";
 	const std::string Keyword_ListBoxItemPixelSpacing = "ItemSpacing";
@@ -772,6 +773,17 @@ namespace
 
 			outTextBoxDef->lineSpacing = lineSpacing;
 		}
+		else if (key == Keyword_TextBoxHasCursor)
+		{
+			bool hasCursor;
+			if (!TryParseBoolean(value, &hasCursor))
+			{
+				DebugLogErrorFormat("Couldn't parse has cursor value \"%s\".", value.c_str());
+				return false;
+			}
+			
+			outTextBoxDef->hasCursor = hasCursor;
+		}
 		else
 		{
 			DebugLogErrorFormat("Unrecognized text box key \"%s\".", key.c_str());
@@ -1060,6 +1072,7 @@ void UiTextBoxDefinition::clear()
 	this->alignment = TextAlignment::TopLeft;
 	this->shadowInfo = std::nullopt;
 	this->lineSpacing = 0;
+	this->hasCursor = false;
 }
 
 UiListBoxDefinition::UiListBoxDefinition()

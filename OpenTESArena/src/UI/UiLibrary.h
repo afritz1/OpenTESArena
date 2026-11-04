@@ -73,6 +73,7 @@ struct UiTextBoxDefinition
 	TextAlignment alignment;
 	std::optional<TextRenderShadowInfo> shadowInfo;
 	int lineSpacing;
+	bool hasCursor;
 
 	void clear();
 };

@@ -287,6 +287,7 @@ void AutomapUI::beginNote(Int2 originalPosition)
 	entryTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(AutomapNoteEntry::MAX_CHARACTERS);
 	entryTextBoxInitInfo.fontName = ArenaFontName::S;
 	entryTextBoxInitInfo.defaultColor = AutomapUiView::ColorNoteEditing;
+	entryTextBoxInitInfo.hasCursor = true;
 	state.currentNoteElementInstID = uiManager.createTextBox(entryElementInitInfo, entryTextBoxInitInfo, state.contextInstID, game.renderer);
 
 	state.currentNote.clear();
@@ -309,6 +310,7 @@ void AutomapUI::confirmNote()
 	if (!state.currentNote.empty())
 	{
 		uiManager.setTextBoxColor(state.currentNoteElementInstID, AutomapUiView::ColorNote);
+		uiManager.setTextBoxHasCursor(state.currentNoteElementInstID, false);
 
 		GameState &gameState = game.gameState;
 		const Rect noteTextBoxRect = uiManager.getTransformGlobalRect(state.currentNoteElementInstID);
@@ -404,7 +406,10 @@ void AutomapUI::onMouseButtonChanged(Game &game, MouseButtonType type, Int2 posi
 	}
 	else if (type == MouseButtonType::Right)
 	{
-		AutomapUI::cancelNote();
+		if (inputManager.isInTextEntryMode())
+		{
+			AutomapUI::cancelNote();
+		}
 	}
 }
 

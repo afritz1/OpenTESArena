@@ -22,6 +22,7 @@ struct UiTextBoxInitInfo
 	TextAlignment alignment;
 	std::optional<TextRenderShadowInfo> shadowInfo;
 	int lineSpacing;
+	bool hasCursor;
 
 	UiTextBoxInitInfo();
 };
@@ -42,10 +43,14 @@ struct UiTextBox
 	std::optional<TextRenderShadowInfo> shadowInfo;
 	int lineSpacing; // Pixels between each line of text.
 
+	bool hasCursor;
+	double cursorCurrentSeconds;
+
 	UiTextBox();
 
 	void init(UiTextureID textureID, int textureWidth, int textureHeight, int fontDefIndex, const Color &defaultColor,
-		PaletteID tabColorPaletteID, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing);
+		PaletteID tabColorPaletteID, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing,
+		bool hasCursor);
 
 	void free(Renderer &renderer);
 };
