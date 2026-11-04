@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "FontLibrary.h"
 #include "GuiUtils.h"
 #include "Surface.h"
