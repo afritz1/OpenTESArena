@@ -26,7 +26,14 @@ TextAlignment=TopCenter
 
 ##################################
 
-# Exit
+[AutomapRecenterButton]
+Type=Button
+Position=262,39
+Size=19,19
+Pivot=TopLeft
+Callback=AutomapUI.onRecenterButtonSelected
+
+##################################
 
 [AutomapExitButton]
 Type=Button

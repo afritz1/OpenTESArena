@@ -54,6 +54,7 @@ namespace AutomapUI
 	void onMouseButtonHeld(Game &game, MouseButtonType buttonType, Int2 position, double dt);
 	void onTextInput(const std::string_view text);
 
+	void onRecenterButtonSelected(MouseButtonType mouseButtonType);
 	void onExitButtonSelected(MouseButtonType mouseButtonType);
 
 	void onAcceptInputAction(const InputActionCallbackValues &values);
@@ -62,6 +63,7 @@ namespace AutomapUI
 
 	constexpr std::pair<const char*, UiButtonDefinitionCallback> ButtonCallbacks[] =
 	{
+		DECLARE_UI_FUNC(AutomapUI, onRecenterButtonSelected),
 		DECLARE_UI_FUNC(AutomapUI, onExitButtonSelected)
 	};
 

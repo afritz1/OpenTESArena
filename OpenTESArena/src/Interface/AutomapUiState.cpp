@@ -11,6 +11,7 @@
 namespace
 {
 	constexpr char AutomapTextureElementName[] = "AutomapTexture";
+	constexpr char AutomapRecenterButtonElementName[] = "AutomapRecenterButton";
 	constexpr char AutomapExitButtonElementName[] = "AutomapExitButton";
 
 	std::string GetAutomapDirectionsDetailEntryElementName(const DialogueDirectionsDetailEntry &entry)
@@ -21,6 +22,14 @@ namespace
 	std::string GetAutomapNoteEntryElementName(int entryIndex)
 	{
 		return String::format("AutomapNoteEntry_%d", entryIndex);
+	}
+
+	Double2 MakePlayerCenteredAutomapOffset(const Player &player)
+	{
+		const CoordDouble3 playerCoord = player.getEyeCoord();
+		const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
+		const CoordInt2 playerCoordXZ(playerCoord.chunk, playerVoxelXZ);
+		return AutomapUiModel::makeAutomapOffset(playerCoordXZ.voxel);
 	}
 
 	Int2 MakeAutomapTransformPosition(Double2 offset)
@@ -81,15 +90,15 @@ void AutomapUiState::init(Game &game)
 	this->game = &game;
 
 	const Player &player = game.player;
+	this->automapOffset = MakePlayerCenteredAutomapOffset(player);
+
 	const CoordDouble3 playerCoord = player.getEyeCoord();
-	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
-	const CoordInt2 playerCoordXZ(playerCoord.chunk, playerVoxelXZ);
-	this->automapOffset = AutomapUiModel::makeAutomapOffset(playerCoordXZ.voxel);
+	const CoordInt2 playerVoxelCoordXZ(playerCoord.chunk, VoxelUtils::pointToVoxel(playerCoord.point.getXZ()));
 
 	const SceneManager &sceneManager = game.sceneManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	Renderer &renderer = game.renderer;
-	this->mapTextureID = AutomapUiView::allocMapTexture(game, playerCoordXZ, player.getGroundDirectionXZ(), voxelChunkManager, renderer);
+	this->mapTextureID = AutomapUiView::allocMapTexture(game, playerVoxelCoordXZ, player.getGroundDirectionXZ(), voxelChunkManager, renderer);
 
 	TextureManager &textureManager = game.textureManager;
 	this->cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);
@@ -324,7 +333,7 @@ void AutomapUI::confirmNote()
 
 			state.gameWorldNotes.emplace(state.currentNoteElementInstID, gameState.getAutomapNoteEntries().getCount());
 		}
-		
+
 		gameState.addAutomapNoteEntry(notePosition, state.currentNote, state.isCurrentNoteInGameWorld);
 	}
 	else
@@ -373,6 +382,7 @@ void AutomapUI::onMouseButtonChanged(Game &game, MouseButtonType type, Int2 posi
 			return;
 		}
 
+		const UiElementInstanceID recenterButtonElementInstID = uiManager.getElementByName(AutomapRecenterButtonElementName);
 		const UiElementInstanceID exitButtonElementInstID = uiManager.getElementByName(AutomapExitButtonElementName);
 
 		const Rect disallowedRegions[] =
@@ -381,6 +391,7 @@ void AutomapUI::onMouseButtonChanged(Game &game, MouseButtonType type, Int2 posi
 			AutomapUiView::CompassDownRegion,
 			AutomapUiView::CompassLeftRegion,
 			AutomapUiView::CompassRightRegion,
+			uiManager.getTransformGlobalRect(recenterButtonElementInstID),
 			uiManager.getTransformGlobalRect(exitButtonElementInstID)
 		};
 
@@ -402,7 +413,6 @@ void AutomapUI::onMouseButtonChanged(Game &game, MouseButtonType type, Int2 posi
 		}
 
 		AutomapUI::beginNote(originalPosition);
-
 	}
 	else if (type == MouseButtonType::Right)
 	{
@@ -475,6 +485,13 @@ void AutomapUI::onAcceptInputAction(const InputActionCallbackValues &values)
 	}
 
 	AutomapUI::confirmNote();
+}
+
+void AutomapUI::onRecenterButtonSelected(MouseButtonType mouseButtonType)
+{
+	AutomapUiState &state = AutomapUI::state;
+	Game &game = *state.game;
+	state.automapOffset = MakePlayerCenteredAutomapOffset(game.player);
 }
 
 void AutomapUI::onExitButtonSelected(MouseButtonType mouseButtonType)
