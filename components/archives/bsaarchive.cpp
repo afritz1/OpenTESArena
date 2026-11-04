@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "bsaarchive.hpp"
+#include "../debug/Debug.h"
 #include "../dos/DOSUtils.h"
 
 namespace Archives
@@ -14,8 +15,11 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
     std::vector<Entry> entries; entries.reserve(count);
 
     std::streamsize base = stream.tellg();
-    if(!stream.seekg(std::streampos(count) * -18, std::ios_base::end))
-        throw std::runtime_error("Failed to seek to archive footer ("+std::to_string(count)+" entries)");
+    if (!stream.seekg(std::streampos(count) * -18, std::ios_base::end))
+    {
+        DebugLogErrorFormat("Failed to seek to archive footer (%d entries)", count);
+        return;
+    }
 
     for(size_t i = 0;i < count;++i)
     {
@@ -26,8 +30,11 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
         names.emplace_back(std::string(name));
 
         const bool isCompressed = read_le16(stream) != 0;
-        if(isCompressed)
-            throw std::runtime_error("Compressed entries not supported");
+        if (isCompressed)
+        {
+            DebugLogError("Compressed entries not supported");
+            continue;
+        }
 
         Entry entry;
         entry.mStart = (i == 0) ? base : entries[i-1].mEnd;
@@ -35,8 +42,11 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
         entries.emplace_back(std::move(entry));
     }
 
-    if(!stream.good())
-        throw std::runtime_error("Failed reading archive footer");
+    if (!stream.good())
+    {
+        DebugLogError("Failed reading archive footer");
+        return;
+    }
 
     for(const std::string &name : names)
     {
@@ -58,8 +68,11 @@ void BsaArchive::load(const std::string &fname)
     mFilename = fname;
 
     std::ifstream stream(mFilename, std::ios::binary);
-    if(!stream.is_open())
-        throw std::runtime_error("Failed to open "+mFilename);
+    if (!stream.is_open())
+    {
+        DebugLogErrorFormat("Failed to open %s.", mFilename.c_str());
+        return;
+    }
 
     size_t count = read_le16(stream);
 
