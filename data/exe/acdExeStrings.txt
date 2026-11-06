@@ -91,6 +91,8 @@ ObjectPronouns=0x39CAF
 PossessivePronouns=0x39CBA
 CardinalDirections=0x39CC6
 DirectionIsCityOnly=0x43E9A
+DayLetters=0x3D65E
+NightLetters=0x4288B
 
 [Entities]
 AttributeNames=0x3E500

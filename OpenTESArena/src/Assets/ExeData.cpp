@@ -481,6 +481,8 @@ bool ExeDataDialogue::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int possessivePronounsOffset = GetExeAddress(*section, "PossessivePronouns");
 	const int cardinalDirectionsOffset = GetExeAddress(*section, "CardinalDirections");
 	const int directionIsCityOnlyOffset = GetExeAddress(*section, "DirectionIsCityOnly");
+	const int dayLettersOffset = GetExeAddress(*section, "DayLetters");
+	const int nightLettersOffset = GetExeAddress(*section, "NightLetters");
 
 	initStringArrayNullTerminated(this->neighborWarPeace, exeBytes, neighborWarPeaceOffset);
 	initStringArrayNullTerminated(this->subjectPronouns, exeBytes, subjectPronounsOffset);
@@ -488,6 +490,8 @@ bool ExeDataDialogue::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	initStringArrayNullTerminated(this->possessivePronouns, exeBytes, possessivePronounsOffset);
 	initStringArrayNullTerminated(this->cardinalDirections, exeBytes, cardinalDirectionsOffset);
 	this->directionIsCityOnly = GetExeStringNullTerminated(exeBytes, directionIsCityOnlyOffset);
+	initInt8Array(this->dayLetters, exeBytes, dayLettersOffset);
+	initInt8Array(this->nightLetters, exeBytes, nightLettersOffset);
 
 	return true;
 }

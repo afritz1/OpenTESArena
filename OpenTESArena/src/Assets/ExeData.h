@@ -156,6 +156,10 @@ struct ExeDataDialogue
 
 	std::string directionIsCityOnly; // When a wilderness NPC says a building is only in the city.
 
+	// TEMPLATE.DAT entry letters for seasonal/weather-specific popups.
+	char dayLetters[32];
+	char nightLetters[4];
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
