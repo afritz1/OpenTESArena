@@ -160,9 +160,9 @@ enum class ArenaDoorType
 // Climate determines the textures and allowed weathers at an exterior world map location.
 enum class ArenaClimateType
 {
-	Temperate,
-	Desert,
-	Mountain
+	Temperate = 0,
+	Desert = 1,
+	Mountain = 2
 };
 
 // A unique identifier for each kind of weather. These can have an effect on the sky colors,

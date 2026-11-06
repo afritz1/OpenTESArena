@@ -10,6 +10,8 @@
 
 class ArenaRandom;
 
+enum class WeatherType;
+
 namespace ArenaInteriorUtils
 {
 	// Number of voxels high all interiors are.
@@ -45,4 +47,7 @@ namespace ArenaInteriorUtils
 	bool isPlayerTrespassing(ArenaBuildingType buildingType, bool isNight);
 
 	int getServiceQuality(uint16_t doorVoxelOffset, ArenaCityType cityType, const ExeData &exeData, ArenaRandom &random);
+
+	// Used with TEMPLATE.DAT entries that depend on the season and weather like store entrances and some ruler text.
+	char getTemplateDatVariantLetter(bool isDaytime, int seasonIndex, WeatherType weatherType);
 }

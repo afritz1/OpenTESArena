@@ -253,7 +253,7 @@ const ArenaTemplateDatEntry &ArenaTemplateDat::getEntry(int key, char letter) co
 	return *letterIter;
 }
 
-const ArenaTemplateDatEntry &ArenaTemplateDat::getTilesetEntry(int tileset, int key, char letter) const
+const ArenaTemplateDatEntry *ArenaTemplateDat::findTilesetEntry(int tileset, int key, char letter) const
 {
 	DebugAssertIndex(this->entryLists, tileset);
 	const Span<const ArenaTemplateDatEntry> entryList = this->entryLists[tileset];
@@ -280,10 +280,21 @@ const ArenaTemplateDatEntry &ArenaTemplateDat::getTilesetEntry(int tileset, int 
 
 	if (letterIter == upperIter)
 	{
+		return nullptr;
+	}
+
+	return &(*letterIter);
+}
+
+const ArenaTemplateDatEntry &ArenaTemplateDat::getTilesetEntry(int tileset, int key, char letter) const
+{
+	const ArenaTemplateDatEntry *entry = this->findTilesetEntry(tileset, key, letter);
+	if (entry == nullptr)
+	{
 		DebugCrashFormat("No TEMPLATE.DAT entry for \"%d, %d, %d\".", tileset, key, letter);
 	}
 
-	return *letterIter;
+	return *entry;
 }
 
 bool ArenaTemplateDat::init()

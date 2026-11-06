@@ -53,6 +53,7 @@ private:
 public:
 	const ArenaTemplateDatEntry &getEntry(int key) const;
 	const ArenaTemplateDatEntry &getEntry(int key, char letter) const;
+	const ArenaTemplateDatEntry *findTilesetEntry(int tileset, int key, char letter) const;
 	const ArenaTemplateDatEntry &getTilesetEntry(int tileset, int key, char letter) const;
 
 	bool init();

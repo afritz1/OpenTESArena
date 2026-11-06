@@ -1274,7 +1274,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	}
 
 	const int currentDay = this->date.getDay();
-	const bool isNightForEncounters = (newHour < 6) || (newHour > 18);
+	const bool isNightForEncounters = ArenaClockUtils::isNightForEncounters(newHour);
 	const ArenaEnvironmentType environmentType = this->getEnvironmentType();
 	const ArenaBuildingType buildingType = this->getBuildingType();
 	const Player &player = game.player;
@@ -1324,7 +1324,7 @@ void GameState::tickGameClock(double dt, Game &game)
 		// Roll for random encounter.
 		//@todo: The original game checks for trespassing at the moment of entering an interior, not every hour as done here.
 		const bool isTrespassing = ArenaInteriorUtils::isPlayerTrespassing(buildingType, isNightForEncounters);
-		const int terrainType = 0; //@todo: Pass in terrain type
+		const int terrainType = 0; //@todo: Pass in terrain type (temperate/desert/mountain?)
 		int encounterChance;
 		int encounterChanceTableIndex;
 		ArenaEntityUtils::getEncounterParameters(environmentType, buildingType, isTrespassing, isPlayerCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);

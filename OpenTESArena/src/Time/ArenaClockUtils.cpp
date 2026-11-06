@@ -25,6 +25,11 @@ bool ArenaClockUtils::nightLightsAreActive(const Clock &clock)
 	return isBeforeLamppostDeactivate || isAfterLamppostActivate;
 }
 
+bool ArenaClockUtils::isNightForEncounters(int hours)
+{
+	return (hours < 6) || (hours > 18);
+}
+
 bool ArenaClockUtils::isDaytimeFogActive(const Clock &clock)
 {
 	const ClockLibrary &clockLibrary = ClockLibrary::getInstance();

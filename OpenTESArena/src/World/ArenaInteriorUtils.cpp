@@ -1,5 +1,7 @@
 #include "ArenaInteriorUtils.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Math/Random.h"
+#include "../Weather/WeatherDefinition.h"
 
 #include "components/debug/Debug.h"
 
@@ -144,4 +146,40 @@ int ArenaInteriorUtils::getServiceQuality(uint16_t doorVoxelOffset, ArenaCityTyp
 	random.srand(savedSeed);
 
 	return result;
+}
+
+char ArenaInteriorUtils::getTemplateDatVariantLetter(bool isDaytime, int seasonIndex, WeatherType weatherType)
+{
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	if (isDaytime)
+	{
+		const bool isOvercast = weatherType == WeatherType::Overcast;
+		const bool isRain = weatherType == WeatherType::Rain;
+		const bool isSnow = weatherType == WeatherType::Snow;
+
+		int weatherOffset = 0;
+		if (isOvercast || isRain)
+		{
+			weatherOffset = 1;
+		}
+		else if (isSnow)
+		{
+			weatherOffset = 2;
+		}
+
+		if (isRain || isSnow)
+		{
+			weatherOffset += 4;
+		}
+
+		const int dayLettersIndex = weatherOffset + (seasonIndex * 8);
+		DebugAssertIndex(exeData.dialogue.dayLetters, dayLettersIndex);
+		return exeData.dialogue.dayLetters[dayLettersIndex];
+	}
+	else
+	{
+		DebugAssertIndex(exeData.dialogue.nightLetters, seasonIndex);
+		return exeData.dialogue.nightLetters[seasonIndex];
+	}
 }

@@ -1,3 +1,4 @@
+#include "ArenaInteriorUtils.h"
 #include "MapLogic.h"
 #include "MapType.h"
 #include "../Assets/ArenaPaletteName.h"
@@ -16,6 +17,8 @@
 #include "../Time/ArenaClockUtils.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Voxels/VoxelFacing.h"
+
+#include "components/utilities/String.h"
 
 void MapLogic::handleNightLightChange(Game &game, bool active)
 {
@@ -42,7 +45,7 @@ void MapLogic::handleNightLightChange(Game &game, bool active)
 				}
 
 				EntityAnimationInstance &entityAnimInst = entityChunkManager.animInsts.get(entityInst.animInstID);
-				entityAnimInst.setStateIndex(*newAnimStateIndex);				
+				entityAnimInst.setStateIndex(*newAnimStateIndex);
 			}
 		}
 	}
@@ -406,6 +409,47 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 
 			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord, playerStartOffset, std::nullopt, false, overrideWeather);
 			gameState.queueMusicOnSceneChange(musicFunc);
+
+			// Order of interiors matters for pop-up lookup.
+			constexpr ArenaInteriorType interiorsWithEntrancePopUps[] =
+			{
+				ArenaInteriorType::Palace,
+				ArenaInteriorType::MagesGuild,
+				ArenaInteriorType::Tavern,
+				ArenaInteriorType::Temple,
+				ArenaInteriorType::Equipment
+			};
+
+			const auto storeEntranceIter = std::find(std::begin(interiorsWithEntrancePopUps), std::end(interiorsWithEntrancePopUps), interiorGenInfo.interiorType);
+			const bool isInteriorValidForEntrancePopUp = storeEntranceIter != std::end(interiorsWithEntrancePopUps);
+			if (isInteriorValidForEntrancePopUp)
+			{
+				const ArenaBuildingType buildingType = ArenaTypes::interiorTypeToBuildingType(*storeEntranceIter);
+				const bool isNight = ArenaClockUtils::isNightForEncounters(gameState.getClock().hours);
+				const bool isEntrancePopUpAllowed = !ArenaInteriorUtils::isPlayerTrespassing(buildingType, isNight);
+				if (isEntrancePopUpAllowed)
+				{
+					const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;
+					const bool isDaytime = !isNight;
+					const int seasonIndex = gameState.getDate().getSeason();
+					const WeatherType weatherType = gameState.getWeatherDefinition().type;
+
+					const int tilesetIndex = static_cast<int>(cityDef.climateType);
+					const int entryIndex = static_cast<int>(std::distance(std::begin(interiorsWithEntrancePopUps), storeEntranceIter));
+					const char entryLetter = ArenaInteriorUtils::getTemplateDatVariantLetter(isDaytime, seasonIndex, weatherType);
+
+					// Lookup might fail due to no night entries defined.
+					const ArenaTemplateDatEntry *templateDatEntry = templateDat.findTilesetEntry(tilesetIndex, entryIndex, entryLetter);
+					if (templateDatEntry != nullptr)
+					{
+						Span<const std::string> entryTexts = templateDatEntry->values;
+						const std::string &entryText = entryTexts[game.random.next(entryTexts.getCount())];
+						const std::string entrySubstitutedText = String::distributeNewlines(entryText, 60);
+						//const std::string entrySubstitutedText = game.dialogueManager.getSubstitutedText(entryText.c_str()); // @todo make substituted text work without an entityInstID
+						GameWorldUI::showTextPopUp(entrySubstitutedText.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
+					}
+				}
+			}
 		}
 		else if (transitionType == TransitionType::CityGate)
 		{
@@ -608,7 +652,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		return;
 	}
 
-	const VoxelTraitsDefID voxelTraitsDefID = chunk.traitsDefIDs.get(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);	
+	const VoxelTraitsDefID voxelTraitsDefID = chunk.traitsDefIDs.get(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
 	const VoxelTraitsDefinition &voxelTraitsDef = chunk.traitsDefs[voxelTraitsDefID];
 	if (voxelTraitsDef.type != ArenaVoxelType::Wall)
 	{
