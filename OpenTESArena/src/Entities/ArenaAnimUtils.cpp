@@ -727,9 +727,9 @@ bool ArenaAnimUtils::isWildernessDen(ArenaItemIndex itemIndex, MapType mapType)
 	return (itemIndex == 15) && (mapType == MapType::Wilderness);
 }
 
-bool ArenaAnimUtils::isWildernessBoat(ArenaItemIndex itemIndex, MapType mapType)
+bool ArenaAnimUtils::isBoat(ArenaItemIndex itemIndex)
 {
-	return (itemIndex == 14) && (mapType == MapType::Wilderness);
+	return itemIndex == 14;
 }
 
 std::optional<ArenaNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex)
@@ -1102,7 +1102,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaFlatIndex flatIndex, MapType 
 	const bool isRuler = interiorType.has_value() && ArenaAnimUtils::isRulerFlatIndex(flatIndex, *interiorType);
 	const bool isStreetlight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, mapType);
 	const bool isLockableChest = ArenaAnimUtils::isLockableContainerFlatIndex(flatIndex, inf);
-	const bool isBoat = optItemIndex.has_value() && ArenaAnimUtils::isWildernessBoat(*optItemIndex, mapType);
+	const bool isBoat = optItemIndex.has_value() && ArenaAnimUtils::isBoat(*optItemIndex);
 	if (isRuler)
 	{
 		DebugAssert(rulerIsMale.has_value());

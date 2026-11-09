@@ -113,7 +113,7 @@ namespace ArenaAnimUtils
 	bool isWildernessDen(ArenaItemIndex itemIndex, MapType mapType);
 	
 	constexpr ArenaItemIndex BoatItemIndex = 14;
-	bool isWildernessBoat(ArenaItemIndex itemIndex, MapType mapType);
+	bool isBoat(ArenaItemIndex itemIndex);
 
 	// For NPCs that can talk about themselves/directions/rumors.
 	std::optional<ArenaNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex);

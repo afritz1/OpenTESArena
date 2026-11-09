@@ -246,7 +246,7 @@ namespace MapGeneration
 			isKey = *optItemIndex == ArenaAnimUtils::KeyItemIndex;
 			isQuestItem = *optItemIndex == ArenaAnimUtils::QuestItemIndex;
 			isTransition = ArenaAnimUtils::isWildernessDen(*optItemIndex, mapType);
-			isBoat = ArenaAnimUtils::isWildernessBoat(*optItemIndex, mapType);
+			isBoat = ArenaAnimUtils::isBoat(*optItemIndex);
 		}
 
 		if (interiorType.has_value())
