@@ -950,7 +950,7 @@ void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &
 		}
 	}
 
-	newGroundState.canJump = newGroundState.onGround && !newGroundState.isSwimming;
+	newGroundState.canJump = newGroundState.onGround && (!newGroundState.isSwimming || this->vehicleState.isInVehicle());
 
 	this->prevGroundState = this->groundState;
 	this->groundState = newGroundState;

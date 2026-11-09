@@ -922,6 +922,13 @@ void Game::loop()
 				else if (inputAcceleration.isInstantJump)
 				{
 					this->player.setPhysicsVelocityY(inputAcceleration.magnitude);
+					
+					if (this->player.vehicleState.isInVehicle())
+					{
+						EntityChunkManager &entityChunkManager = this->sceneManager.entityChunkManager;
+						entityChunkManager.setVehicleOccupied(this->player.vehicleState.occupiedEntityInstID, false);
+						this->player.vehicleState.clear();
+					}
 				}
 				else if (inputAcceleration.direction.isNormalized())
 				{

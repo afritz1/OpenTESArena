@@ -862,6 +862,8 @@ namespace PlayerLogic
 						if (!player.vehicleState.isInVehicle())
 						{
 							player.vehicleState.occupiedEntityInstID = entityInstID;
+							player.setPhysicsPosition(entityPosition);
+
 							entityChunkManager.setVehicleOccupied(entityInstID, true);
 						}
 					}
