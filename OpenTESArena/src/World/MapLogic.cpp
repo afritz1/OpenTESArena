@@ -444,8 +444,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					{
 						Span<const std::string> entryTexts = templateDatEntry->values;
 						const std::string &entryText = entryTexts[game.random.next(entryTexts.getCount())];
-						const std::string entrySubstitutedText = String::distributeNewlines(entryText, 60);
-						//const std::string entrySubstitutedText = game.dialogueManager.getSubstitutedText(entryText.c_str()); // @todo make substituted text work without an entityInstID
+						const std::string entrySubstitutedText = game.dialogueManager.getSubstitutedText(entryText.c_str());
 						GameWorldUI::showTextPopUp(entrySubstitutedText.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
 					}
 				}

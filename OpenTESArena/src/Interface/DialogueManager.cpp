@@ -197,6 +197,12 @@ bool DialogueManager::hasEntityBeenIntroduced() const
 
 WorldDouble2 DialogueManager::getEntityPosition() const
 {
+	if (this->entityInstID < 0)
+	{
+		// For building entrance popups.
+		return this->game->player.getFeetPosition().getXZ();
+	}
+
 	const EntityInstance &entityInst = this->getEntityInstance();
 	const EntityChunkManager &entityChunkManager = this->game->sceneManager.entityChunkManager;
 	return entityChunkManager.positions.get(entityInst.positionID).getXZ();
@@ -284,7 +290,6 @@ const std::string &DialogueManager::getRandomTemplateDatEntryValue(int entryKey)
 
 std::string DialogueManager::getSubstitutedText(const char *text, int maxCharsPerLine)
 {
-	DebugAssert(this->entityInstID >= 0);
 	DebugAssert(maxCharsPerLine > 0);
 
 	const Span<const std::pair<const char*, DialogueFunction>> functionMappings = DialogueFunctions::FunctionMappings;

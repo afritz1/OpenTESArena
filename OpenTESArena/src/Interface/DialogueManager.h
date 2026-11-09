@@ -40,7 +40,7 @@ struct DialogueManager
 	std::vector<DialogueDirectionsEntry> cityDirectionsEntries;
 	std::vector<DialogueDirectionsEntry> wildernessDirectionsEntries;
 
-	// The entity the player is talking to.
+	// The entity the player is talking to, or -1 if entering a building.
 	EntityInstanceID entityInstID;
 	int dialogueGender; // 0: male, 1: female, 2: neutral
 	std::optional<CardinalDirectionName> dialogueDirection; // For NPCs giving directions.
