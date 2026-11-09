@@ -300,6 +300,11 @@ EntityLockState::EntityLockState()
 	this->isLocked = false;
 }
 
+EntityVehicleState::EntityVehicleState()
+{
+	this->isOccupied = false;
+}
+
 const EntityDefinition &EntityChunkManager::getEntityDef(EntityDefID defID) const
 {
 	const auto iter = this->entityDefs.find(defID);
@@ -1032,6 +1037,15 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		DebugAssert(unlockedAnimDefStateIndex.has_value());
 		const int activeAnimDefStateIndex = *initInfo.isLocked ? *lockedAnimDefStateIndex : *unlockedAnimDefStateIndex;
 		animInst.setStateIndex(activeAnimDefStateIndex);
+	}
+
+	if (entityDef.type == EntityDefinitionType::Vehicle)
+	{
+		entityInst.vehicleStateID = this->vehicleStates.alloc();
+		if (entityInst.vehicleStateID < 0)
+		{
+			DebugLogError("Couldn't allocate EntityVehicleStateID.");
+		}
 	}
 
 	// Cache for faster iteration if needed for this entity type.
@@ -2124,6 +2138,14 @@ bool EntityChunkManager::anyEnemiesNearby(WorldDouble3 position) const
 	return false;
 }
 
+void EntityChunkManager::setVehicleOccupied(EntityInstanceID id, bool isOccupied)
+{
+	EntityInstance &entityInst = this->entities.get(id);
+	EntityVehicleState &vehicleState = this->vehicleStates.get(entityInst.vehicleStateID);
+	DebugAssert(vehicleState.isOccupied != isOccupied);
+	vehicleState.isOccupied = isOccupied;
+}
+
 void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	Span<const ChunkInt2> freedChunkPositions, Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs, Span<const int> levelInfoDefIndices,
@@ -2223,6 +2245,15 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 
 	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
 	this->updateEnemyBehaviors(dt, playerPosition, player, game);
+
+	if (player.vehicleState.isInVehicle())
+	{
+		const EntityInstance &vehicleEntityInst = this->entities.get(player.vehicleState.occupiedEntityInstID);
+		WorldDouble3 &vehiclePosition = this->positions.get(vehicleEntityInst.positionID);
+		vehiclePosition.x = playerPosition.x;
+		vehiclePosition.z = playerPosition.z;
+	}
+
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx(playerPosition, ceilingScale, voxelChunkManager);
@@ -2481,6 +2512,11 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 		if (entityInst.lockStateID >= 0)
 		{
 			this->lockStates.free(entityInst.lockStateID);
+		}
+
+		if (entityInst.vehicleStateID >= 0)
+		{
+			this->vehicleStates.free(entityInst.vehicleStateID);
 		}
 
 		const JPH::BodyID physicsBodyID = entityInst.physicsBodyID;

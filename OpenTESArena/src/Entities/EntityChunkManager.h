@@ -166,6 +166,13 @@ struct EntityLockState
 	EntityLockState();
 };
 
+struct EntityVehicleState
+{
+	bool isOccupied; // Whether this vehicle is attached to player.
+
+	EntityVehicleState();
+};
+
 using EntityInstancePredicate = std::function<bool(const EntityInstance&)>;
 
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
@@ -184,6 +191,7 @@ public:
 	using EntityPaletteIndicesInstancePool = KeyValuePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
 	using EntityItemInventoryInstancePool = KeyValuePool<EntityItemInventoryInstanceID, ItemInventory>;
 	using EntityLockStatePool = KeyValuePool<EntityLockStateID, EntityLockState>;
+	using EntityVehicleStatePool = KeyValuePool<EntityVehicleStateID, EntityVehicleState>;
 
 	// Containers for all currently-allocated entity data in the scene. Do not manually allocate/free these.
 	EntityPool entities;
@@ -199,6 +207,7 @@ public:
 	EntityPaletteIndicesInstancePool paletteIndices;
 	EntityItemInventoryInstancePool itemInventories;
 	EntityLockStatePool lockStates;
+	EntityVehicleStatePool vehicleStates;
 
 	// Weak references to certain entity types for ease of iterating. Does not contain destroyed entities.
 	// These containers are modified upon queuing an entity for destruction.
@@ -264,6 +273,8 @@ public:
 
 	bool anyCitizensNearby(WorldDouble3 position) const;
 	bool anyEnemiesNearby(WorldDouble3 position) const;
+
+	void setVehicleOccupied(EntityInstanceID id, bool isOccupied);
 
 	void updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions,
 		Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,

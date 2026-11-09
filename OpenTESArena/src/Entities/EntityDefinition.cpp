@@ -354,13 +354,11 @@ bool TransitionEntityDefinition::operator==(const TransitionEntityDefinition &ot
 VehicleEntityDefinition::VehicleEntityDefinition()
 {
 	this->yOffset = 0;
-	this->collider = false;
 }
 
-void VehicleEntityDefinition::init(int yOffset, bool collider)
+void VehicleEntityDefinition::init(int yOffset)
 {
 	this->yOffset = yOffset;
-	this->collider = collider;
 }
 
 bool VehicleEntityDefinition::operator==(const VehicleEntityDefinition &other) const
@@ -371,11 +369,6 @@ bool VehicleEntityDefinition::operator==(const VehicleEntityDefinition &other) c
 	}
 
 	if (this->yOffset != other.yOffset)
-	{
-		return false;
-	}
-
-	if (this->collider != other.collider)
 	{
 		return false;
 	}
@@ -586,10 +579,10 @@ void EntityDefinition::initTransition(LevelVoxelTransitionDefID defID, EntityAni
 	this->transition.init(defID);
 }
 
-void EntityDefinition::initVehicle(int yOffset, bool collider, EntityAnimationDefinition &&animDef)
+void EntityDefinition::initVehicle(int yOffset, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Vehicle, std::move(animDef));
-	this->vehicle.init(yOffset, collider);
+	this->vehicle.init(yOffset);
 }
 
 void EntityDefinition::initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool hasStreetlightLogic,

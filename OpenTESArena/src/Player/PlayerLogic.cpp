@@ -862,6 +862,7 @@ namespace PlayerLogic
 						if (!player.vehicleState.isInVehicle())
 						{
 							player.vehicleState.occupiedEntityInstID = entityInstID;
+							entityChunkManager.setVehicleOccupied(entityInstID, true);
 						}
 					}
 					else

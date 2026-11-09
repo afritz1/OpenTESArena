@@ -58,6 +58,11 @@ bool EntityInstance::canBeLocked() const
 	return this->lockStateID >= 0;
 }
 
+bool EntityInstance::isVehicle() const
+{
+	return this->vehicleStateID >= 0;
+}
+
 void EntityInstance::clear()
 {
 	this->instanceID = -1;
@@ -74,6 +79,7 @@ void EntityInstance::clear()
 	this->paletteIndicesInstID = -1;
 	this->itemInventoryInstID = -1;
 	this->lockStateID = -1;
+	this->vehicleStateID = -1;
 	this->physicsBodyID = JPH::BodyID();
 	this->transformHeapIndex = -1;
 	this->transformIndex = -1;

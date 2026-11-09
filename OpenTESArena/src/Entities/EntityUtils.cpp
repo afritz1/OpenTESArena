@@ -199,9 +199,8 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Container:
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Transition:
-		return false;
 	case EntityDefinitionType::Vehicle:
-		return entityDef.vehicle.collider;
+		return false;
 	case EntityDefinitionType::Decoration:
 		return entityDef.decoration.collider;
 	default:

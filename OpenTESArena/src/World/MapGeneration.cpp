@@ -352,7 +352,8 @@ namespace MapGeneration
 		}
 		else if (isBoat)
 		{
-			outDef->initVehicle(flatData.yOffset, flatData.collider, std::move(entityAnimDef));
+			// Boats have collision set on their flat but the original game doesn't use it.
+			outDef->initVehicle(flatData.yOffset, std::move(entityAnimDef));
 		}
 		else
 		{

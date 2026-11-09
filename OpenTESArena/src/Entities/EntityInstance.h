@@ -18,6 +18,7 @@ using EntityDialogueStateID = int;
 using EntityPaletteIndicesInstanceID = int;
 using EntityItemInventoryInstanceID = int;
 using EntityLockStateID = int;
+using EntityVehicleStateID = int;
 
 struct EntityInstance
 {
@@ -35,6 +36,7 @@ struct EntityInstance
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;
 	EntityLockStateID lockStateID;
+	EntityVehicleStateID vehicleStateID;
 	JPH::BodyID physicsBodyID;
 	int transformHeapIndex;
 	int transformIndex;
@@ -59,6 +61,8 @@ struct EntityInstance
 	bool hasInventory() const;
 
 	bool canBeLocked() const;
+
+	bool isVehicle() const;
 
 	void clear();
 };

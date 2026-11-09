@@ -483,6 +483,19 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const EntityInstanceID entityInstID = visibleEntity.id;
 			const WorldDouble3 entityPosition = visibleEntity.position;
 			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+
+			bool isEntityValidToRender = true;
+			if (entityInst.isVehicle())
+			{
+				const EntityVehicleState &vehicleState = entityChunkManager.vehicleStates.get(entityInst.vehicleStateID);
+				isEntityValidToRender = !vehicleState.isOccupied;
+			}
+
+			if (!isEntityValidToRender)
+			{
+				continue;
+			}
+
 			const EntityDefID entityDefID = entityInst.defID;
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 			const EntityAnimationDefinition &animDef = entityDef.animDef;

@@ -236,11 +236,10 @@ struct TransitionEntityDefinition
 struct VehicleEntityDefinition
 {
 	int yOffset; // @todo convert to modern percentage?
-	bool collider;
 
 	VehicleEntityDefinition();
 
-	void init(int yOffset, bool collider);
+	void init(int yOffset);
 
 	bool operator==(const VehicleEntityDefinition &other) const;
 };
@@ -309,7 +308,7 @@ struct EntityDefinition
 
 	void initTransition(LevelVoxelTransitionDefID defID, EntityAnimationDefinition &&animDef);
 
-	void initVehicle(int yOffset, bool collider, EntityAnimationDefinition &&animDef);
+	void initVehicle(int yOffset, EntityAnimationDefinition &&animDef);
 
 	void initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool hasStreetlightLogic, bool hasPuddleShader,
 		int lightIntensity, EntityAnimationDefinition &&animDef);
