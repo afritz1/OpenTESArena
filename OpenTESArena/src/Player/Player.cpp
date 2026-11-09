@@ -688,8 +688,15 @@ double Player::getMaxMoveSpeed() const
 {
 	if (this->groundState.isSwimming)
 	{
-		const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(this->raceDefID);
-		return raceDef.swimmingMoveSpeed;
+		if (this->vehicleState.isInVehicle())
+		{
+			return PlayerConstants::SWIMMING_VEHICLE_MOVE_SPEED;
+		}
+		else
+		{
+			const CharacterRaceDefinition &raceDef = CharacterRaceLibrary::getInstance().getDefinition(this->raceDefID);
+			return raceDef.swimmingMoveSpeed;
+		}
 	}
 
 	const int speedAttribute = this->primaryAttributes.speed.maxValue; // @todo use currentValue eventually
