@@ -865,6 +865,8 @@ namespace PlayerLogic
 							player.setPhysicsPosition(entityPosition);
 
 							entityChunkManager.setVehicleOccupied(entityInstID, true);
+
+							GameWorldUI::setActionText("Jump to exit boat."); // Don't use original game's hotkey.
 						}
 					}
 					else
