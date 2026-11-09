@@ -1007,6 +1007,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	this->updateGroundState(dt, game, physicsSystem);
 
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	AudioManager &audioManager = game.audioManager;
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
@@ -1025,6 +1026,8 @@ void Player::postPhysicsStep(double dt, Game &game)
 				const MusicDefinition *swimmingMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::Swimming, game.random);
 				audioManager.setMusic(swimmingMusicDef);
 			}
+
+			entityChunkManager.setVehicleSideViewEnabled(true);
 		}
 	}
 	else if (!this->groundState.isFeetInsideChasm)
@@ -1038,6 +1041,8 @@ void Player::postPhysicsStep(double dt, Game &game)
 				const MusicDefinition *exteriorMusicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
 				audioManager.setMusic(exteriorMusicDef);
 			}
+
+			entityChunkManager.setVehicleSideViewEnabled(false);
 		}
 	}
 

@@ -5,6 +5,7 @@
 namespace EntityAnimationUtils
 {
 	const std::string STATE_IDLE = "Idle";
+	const std::string STATE_IDLE_SIDE = "Idle Side";
 	const std::string STATE_LOOK = "Look";
 	const std::string STATE_WALK = "Walk";
 	const std::string STATE_ATTACK = "Attack";

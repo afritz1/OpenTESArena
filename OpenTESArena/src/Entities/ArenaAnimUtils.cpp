@@ -1094,11 +1094,15 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaFlatIndex flatIndex, MapType 
 {
 	DebugAssert(outAnimDef != nullptr);
 
+	const INFFlat &flatData = inf.getFlat(flatIndex);
+	const std::optional<ArenaItemIndex> &optItemIndex = flatData.itemIndex;
+
 	// Generate animation states based on what the entity needs. The animations to load depend on
 	// the flat index. The wilderness does not have any streetlights (there is no ID for them).
 	const bool isRuler = interiorType.has_value() && ArenaAnimUtils::isRulerFlatIndex(flatIndex, *interiorType);
 	const bool isStreetlight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, mapType);
 	const bool isLockableChest = ArenaAnimUtils::isLockableContainerFlatIndex(flatIndex, inf);
+	const bool isBoat = optItemIndex.has_value() && ArenaAnimUtils::isWildernessBoat(*optItemIndex, mapType);
 	if (isRuler)
 	{
 		DebugAssert(rulerIsMale.has_value());
@@ -1150,6 +1154,27 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaFlatIndex flatIndex, MapType 
 			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
 		{
 			DebugLogWarningFormat("Couldn't add unlocked anim state for ID \"%d\".", unlockedFlatIndex);
+			return false;
+		}
+	}
+	else if (isBoat)
+	{
+		outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
+
+		const ArenaFlatIndex boatFlatIndex = inf.findFlatIndexWithItemIndex(ArenaAnimUtils::BoatItemIndex);
+		const ArenaFlatIndex boatSideFlatIndex = boatFlatIndex + 1;
+
+		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(boatFlatIndex, EntityAnimationUtils::STATE_IDLE.c_str(),
+			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
+		{
+			DebugLogWarningFormat("Couldn't add boat anim state for ID \"%d\".", boatFlatIndex);
+			return false;
+		}
+
+		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(boatSideFlatIndex, EntityAnimationUtils::STATE_IDLE_SIDE.c_str(),
+			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
+		{
+			DebugLogWarningFormat("Couldn't add boat side anim state for ID \"%d\".", boatSideFlatIndex);
 			return false;
 		}
 	}

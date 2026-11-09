@@ -112,6 +112,7 @@ namespace ArenaAnimUtils
 
 	bool isWildernessDen(ArenaItemIndex itemIndex, MapType mapType);
 	
+	constexpr ArenaItemIndex BoatItemIndex = 14;
 	bool isWildernessBoat(ArenaItemIndex itemIndex, MapType mapType);
 
 	// For NPCs that can talk about themselves/directions/rumors.

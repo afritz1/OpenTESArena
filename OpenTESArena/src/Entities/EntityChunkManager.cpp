@@ -2146,6 +2146,23 @@ void EntityChunkManager::setVehicleOccupied(EntityInstanceID id, bool isOccupied
 	vehicleState.isOccupied = isOccupied;
 }
 
+void EntityChunkManager::setVehicleSideViewEnabled(bool enabled)
+{
+	for (const EntityInstance &entityInst : this->entities.values)
+	{
+		if (!entityInst.isVehicle())
+		{
+			continue;
+		}
+
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		constexpr int idleStateIndex = 0;
+		constexpr int idleSideStateIndex = 1;
+		const int newStateIndex = enabled ? idleSideStateIndex : idleStateIndex;
+		animInst.setStateIndex(newStateIndex);
+	}
+}
+
 void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	Span<const ChunkInt2> freedChunkPositions, Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs, Span<const int> levelInfoDefIndices,

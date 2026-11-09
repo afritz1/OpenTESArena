@@ -255,8 +255,8 @@ namespace MapGeneration
 			isRuler = ArenaAnimUtils::isRulerFlatIndex(flatIndex, *interiorType);
 		}
 
-		// Add entity animation data. Static entities have only idle animations (and maybe on/off
-		// state for lampposts). Dynamic entities have several animation states and directions.
+		// Add entity animation data. Static entities have only idle animations (and maybe on/off state for lampposts
+		// or "side view" for boats). Dynamic entities have several animation states and directions.
 		EntityAnimationDefinition entityAnimDef;
 		if (!isDynamicEntity)
 		{

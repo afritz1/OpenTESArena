@@ -275,6 +275,7 @@ public:
 	bool anyEnemiesNearby(WorldDouble3 position) const;
 
 	void setVehicleOccupied(EntityInstanceID id, bool isOccupied);
+	void setVehicleSideViewEnabled(bool enabled); // @todo new chunks don't apply this if player is swimming
 
 	void updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions,
 		Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
