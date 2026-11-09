@@ -50,6 +50,8 @@ namespace
 
 	constexpr char CompassSliderImageElementName[] = "GameWorldCompassSlider";
 	constexpr char CompassFrameImageElementName[] = "GameWorldCompassFrame";
+	
+	constexpr char BoatImageElementName[] = "GameWorldBoatImage";
 
 	constexpr char WeaponImageElementName[] = "GameWorldWeaponImage";
 	constexpr char PlayerHurtImageElementName[] = "GameWorldPlayerHurtImage";
@@ -720,6 +722,19 @@ void GameWorldUI::update(double dt)
 		uiManager.setTransformPosition(weaponImageElementInstID, weaponPosition);
 		uiManager.setTransformSize(weaponImageElementInstID, weaponSize);
 		uiManager.setImageTexture(weaponImageElementInstID, weaponAnimTextureID);
+	}
+
+	// Boat
+	const UiElementInstanceID boatImageElementInstID = uiManager.getElementByName(BoatImageElementName);
+	uiManager.setElementActive(boatImageElementInstID, player.vehicleState.isInVehicle());
+
+	if (isModernInterface)
+	{
+		constexpr int boatClassicTextureHeight = 78;
+		constexpr int boatModernTextureExtraHeight = ArenaRenderUtils::SCENE_UI_HEIGHT / 4; // Original art doesn't look good stretched out.
+		constexpr int boatModernTextureHeight = boatClassicTextureHeight + boatModernTextureExtraHeight;
+		uiManager.setTransformPosition(boatImageElementInstID, Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT));
+		uiManager.setTransformSize(boatImageElementInstID, Int2(ArenaRenderUtils::SCREEN_WIDTH, boatModernTextureHeight));
 	}
 
 	// Status bars

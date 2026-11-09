@@ -135,6 +135,17 @@ Palette=PAL.COL
 
 ##################################
 
+[GameWorldBoatImage]
+Type=Image
+Position=160,147
+Size=320,78
+Pivot=Bottom
+DrawOrder=0
+Texture=BOATPROL.IMG
+Palette=PAL.COL
+
+##################################
+
 # Trigger/action/effect texts
 
 [GameWorldTriggerTextBox]
