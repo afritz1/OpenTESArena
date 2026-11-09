@@ -24,6 +24,7 @@ bool EntityUtils::isDynamicEntity(EntityDefinitionType defType)
 	case EntityDefinitionType::Enemy:
 	case EntityDefinitionType::Citizen:
 	case EntityDefinitionType::Vfx:
+	case EntityDefinitionType::Vehicle:
 		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(defType)));
@@ -72,6 +73,8 @@ std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 		return "StaticNPC";
 	case EntityDefinitionType::Transition:
 		return "Transition";
+	case EntityDefinitionType::Vehicle:
+		return "Vehicle";
 	default:
 		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(type)));
 	}
@@ -127,6 +130,7 @@ bool EntityUtils::isSceneManagedResource(EntityDefinitionType entityDefType)
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Container:
 	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Vehicle:
 	case EntityDefinitionType::Decoration:
 		return true;
 	case EntityDefinitionType::Vfx:
@@ -141,8 +145,9 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 	const EntityDefinitionType type = entityDef.type;
 	const bool isEnemy = type == EntityDefinitionType::Enemy;
 	const bool isItem = type == EntityDefinitionType::Item;
+	const bool isVehicle = type == EntityDefinitionType::Vehicle;
 	const bool isDecoration = type == EntityDefinitionType::Decoration;
-	if (!isEnemy && !isItem && !isDecoration)
+	if (!isEnemy && !isItem && !isVehicle && !isDecoration)
 	{
 		return 0;
 	}
@@ -170,6 +175,11 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 		const ItemEntityDefinition::QuestItemDefinition &questItemDef = itemDef.questItem;
 		return questItemDef.yOffset;
 	}
+	else if (isVehicle)
+	{
+		const VehicleEntityDefinition &vehicleDef = entityDef.vehicle;
+		return vehicleDef.yOffset;
+	}
 	else
 	{
 		const DecorationEntityDefinition &decorationDef = entityDef.decoration;
@@ -190,6 +200,8 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Transition:
 		return false;
+	case EntityDefinitionType::Vehicle:
+		return entityDef.vehicle.collider;
 	case EntityDefinitionType::Decoration:
 		return entityDef.decoration.collider;
 	default:
@@ -210,6 +222,7 @@ bool EntityUtils::canDie(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Container:
 	case EntityDefinitionType::Vfx:
 	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Vehicle:
 	case EntityDefinitionType::Decoration:
 		return false;
 	default:
@@ -246,6 +259,7 @@ bool EntityUtils::leavesCorpse(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Container:
 	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Vehicle:
 	case EntityDefinitionType::Decoration:
 		return false;
 	default:

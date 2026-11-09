@@ -351,6 +351,38 @@ bool TransitionEntityDefinition::operator==(const TransitionEntityDefinition &ot
 	return this->transitionDefID == other.transitionDefID;
 }
 
+VehicleEntityDefinition::VehicleEntityDefinition()
+{
+	this->yOffset = 0;
+	this->collider = false;
+}
+
+void VehicleEntityDefinition::init(int yOffset, bool collider)
+{
+	this->yOffset = yOffset;
+	this->collider = collider;
+}
+
+bool VehicleEntityDefinition::operator==(const VehicleEntityDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->yOffset != other.yOffset)
+	{
+		return false;
+	}
+
+	if (this->collider != other.collider)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 DecorationEntityDefinition::DecorationEntityDefinition()
 {
 	this->yOffset = 0;
@@ -467,6 +499,8 @@ bool EntityDefinition::operator==(const EntityDefinition &other) const
 		return this->container == other.container;
 	case EntityDefinitionType::Transition:
 		return this->transition == other.transition;
+	case EntityDefinitionType::Vehicle:
+		return this->vehicle == other.vehicle;
 	case EntityDefinitionType::Decoration:
 		return this->decoration == other.decoration;
 	default:
@@ -550,6 +584,12 @@ void EntityDefinition::initTransition(LevelVoxelTransitionDefID defID, EntityAni
 {
 	this->init(EntityDefinitionType::Transition, std::move(animDef));
 	this->transition.init(defID);
+}
+
+void EntityDefinition::initVehicle(int yOffset, bool collider, EntityAnimationDefinition &&animDef)
+{
+	this->init(EntityDefinitionType::Vehicle, std::move(animDef));
+	this->vehicle.init(yOffset, collider);
 }
 
 void EntityDefinition::initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool hasStreetlightLogic,

@@ -21,6 +21,7 @@ enum class EntityDefinitionType
 	Container, // Chests, loot piles, etc..
 	Vfx, // Spell projectile, explosion, or physical hit.
 	Transition, // Wilderness den.
+	Vehicle, // Wilderness boats.
 	Decoration // Trees, chairs, streetlights, etc..
 };
 
@@ -232,6 +233,18 @@ struct TransitionEntityDefinition
 	bool operator==(const TransitionEntityDefinition &other) const;
 };
 
+struct VehicleEntityDefinition
+{
+	int yOffset; // @todo convert to modern percentage?
+	bool collider;
+
+	VehicleEntityDefinition();
+
+	void init(int yOffset, bool collider);
+
+	bool operator==(const VehicleEntityDefinition &other) const;
+};
+
 struct DecorationEntityDefinition
 {
 	// @todo: eventually convert these to modern values (percentages, etc.).
@@ -265,6 +278,7 @@ struct EntityDefinition
 		ContainerEntityDefinition container;
 		VfxEntityDefinition vfx;
 		TransitionEntityDefinition transition;
+		VehicleEntityDefinition vehicle;
 		DecorationEntityDefinition decoration;
 	};
 
@@ -294,6 +308,8 @@ struct EntityDefinition
 	void initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef);
 
 	void initTransition(LevelVoxelTransitionDefID defID, EntityAnimationDefinition &&animDef);
+
+	void initVehicle(int yOffset, bool collider, EntityAnimationDefinition &&animDef);
 
 	void initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool hasStreetlightLogic, bool hasPuddleShader,
 		int lightIntensity, EntityAnimationDefinition &&animDef);

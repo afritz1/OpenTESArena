@@ -352,6 +352,7 @@ namespace MapGeneration
 		}
 		else if (isBoat)
 		{
+			outDef->initVehicle(flatData.yOffset, flatData.collider, std::move(entityAnimDef));
 		}
 		else
 		{
