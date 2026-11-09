@@ -262,6 +262,21 @@ void PlayerEffectsState::clear()
 	this->drunkPercent = 0.0;
 }
 
+PlayerVehicleState::PlayerVehicleState()
+{
+	this->clear();
+}
+
+bool PlayerVehicleState::isInVehicle() const
+{
+	return this->occupiedEntityInstID >= 0;
+}
+
+void PlayerVehicleState::clear()
+{
+	this->occupiedEntityInstID = -1;
+}
+
 Player::Player()
 {
 	this->physicsCharacter = nullptr;
@@ -328,6 +343,7 @@ void Player::init(const std::string &displayName, bool male, CharacterRaceDefini
 
 	this->setCameraFrameFromDirection(CardinalDirection::North3D);
 	this->movementType = PlayerMovementType::Default;
+	this->vehicleState.clear();
 	this->movementSoundProgress = 0.0;
 }
 
@@ -740,7 +756,7 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 			newVelocity = Double3::Zero;
 		}
 
-		this->climbingState.isAccelerationValidForClimbing = this->groundState.onGround && isAccelerationForward && isPushingEnoughToClimb;
+		this->climbingState.isAccelerationValidForClimbing = this->groundState.onGround && !this->vehicleState.isInVehicle() && isAccelerationForward && isPushingEnoughToClimb;
 
 		this->setPhysicsVelocity(newVelocity);
 	}

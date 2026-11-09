@@ -853,6 +853,25 @@ namespace PlayerLogic
 
 				break;
 			}
+			case EntityDefinitionType::Vehicle:
+			{
+				if (passesNpcDistanceTest && canPlayerMoveAndTurn)
+				{
+					if (interactionType == GameWorldInteractionType::Default)
+					{
+						if (!player.vehicleState.isInVehicle())
+						{
+							player.vehicleState.occupiedEntityInstID = entityInstID;
+						}
+					}
+					else
+					{
+						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+					}
+				}
+
+				break;
+			}
 			default:
 				break;
 			}

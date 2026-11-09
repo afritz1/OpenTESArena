@@ -8,6 +8,7 @@
 #include "ArenaPlayerUtils.h"
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
+#include "../Entities/EntityInstance.h"
 #include "../Items/ArenaItemUtils.h"
 #include "../Items/ItemInventory.h"
 #include "../Math/MathUtils.h"
@@ -84,6 +85,17 @@ struct PlayerClimbingState
 	PlayerClimbingState();
 };
 
+struct PlayerVehicleState
+{
+	EntityInstanceID occupiedEntityInstID; // Entity the player is pulling around.
+
+	PlayerVehicleState();
+
+	bool isInVehicle() const;
+
+	void clear();
+};
+
 struct PlayerEffectsState
 {
 	int diseaseID;
@@ -127,6 +139,7 @@ struct Player
 	PlayerMovementType movementType;
 	PlayerGroundState groundState, prevGroundState;
 	PlayerClimbingState climbingState;
+	PlayerVehicleState vehicleState;
 	double movementSoundProgress;
 
 	std::string displayName;
