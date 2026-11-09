@@ -111,6 +111,8 @@ namespace ArenaAnimUtils
 	bool isNpcTavernPatron(ArenaItemIndex itemIndex);
 
 	bool isWildernessDen(ArenaItemIndex itemIndex, MapType mapType);
+	
+	bool isWildernessBoat(ArenaItemIndex itemIndex, MapType mapType);
 
 	// For NPCs that can talk about themselves/directions/rumors.
 	std::optional<ArenaNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex);

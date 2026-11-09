@@ -227,6 +227,7 @@ namespace MapGeneration
 		bool isKey = false;
 		bool isQuestItem = false;
 		bool isTransition = false;
+		bool isBoat = false;
 		if (optItemIndex.has_value())
 		{
 			isCreature = ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isCreatureFinalBoss);
@@ -245,6 +246,7 @@ namespace MapGeneration
 			isKey = *optItemIndex == ArenaAnimUtils::KeyItemIndex;
 			isQuestItem = *optItemIndex == ArenaAnimUtils::QuestItemIndex;
 			isTransition = ArenaAnimUtils::isWildernessDen(*optItemIndex, mapType);
+			isBoat = ArenaAnimUtils::isWildernessBoat(*optItemIndex, mapType);
 		}
 
 		if (interiorType.has_value())
@@ -347,6 +349,9 @@ namespace MapGeneration
 		{
 			DebugAssert(transitionDefID.has_value());
 			outDef->initTransition(*transitionDefID, std::move(entityAnimDef));
+		}
+		else if (isBoat)
+		{
 		}
 		else
 		{

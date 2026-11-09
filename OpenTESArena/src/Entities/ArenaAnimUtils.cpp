@@ -727,6 +727,11 @@ bool ArenaAnimUtils::isWildernessDen(ArenaItemIndex itemIndex, MapType mapType)
 	return (itemIndex == 15) && (mapType == MapType::Wilderness);
 }
 
+bool ArenaAnimUtils::isWildernessBoat(ArenaItemIndex itemIndex, MapType mapType)
+{
+	return (itemIndex == 14) && (mapType == MapType::Wilderness);
+}
+
 std::optional<ArenaNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex)
 {
 	if (ArenaAnimUtils::isNpcBeggar(itemIndex))
