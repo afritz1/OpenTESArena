@@ -187,9 +187,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	const LocationCityDefinition &cityDef = locationDef.city;
 
 	MapGenerationCityInfo cityGenInfo;
-	cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
-		provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
-		cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+	cityGenInfo.init(cityDef, provinceDef.originalProvinceIndex);
 
 	const int currentDay = gameState.getDate().getDay();
 	const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
@@ -507,9 +505,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			{
 				// From wilderness to city.
 				MapGenerationCityInfo cityGenInfo;
-				cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
-					provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
-					cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+				cityGenInfo.init(cityDef, provinceDef.originalProvinceIndex);
 
 				SkyGenerationExteriorInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand);

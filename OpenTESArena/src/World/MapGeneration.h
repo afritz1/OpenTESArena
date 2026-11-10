@@ -105,6 +105,7 @@ struct MapGenerationCityInfo
 		uint32_t rulerSeed, int originalRaceIndex, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 		Span<const uint8_t> reservedBlocks, LocationCityMainQuestTempleOverride mainQuestTempleOverride,
 		WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
+	void init(const LocationCityDefinition &cityDef, int originalRaceIndex);
 };
 
 // Input: 70 .RMD files (from asset library) + 1 weather .INF

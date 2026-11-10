@@ -427,9 +427,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 
 		// Get city generation values.
 		MapGenerationCityInfo cityGenInfo;
-		cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
-			travelProvinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
-			cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+		cityGenInfo.init(cityDef, travelProvinceDef.originalProvinceIndex);
 
 		const int currentDay = gameState.getDate().getDay();
 		const WeatherDefinition overrideWeather = [&game, &random, weatherType, currentDay]()

@@ -2446,6 +2446,13 @@ void MapGenerationCityInfo::init(const std::string &mifName, const std::string &
 	this->cityBlocksPerSide = cityBlocksPerSide;
 }
 
+void MapGenerationCityInfo::init(const LocationCityDefinition &cityDef, int originalRaceIndex)
+{
+	this->init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
+		originalRaceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
+		cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+}
+
 void MapGenerationWildInfo::init(Buffer2D<ArenaWildBlockID> &&wildBlockIDs, const LocationCityDefinition &cityDef, uint32_t fallbackSeed)
 {
 	this->wildBlockIDs = std::move(wildBlockIDs);
