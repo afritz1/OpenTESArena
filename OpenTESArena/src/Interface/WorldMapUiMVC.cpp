@@ -440,10 +440,9 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 		}();
 
 		MapGenerationCityInfo cityGenInfo;
-		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal,
-			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks, mainQuestTempleOverride,
-			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+		cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
+			travelProvinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
+			cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 		const int currentDay = gameState.getDate().getDay();
 		const WeatherDefinition overrideWeather = [&game, &random, weatherType, currentDay]()

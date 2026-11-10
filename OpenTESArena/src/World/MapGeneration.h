@@ -101,10 +101,9 @@ struct MapGenerationCityInfo
 
 	int cityBlocksPerSide;
 
-	void init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType, uint32_t citySeed,
-		uint32_t rulerSeed, int originalRaceIndex, bool isPremade, bool coastal, bool rulerIsMale,
-		bool palaceIsMainQuestDungeon, Span<const uint8_t> reservedBlocks,
-		const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
+	void init(const std::string &mifName, const std::string &cityTypeName, ArenaCityType cityType, uint32_t citySeed,
+		uint32_t rulerSeed, int originalRaceIndex, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
+		Span<const uint8_t> reservedBlocks, const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
 		WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
 };
 

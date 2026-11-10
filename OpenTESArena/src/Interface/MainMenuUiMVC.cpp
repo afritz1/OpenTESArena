@@ -828,10 +828,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}();
 
 			MapGenerationCityInfo cityGenInfo;
-			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
-				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, centerProvinceDef.originalProvinceIndex, cityDef.premade,
-				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks,
-				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+			cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
+				centerProvinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
+				cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 			{
@@ -908,10 +907,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			}();
 
 			MapGenerationCityInfo cityGenInfo;
-			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
-				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade,
-				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks,
-				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+			cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
+				provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
+				cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 			{

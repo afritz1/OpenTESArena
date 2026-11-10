@@ -199,10 +199,9 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	}();
 
 	MapGenerationCityInfo cityGenInfo;
-	cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-		cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal,
-		cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks,
-		mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+	cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
+		provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
+		cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 	const int currentDay = gameState.getDate().getDay();
 	const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
@@ -533,11 +532,9 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				}();
 
 				MapGenerationCityInfo cityGenInfo;
-				cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-					cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade,
-					cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks,
-					mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY,
-					cityDef.cityBlocksPerSide);
+				cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
+					provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
+					cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 				SkyGenerationExteriorInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand);

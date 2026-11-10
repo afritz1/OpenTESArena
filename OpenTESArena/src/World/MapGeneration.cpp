@@ -2422,13 +2422,13 @@ void MapGenerationInteriorInfo::initDungeon(const LocationDungeonDefinition &dun
 	this->dungeon.init(dungeonDef, isArtifactDungeon);
 }
 
-void MapGenerationCityInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType, uint32_t citySeed,
+void MapGenerationCityInfo::init(const std::string &mifName, const std::string &cityTypeName, ArenaCityType cityType, uint32_t citySeed,
 	uint32_t rulerSeed, int originalRaceIndex, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	Span<const uint8_t> reservedBlocks, const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
-	this->mifName = std::move(mifName);
-	this->cityTypeName = std::move(cityTypeName);
+	this->mifName = mifName;
+	this->cityTypeName = cityTypeName;
 	this->cityType = cityType;
 	this->citySeed = citySeed;
 	this->rulerSeed = rulerSeed;
