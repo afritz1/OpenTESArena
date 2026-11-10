@@ -1935,7 +1935,7 @@ namespace MapGeneration
 	}
 
 	void generateArenaCityBuildingNames(uint32_t citySeed, int originalRaceIndex, bool coastal, const std::string_view cityTypeName,
-		const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, ArenaRandom &random,
+		LocationCityMainQuestTempleOverride mainQuestTempleOverride, ArenaRandom &random,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
 		LevelInfoDefinition *outLevelInfoDef)
 	{
@@ -1985,7 +1985,7 @@ namespace MapGeneration
 
 		// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 		// match the given menu type.
-		auto generateNames = [&citySeed, originalRaceIndex, coastal, &cityTypeName, mainQuestTempleOverride, &random, &textAssetLibrary,
+		auto generateNames = [&citySeed, originalRaceIndex, coastal, &cityTypeName, &mainQuestTempleOverride, &random, &textAssetLibrary,
 			outLevelDef, outLevelInfoDef, &exeData, &localCityPoint, &tryGetInteriorType](ArenaInteriorType interiorType)
 		{
 			if ((interiorType == ArenaInteriorType::Equipment) || (interiorType == ArenaInteriorType::Temple))
@@ -2167,15 +2167,14 @@ namespace MapGeneration
 			}
 
 			// Fix some edge cases with main quest cities.
-			if ((interiorType == ArenaInteriorType::Temple) && (mainQuestTempleOverride != nullptr))
+			if ((interiorType == ArenaInteriorType::Temple) && mainQuestTempleOverride.isValid())
 			{
-				const int modelIndex = mainQuestTempleOverride->modelIndex;
-				const int suffixIndex = mainQuestTempleOverride->suffixIndex;
+				const int modelIndex = mainQuestTempleOverride.modelIndex;
+				const int suffixIndex = mainQuestTempleOverride.suffixIndex;
 
 				// Added an index variable in this solution since the original game seems to store
 				// its building names in a way other than with a vector.
-				const LevelVoxelBuildingNameID buildingNameID =
-					mainQuestTempleOverride->menuNamesIndex;
+				const LevelVoxelBuildingNameID buildingNameID = mainQuestTempleOverride.menuNamesIndex;
 
 				std::string buildingName = createTempleName(modelIndex, suffixIndex);
 				outLevelInfoDef->setBuildingNameOverride(buildingNameID, std::move(buildingName));
@@ -2424,7 +2423,7 @@ void MapGenerationInteriorInfo::initDungeon(const LocationDungeonDefinition &dun
 
 void MapGenerationCityInfo::init(const std::string &mifName, const std::string &cityTypeName, ArenaCityType cityType, uint32_t citySeed,
 	uint32_t rulerSeed, int originalRaceIndex, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-	Span<const uint8_t> reservedBlocks, const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
+	Span<const uint8_t> reservedBlocks, LocationCityMainQuestTempleOverride mainQuestTempleOverride,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
 	this->mifName = mifName;
@@ -2648,8 +2647,8 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int originalRaceIndex,
 	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon, Span<const uint8_t> reservedBlocks,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName,
-	ArenaCityType cityType, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
-	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	ArenaCityType cityType, LocationCityMainQuestTempleOverride mainQuestTempleOverride, const INFFile &inf,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
 	LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)
 {

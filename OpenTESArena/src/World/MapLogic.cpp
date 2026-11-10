@@ -185,23 +185,11 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	Renderer &renderer = game.renderer;
 
 	const LocationCityDefinition &cityDef = locationDef.city;
-	const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
-		[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
-	{
-		if (cityDef.hasMainQuestTempleOverride)
-		{
-			return cityDef.mainQuestTempleOverride;
-		}
-		else
-		{
-			return std::nullopt;
-		}
-	}();
 
 	MapGenerationCityInfo cityGenInfo;
 	cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
 		provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
-		cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+		cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 	const int currentDay = gameState.getDate().getDay();
 	const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
@@ -518,23 +506,10 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			else if (activeMapType == MapType::Wilderness)
 			{
 				// From wilderness to city.
-				const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
-					[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
-				{
-					if (cityDef.hasMainQuestTempleOverride)
-					{
-						return cityDef.mainQuestTempleOverride;
-					}
-					else
-					{
-						return std::nullopt;
-					}
-				}();
-
 				MapGenerationCityInfo cityGenInfo;
 				cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
 					provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
-					cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+					cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 				SkyGenerationExteriorInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand);

@@ -426,23 +426,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 		const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
 
 		// Get city generation values.
-		const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
-		{
-			if (cityDef.hasMainQuestTempleOverride)
-			{
-				return cityDef.mainQuestTempleOverride;
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}();
-
 		MapGenerationCityInfo cityGenInfo;
 		cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
 			travelProvinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
-			cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+			cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 		const int currentDay = gameState.getDate().getDay();
 		const WeatherDefinition overrideWeather = [&game, &random, weatherType, currentDay]()

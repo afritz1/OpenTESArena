@@ -93,7 +93,7 @@ struct MapGenerationCityInfo
 	// Affects which types of city blocks are used at generation start.
 	Buffer<uint8_t> reservedBlocks;
 
-	std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride;
+	LocationCityMainQuestTempleOverride mainQuestTempleOverride;
 
 	// Generation offset from city origin.
 	WEInt blockStartPosX;
@@ -103,7 +103,7 @@ struct MapGenerationCityInfo
 
 	void init(const std::string &mifName, const std::string &cityTypeName, ArenaCityType cityType, uint32_t citySeed,
 		uint32_t rulerSeed, int originalRaceIndex, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-		Span<const uint8_t> reservedBlocks, const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
+		Span<const uint8_t> reservedBlocks, LocationCityMainQuestTempleOverride mainQuestTempleOverride,
 		WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
 };
 
@@ -187,11 +187,10 @@ namespace MapGeneration
 		bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 		Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 		int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName, ArenaCityType cityType,
-		const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
-		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef);
+		LocationCityMainQuestTempleOverride mainQuestTempleOverride, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
+		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef);
 
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.

@@ -27,7 +27,11 @@ struct LocationCityMainQuestTempleOverride
 	int suffixIndex;
 	int menuNamesIndex;
 
+	LocationCityMainQuestTempleOverride();
+
 	void init(int modelIndex, int suffixIndex, int menuNamesIndex);
+
+	bool isValid() const;
 };
 
 struct LocationCityDefinition
@@ -50,7 +54,6 @@ struct LocationCityDefinition
 	WEInt blockStartPosX; // Start position of city blocks within the city skeleton in original coordinates.
 	SNInt blockStartPosY;
 
-	bool hasMainQuestTempleOverride;
 	LocationCityMainQuestTempleOverride mainQuestTempleOverride;
 
 	int cityBlocksPerSide;
@@ -62,7 +65,7 @@ struct LocationCityDefinition
 	void init(ArenaCityType type, const char *typeDisplayName, const char *typeDisplayNameLowercase, const char *mapFilename,
 		uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t skySeed,
 		ArenaClimateType climateType, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-		const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal, bool premade,
+		LocationCityMainQuestTempleOverride mainQuestTempleOverride, int cityBlocksPerSide, bool coastal, bool premade,
 		bool rulerIsMale, bool palaceIsMainQuestDungeon);
 
 	uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;

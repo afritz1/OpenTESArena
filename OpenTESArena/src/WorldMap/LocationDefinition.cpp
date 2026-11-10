@@ -8,6 +8,13 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
+LocationCityMainQuestTempleOverride::LocationCityMainQuestTempleOverride()
+{
+	this->modelIndex = -1;
+	this->suffixIndex = -1;
+	this->menuNamesIndex = -1;
+}
+
 void LocationCityMainQuestTempleOverride::init(int modelIndex, int suffixIndex, int menuNamesIndex)
 {
 	this->modelIndex = modelIndex;
@@ -15,9 +22,14 @@ void LocationCityMainQuestTempleOverride::init(int modelIndex, int suffixIndex, 
 	this->menuNamesIndex = menuNamesIndex;
 }
 
+bool LocationCityMainQuestTempleOverride::isValid() const
+{
+	return this->modelIndex >= 0;
+}
+
 void LocationCityDefinition::init(ArenaCityType type, const char *typeDisplayName, const char *typeDisplayNameLowercase, const char *mapFilename,
 	uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t skySeed, ArenaClimateType climateType,
-	Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
+	Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY, LocationCityMainQuestTempleOverride mainQuestTempleOverride,
 	int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon)
 {
 	this->type = type;
@@ -37,17 +49,7 @@ void LocationCityDefinition::init(ArenaCityType type, const char *typeDisplayNam
 
 	this->blockStartPosX = blockStartPosX;
 	this->blockStartPosY = blockStartPosY;
-
-	if (mainQuestTempleOverride != nullptr)
-	{
-		this->hasMainQuestTempleOverride = true;
-		this->mainQuestTempleOverride = *mainQuestTempleOverride;
-	}
-	else
-	{
-		this->hasMainQuestTempleOverride = false;
-	}
-
+	this->mainQuestTempleOverride = mainQuestTempleOverride;
 	this->cityBlocksPerSide = cityBlocksPerSide;
 	this->coastal = coastal;
 	this->premade = premade;
@@ -189,7 +191,6 @@ void LocationDefinition::initCity(int localCityID, int originalProvinceIndex, bo
 	}();
 
 	LocationCityMainQuestTempleOverride mainQuestTempleOverride;
-	const LocationCityMainQuestTempleOverride *mainQuestTempleOverridePtr = &mainQuestTempleOverride;
 	if (globalCityID == 2)
 	{
 		mainQuestTempleOverride.init(1, 7, 23);
@@ -198,17 +199,13 @@ void LocationDefinition::initCity(int localCityID, int originalProvinceIndex, bo
 	{
 		mainQuestTempleOverride.init(2, 8, 32);
 	}
-	else
-	{
-		mainQuestTempleOverridePtr = nullptr;
-	}
 
 	const bool rulerIsMale = (rulerSeed & 0x3) != 0;
 	const bool palaceIsMainQuestDungeon = (originalProvinceIndex == ArenaLocationUtils::CENTER_PROVINCE_INDEX) && (localCityID == 0);
 
 	this->city.init(type, typeDisplayName.c_str(), typeDisplayNameLowercase.c_str(), mapFilename.c_str(), citySeed, wildSeed,
 		provinceSeed, rulerSeed, skySeed, climateType, reservedBlocks, blockStartPosition.x, blockStartPosition.y,
-		mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade, rulerIsMale, palaceIsMainQuestDungeon);
+		mainQuestTempleOverride, cityBlocksPerSide, coastal, premade, rulerIsMale, palaceIsMainQuestDungeon);
 }
 
 void LocationDefinition::initDungeon(int localDungeonID, int originalProvinceIndex, const ArenaLocationData &locationData, const ArenaProvinceData &provinceData)

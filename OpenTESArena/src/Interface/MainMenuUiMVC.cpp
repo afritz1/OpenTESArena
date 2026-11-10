@@ -814,23 +814,10 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const LocationCityDefinition &cityDef = locationDef.city;
 
-			const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
-			{
-				if (cityDef.hasMainQuestTempleOverride)
-				{
-					return cityDef.mainQuestTempleOverride;
-				}
-				else
-				{
-					return std::nullopt;
-				}
-			}();
-
 			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
 				centerProvinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
-				cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+				cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 			{
@@ -893,23 +880,10 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const LocationDefinition &locationDef = provinceDef.locations[*locationIndex];
 			const LocationCityDefinition &cityDef = locationDef.city;
 
-			const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
-			{
-				if (cityDef.hasMainQuestTempleOverride)
-				{
-					return cityDef.mainQuestTempleOverride;
-				}
-				else
-				{
-					return std::nullopt;
-				}
-			}();
-
 			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(cityDef.mapFilename, cityDef.typeDisplayName, cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
 				provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon,
-				cityDef.reservedBlocks, mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+				cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 			{

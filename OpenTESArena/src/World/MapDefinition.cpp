@@ -282,7 +282,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int originalRaceIndex,
 	bool isPremade, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide,
 	bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaCityType cityType,
-	const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, const SkyGenerationExteriorInfo &exteriorSkyGenInfo,
+	LocationCityMainQuestTempleOverride mainQuestTempleOverride, const SkyGenerationExteriorInfo &exteriorSkyGenInfo,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager)
 {
@@ -508,15 +508,13 @@ bool MapDefinition::initCity(const MapGenerationCityInfo &generationInfo, const 
 	}
 
 	const Span<const uint8_t> reservedBlocks(generationInfo.reservedBlocks);
-	const LocationCityMainQuestTempleOverride *mainQuestTempleOverride =
-		generationInfo.mainQuestTempleOverride.has_value() ? &(*generationInfo.mainQuestTempleOverride) : nullptr;
 
 	// Generate city level (optionally generating random city blocks if not premade).
 	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.rulerSeed, generationInfo.originalRaceIndex,
 		generationInfo.isPremade, reservedBlocks, generationInfo.blockStartPosX, generationInfo.blockStartPosY,
 		generationInfo.cityBlocksPerSide, generationInfo.coastal, generationInfo.rulerIsMale,
 		generationInfo.palaceIsMainQuestDungeon, generationInfo.cityTypeName, generationInfo.cityType,
-		mainQuestTempleOverride, skyGenInfo, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+		generationInfo.mainQuestTempleOverride, skyGenInfo, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
 		textAssetLibrary, textureManager);
 	this->initStartPoints(mif);
 	this->startLevelIndex = 0;
