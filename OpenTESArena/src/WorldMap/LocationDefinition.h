@@ -7,6 +7,8 @@
 #include "../Assets/CityDataFile.h"
 #include "../Voxels/VoxelUtils.h"
 
+#include "components/utilities/Buffer.h"
+
 class BinaryAssetLibrary;
 
 struct ExeData;
@@ -43,7 +45,7 @@ struct LocationCityDefinition
 
 	ArenaClimateType climateType;
 
-	const std::vector<uint8_t> *reservedBlocks;
+	Buffer<uint8_t> reservedBlocks;
 
 	WEInt blockStartPosX; // Start position of city blocks within the city skeleton in original coordinates.
 	SNInt blockStartPosY;
@@ -59,7 +61,7 @@ struct LocationCityDefinition
 
 	void init(ArenaCityType type, const char *typeDisplayName, const char *typeDisplayNameLowercase, const char *mapFilename,
 		uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t skySeed,
-		ArenaClimateType climateType, const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+		ArenaClimateType climateType, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 		const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal, bool premade,
 		bool rulerIsMale, bool palaceIsMainQuestDungeon);
 
@@ -110,15 +112,11 @@ struct LocationDefinition
 	// Whether the location needs to be discovered for it to be visible on the map.
 	bool visibleByDefault;
 
-	// Determines union access.
+	// Determines inner struct access.
 	LocationDefinitionType type;
-
-	union
-	{
-		LocationCityDefinition city;
-		LocationDungeonDefinition dungeon;
-		LocationMainQuestDungeonDefinition mainQuest;
-	};
+	LocationCityDefinition city;
+	LocationDungeonDefinition dungeon;
+	LocationMainQuestDungeonDefinition mainQuest;
 
 	// Internal init method for original game state.
 	void init(LocationDefinitionType type, const std::string &name, int screenX, int screenY, double latitude);

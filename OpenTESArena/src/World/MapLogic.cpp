@@ -185,15 +185,6 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	Renderer &renderer = game.renderer;
 
 	const LocationCityDefinition &cityDef = locationDef.city;
-	Buffer<uint8_t> reservedBlocks = [&cityDef]()
-	{
-		const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
-		DebugAssert(cityReservedBlocks != nullptr);
-		Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-		std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
-		return buffer;
-	}();
-
 	const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
 		[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 	{
@@ -210,7 +201,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	MapGenerationCityInfo cityGenInfo;
 	cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
 		cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal,
-		cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+		cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks,
 		mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 	const int currentDay = gameState.getDate().getDay();
@@ -528,14 +519,6 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			else if (activeMapType == MapType::Wilderness)
 			{
 				// From wilderness to city.
-				Buffer<uint8_t> reservedBlocks = [&cityDef]()
-				{
-					DebugAssert(cityDef.reservedBlocks != nullptr);
-					Buffer<uint8_t> buffer(static_cast<int>(cityDef.reservedBlocks->size()));
-					std::copy(cityDef.reservedBlocks->begin(), cityDef.reservedBlocks->end(), buffer.begin());
-					return buffer;
-				}();
-
 				const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
 					[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 				{
@@ -552,7 +535,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				MapGenerationCityInfo cityGenInfo;
 				cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
 					cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade,
-					cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+					cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks,
 					mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY,
 					cityDef.cityBlocksPerSide);
 

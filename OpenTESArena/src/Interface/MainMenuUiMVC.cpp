@@ -813,14 +813,6 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const LocationDefinition &locationDef = centerProvinceDef.locations[locationIndex];
 
 			const LocationCityDefinition &cityDef = locationDef.city;
-			Buffer<uint8_t> reservedBlocks = [&cityDef]()
-			{
-				const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
-				DebugAssert(cityReservedBlocks != nullptr);
-				Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-				std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
-				return buffer;
-			}();
 
 			const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
 				[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
@@ -838,7 +830,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
 				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, centerProvinceDef.originalProvinceIndex, cityDef.premade,
-				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks,
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
@@ -902,15 +894,6 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const LocationDefinition &locationDef = provinceDef.locations[*locationIndex];
 			const LocationCityDefinition &cityDef = locationDef.city;
 
-			Buffer<uint8_t> reservedBlocks = [&cityDef]()
-			{
-				const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
-				DebugAssert(cityReservedBlocks != nullptr);
-				Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-				std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
-				return buffer;
-			}();
-
 			const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
 				[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 			{
@@ -927,7 +910,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
 				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.originalProvinceIndex, cityDef.premade,
-				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks,
 				mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()

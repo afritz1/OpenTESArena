@@ -426,15 +426,6 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 		const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
 
 		// Get city generation values.
-		Buffer<uint8_t> reservedBlocks = [&cityDef]()
-		{
-			const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
-			DebugAssert(cityReservedBlocks != nullptr);
-			Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-			std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
-			return buffer;
-		}();
-
 		const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
 			[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 		{
@@ -451,7 +442,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, ProvinceDefinitionI
 		MapGenerationCityInfo cityGenInfo;
 		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
 			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.originalProvinceIndex, cityDef.premade, cityDef.coastal,
-			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks), mainQuestTempleOverride,
+			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, cityDef.reservedBlocks, mainQuestTempleOverride,
 			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 		const int currentDay = gameState.getDate().getDay();

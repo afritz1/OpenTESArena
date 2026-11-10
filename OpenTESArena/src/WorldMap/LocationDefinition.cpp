@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 
 #include "ArenaLocationUtils.h"
@@ -16,7 +17,7 @@ void LocationCityMainQuestTempleOverride::init(int modelIndex, int suffixIndex, 
 
 void LocationCityDefinition::init(ArenaCityType type, const char *typeDisplayName, const char *typeDisplayNameLowercase, const char *mapFilename,
 	uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t skySeed, ArenaClimateType climateType,
-	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
+	Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
 	int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon)
 {
 	this->type = type;
@@ -30,7 +31,10 @@ void LocationCityDefinition::init(ArenaCityType type, const char *typeDisplayNam
 	this->rulerSeed = rulerSeed;
 	this->skySeed = skySeed;
 	this->climateType = climateType;
-	this->reservedBlocks = reservedBlocks;
+	
+	this->reservedBlocks.init(reservedBlocks.getCount());
+	std::copy(reservedBlocks.begin(), reservedBlocks.end(), this->reservedBlocks.begin());
+
 	this->blockStartPosX = blockStartPosX;
 	this->blockStartPosY = blockStartPosY;
 
@@ -155,13 +159,11 @@ void LocationDefinition::initCity(int localCityID, int originalProvinceIndex, bo
 	const uint32_t skySeed = ArenaLocationUtils::getSkySeed(localPoint, originalProvinceIndex, provinceRect);
 	const ArenaClimateType climateType = ArenaLocationUtils::getCityClimateType(localCityID, originalProvinceIndex, binaryAssetLibrary);
 
-	const auto &cityGen = exeData.cityGen;
-	const std::vector<uint8_t> *reservedBlocks = [coastal, templateID, &cityGen]()
-	{
-		const int index = ArenaLocationUtils::getCityReservedBlockListIndex(coastal, templateID);
-		DebugAssertIndex(cityGen.reservedBlockLists, index);
-		return &cityGen.reservedBlockLists[index];
-	}();
+	const ExeDataCityGeneration &cityGen = exeData.cityGen;
+	
+	Span<const std::vector<uint8_t>> reservedBlockLists = cityGen.reservedBlockLists;
+	const int reservedBlockListsIndex = ArenaLocationUtils::getCityReservedBlockListIndex(coastal, templateID);
+	Span<const uint8_t> reservedBlocks = reservedBlockLists[reservedBlockListsIndex];
 
 	const OriginalInt2 blockStartPosition = [coastal, templateID, locationType, &cityGen]()
 	{

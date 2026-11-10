@@ -179,8 +179,7 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildBlockID wildBlockID,
 	if (!isPremadeCity)
 	{
 		const int cityBlocksPerSide = cityDef.cityBlocksPerSide;
-		const Span<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
-			static_cast<int>(cityDef.reservedBlocks->size()));
+		const Span<const uint8_t> reservedBlocks = cityDef.reservedBlocks;
 		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
 		const uint32_t citySeed = cityDef.citySeed;
 		ArenaRandom random(citySeed);

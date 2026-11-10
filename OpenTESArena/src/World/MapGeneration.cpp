@@ -2424,7 +2424,7 @@ void MapGenerationInteriorInfo::initDungeon(const LocationDungeonDefinition &dun
 
 void MapGenerationCityInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType, uint32_t citySeed,
 	uint32_t rulerSeed, int originalRaceIndex, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-	Buffer<uint8_t> &&reservedBlocks, const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
+	Span<const uint8_t> reservedBlocks, const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
 	this->mifName = std::move(mifName);
@@ -2437,7 +2437,10 @@ void MapGenerationCityInfo::init(std::string &&mifName, std::string &&cityTypeNa
 	this->coastal = coastal;
 	this->rulerIsMale = rulerIsMale;
 	this->palaceIsMainQuestDungeon = palaceIsMainQuestDungeon;
-	this->reservedBlocks = std::move(reservedBlocks);
+	
+	this->reservedBlocks.init(reservedBlocks.getCount());
+	std::copy(reservedBlocks.begin(), reservedBlocks.end(), this->reservedBlocks.begin());
+
 	this->mainQuestTempleOverride = mainQuestTempleOverride;
 	this->blockStartPosX = blockStartPosX;
 	this->blockStartPosY = blockStartPosY;
