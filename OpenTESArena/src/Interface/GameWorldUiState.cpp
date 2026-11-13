@@ -556,6 +556,9 @@ void GameWorldUI::create(Game &game)
 	const bool isCompassVisible = options.getMisc_ShowCompass() && !gameState.isCamping();
 	GameWorldUI::setCompassVisible(isCompassVisible);
 
+	const UiElementInstanceID boatImageElementInstID = uiManager.getElementByName(BoatImageElementName);
+	uiManager.setElementActive(boatImageElementInstID, player.vehicleState.isInVehicle());
+
 	uiManager.addMouseButtonChangedListener(GameWorldUI::onMouseButtonChanged, GameWorldUI::ContextName, inputManager);
 	uiManager.addMouseButtonHeldListener(GameWorldUI::onMouseButtonHeld, GameWorldUI::ContextName, inputManager);
 	uiManager.addWindowResizedListener(GameWorldUI::onWindowResized, GameWorldUI::ContextName, inputManager);
