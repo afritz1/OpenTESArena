@@ -27,6 +27,7 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Sky/SkyUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/CharacterRaceLibrary.h"
 #include "../Time/ArenaClockUtils.h"
@@ -249,6 +250,21 @@ void TavernRentedRoomState::clear()
 	this->remainingSeconds = 0.0;
 }
 
+MapExteriorSavedGenInfo::MapExteriorSavedGenInfo()
+{
+	this->clear();
+}
+
+bool MapExteriorSavedGenInfo::isValid() const
+{
+	return (this->mapType == MapType::City) || (this->mapType == MapType::Wilderness);
+}
+
+void MapExteriorSavedGenInfo::clear()
+{
+	this->mapType = static_cast<MapType>(-1);
+}
+
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(ProvinceDefinitionID provinceDefID, int locationID)
 {
 	this->provinceDefID = provinceDefID;
@@ -395,17 +411,17 @@ void GameState::queueMapDefChange(MapDefinition &&newMapDef, const std::optional
 	this->nextMapDefWeatherDef = weatherDef;
 }
 
-void GameState::queueMapDefPop()
+void GameState::queueMapDefPop(Game &game)
 {
 	if (this->hasPendingMapDefChange())
 	{
-		DebugLogError("Already queued map definition change to " + std::to_string(static_cast<int>(this->nextMapDef.getMapType())) + ".");
+		DebugLogErrorFormat("Already queued map definition change to %d.", this->nextMapDef.getMapType());
 		return;
 	}
 
 	if (this->hasPendingLevelIndexChange())
 	{
-		DebugLogError("Already changing level index to " + std::to_string(this->nextLevelIndex) + " this frame.");
+		DebugLogErrorFormat("Already changing level index to %d this frame.", this->nextLevelIndex);
 		return;
 	}
 
@@ -421,17 +437,43 @@ void GameState::queueMapDefPop()
 		return;
 	}
 
-	this->nextMapDef = std::move(this->prevMapDef);
-	this->prevMapDef.clear();
+	const int currentDay = this->date.getDay();
+	const ArenaWeatherType weatherType = this->getWeatherForLocation(this->provinceDefID, this->locationIndex);
+	this->nextMapDefWeatherDef = WeatherDefinition();
+	this->nextMapDefWeatherDef->initFromClassic(weatherType, currentDay, game.random);
+
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+
+	DebugAssert(locationDef.type == LocationDefinitionType::City);
+	const LocationCityDefinition &locationCityDef = locationDef.city;
+
+	const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
+
+	SkyGenerationExteriorInfo newSkyGenExteriorInfo;
+	newSkyGenExteriorInfo.init(locationCityDef.climateType, *this->nextMapDefWeatherDef, currentDay, starCount, locationCityDef.citySeed,
+		locationCityDef.skySeed, provinceDef.hasAnimatedDistantLand);
+
+	const MapType savedMapType = this->prevMapSavedGenInfo.mapType;
+	MapDefinition savedMapDef;
+	if (savedMapType == MapType::City)
+	{
+		savedMapDef.initCity(this->prevMapSavedGenInfo.cityInfo, newSkyGenExteriorInfo, game.textureManager);
+	}
+	else if (savedMapType == MapType::Wilderness)
+	{
+		savedMapDef.initWild(this->prevMapSavedGenInfo.wildInfo, newSkyGenExteriorInfo, game.textureManager);
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(this->prevMapSavedGenInfo.mapType)));
+	}
+
+	this->nextMapDef = std::move(savedMapDef);
+	this->prevMapSavedGenInfo.clear();
 
 	this->nextMapPlayerStartOffset = VoxelInt2::Zero;
 	this->nextMapDefLocationIDs = std::nullopt;
-
-	// Calculate weather.
-	const ArenaWeatherType weatherType = this->getWeatherForLocation(this->provinceDefID, this->locationIndex);
-	Random random; // @todo: get from Game
-	this->nextMapDefWeatherDef = WeatherDefinition();
-	this->nextMapDefWeatherDef->initFromClassic(weatherType, this->date.getDay(), random);
 
 	this->nextMapClearsPrevious = true;
 }
@@ -530,13 +572,13 @@ double GameState::getActiveCeilingScale() const
 
 bool GameState::isActiveMapNested() const
 {
-	return this->prevMapDef.isValid();
+	return this->prevMapSavedGenInfo.isValid();
 }
 
 MapType GameState::getExteriorMapType() const
 {
 	DebugAssert(this->isActiveMapNested());
-	return this->prevMapDef.getMapType();
+	return this->prevMapSavedGenInfo.mapType;
 }
 
 ArenaEnvironmentType GameState::getEnvironmentType() const
@@ -718,7 +760,7 @@ void GameState::clearMaps()
 {
 	this->activeMapDef.clear();
 	this->activeLevelIndex = -1;
-	this->prevMapDef.clear();
+	this->prevMapSavedGenInfo.clear();
 	this->prevMapReturnCoord = std::nullopt;
 	this->nextMapDef.clear();
 	this->nextMapPlayerStartOffset = VoxelInt2::Zero;
@@ -1084,7 +1126,27 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	{
 		if (!this->nextMapClearsPrevious)
 		{
-			this->prevMapDef = std::move(this->activeMapDef);
+			if (this->activeMapDef.isValid())
+			{
+				this->prevMapSavedGenInfo.mapType = this->activeMapDef.getMapType();
+
+				const LocationDefinition &locationDef = this->getLocationDefinition();
+				const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+
+				DebugAssert(locationDef.type == LocationDefinitionType::City);
+				const LocationCityDefinition &locationCityDef = locationDef.city;				
+
+				if (this->prevMapSavedGenInfo.mapType == MapType::City)
+				{
+					this->prevMapSavedGenInfo.cityInfo.init(locationCityDef, provinceDef.originalProvinceIndex);
+				}
+				else
+				{
+					const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+					Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(locationCityDef.wildSeed, exeData.wild);
+					this->prevMapSavedGenInfo.wildInfo.init(std::move(wildBlockIDs), locationCityDef, locationCityDef.citySeed);
+				}
+			}
 		}
 
 		this->activeMapDef.clear();

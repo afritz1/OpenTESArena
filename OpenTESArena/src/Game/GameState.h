@@ -135,6 +135,19 @@ struct TavernRentedRoomState
 	void clear();
 };
 
+struct MapExteriorSavedGenInfo
+{
+	MapType mapType;
+	MapGenerationCityInfo cityInfo;
+	MapGenerationWildInfo wildInfo;
+
+	MapExteriorSavedGenInfo();
+
+	bool isValid() const;
+
+	void clear();
+};
+
 // Container for currently loaded game/world data.
 class GameState
 {
@@ -152,7 +165,7 @@ public:
 private:
 	MapDefinition activeMapDef;
 	int activeLevelIndex;
-	MapDefinition prevMapDef; // Stored map definition when in an interior.
+	MapExteriorSavedGenInfo prevMapSavedGenInfo; // Stored means of regenerating city/wild when in an interior.
 	std::optional<CoordInt3> prevMapReturnCoord; // Used when leaving interiors.
 
 	// Scene transition request variables.
@@ -220,7 +233,7 @@ public:
 		const std::optional<CoordInt3> &returnCoord = std::nullopt, const VoxelInt2 &playerStartOffset = VoxelInt2::Zero,
 		const std::optional<WorldMapLocationIDs> &worldMapLocationIDs = std::nullopt,
 		bool clearPreviousMap = false, const std::optional<WeatherDefinition> &weatherDef = std::nullopt);
-	void queueMapDefPop();
+	void queueMapDefPop(Game &game);
 	void queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, const SceneChangeMusicFunc &jingleMusicFunc = SceneChangeMusicFunc());
 
 	bool hasPendingLevelTransitionCalculation() const;

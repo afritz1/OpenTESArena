@@ -295,7 +295,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 		};
 
 		// Leave the interior and go to the saved exterior.
-		gameState.queueMapDefPop();
+		gameState.queueMapDefPop(game);
 		gameState.queueMusicOnSceneChange(musicDefFunc, jingleMusicDefFunc);
 	}
 	else
@@ -732,7 +732,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 				return musicDef;
 			};
 
-			gameState.queueMapDefPop();
+			gameState.queueMapDefPop(game);
 			gameState.queueMusicOnSceneChange(musicFunc);
 		}
 		else
