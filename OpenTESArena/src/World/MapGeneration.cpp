@@ -2453,9 +2453,10 @@ void MapGenerationCityInfo::init(const LocationCityDefinition &cityDef, int orig
 		cityDef.reservedBlocks, cityDef.mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 }
 
-void MapGenerationWildInfo::init(Buffer2D<ArenaWildBlockID> &&wildBlockIDs, const LocationCityDefinition &cityDef, uint32_t fallbackSeed)
+void MapGenerationWildInfo::init(const LocationCityDefinition &cityDef, uint32_t fallbackSeed)
 {
-	this->wildBlockIDs = std::move(wildBlockIDs);
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	this->wildBlockIDs = ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 	this->cityDef = &cityDef;
 	this->fallbackSeed = fallbackSeed;
 }

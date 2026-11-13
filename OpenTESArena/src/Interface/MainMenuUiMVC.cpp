@@ -921,11 +921,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		const LocationDefinition &locationDef = provinceDef.locations[locationIndex];
 		const LocationCityDefinition &cityDef = locationDef.city;
 
-		const ExeData &exeData = binaryAssetLibrary.getExeData();
-		Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
-
 		MapGenerationWildInfo wildGenInfo;
-		wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
+		wildGenInfo.init(cityDef, cityDef.citySeed);
 
 		const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 		{

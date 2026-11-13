@@ -116,7 +116,7 @@ struct MapGenerationWildInfo
 	const LocationCityDefinition *cityDef;
 	uint32_t fallbackSeed;
 
-	void init(Buffer2D<ArenaWildBlockID> &&wildBlockIDs, const LocationCityDefinition &cityDef, uint32_t fallbackSeed);
+	void init(const LocationCityDefinition &cityDef, uint32_t fallbackSeed);
 };
 
 // Building names in the wild are shared per-chunk.

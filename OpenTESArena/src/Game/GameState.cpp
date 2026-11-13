@@ -1142,9 +1142,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 				}
 				else
 				{
-					const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-					Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(locationCityDef.wildSeed, exeData.wild);
-					this->prevMapSavedGenInfo.wildInfo.init(std::move(wildBlockIDs), locationCityDef, locationCityDef.citySeed);
+					this->prevMapSavedGenInfo.wildInfo.init(locationCityDef, locationCityDef.citySeed);
 				}
 			}
 		}
