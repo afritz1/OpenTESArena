@@ -2,8 +2,6 @@
 
 #include "../Math/Vector2.h"
 
-#include "components/debug/Debug.h"
-
 struct SDL_Rect;
 
 struct Rect
@@ -12,8 +10,6 @@ struct Rect
 
 	constexpr Rect(int x, int y, int width, int height)
 	{
-		DebugAssert(width >= 0);
-		DebugAssert(height >= 0);
 		this->x = x;
 		this->y = y;
 		this->width = width;

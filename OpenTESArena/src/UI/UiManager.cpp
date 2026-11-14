@@ -313,6 +313,12 @@ Rect UiManager::getElementClipRect(UiElementInstanceID elementInstID) const
 	return element.clipRect;
 }
 
+void UiManager::setElementClipRect(UiElementInstanceID elementInstID, Rect clipRect)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	element.clipRect = clipRect;
+}
+
 void UiManager::setElementDrawOrder(UiElementInstanceID elementInstID, int drawOrder)
 {
 	UiElement &element = this->elements.get(elementInstID);

@@ -19,6 +19,8 @@ struct ChooseRaceUiState
 	UiContextInstanceID provinceConfirmed3ContextInstID;
 	UiContextInstanceID provinceConfirmed4ContextInstID;
 
+	double openingScrollCurrentSeconds;
+
 	ChooseRaceUiState();
 
 	void init(Game &game);
@@ -27,6 +29,9 @@ struct ChooseRaceUiState
 namespace ChooseRaceUI
 {
 	DECLARE_UI_CONTEXT(ChooseRace);
+
+	double getOpeningScrollProgressPercent();
+	bool isOpeningScrollAnimating();
 
 	void onMouseButtonChanged(Game &game, MouseButtonType mouseButtonType, Int2 position, bool pressed);
 

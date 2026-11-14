@@ -13,7 +13,18 @@ Texture=TAMRIEL.MNU
 Type=Image
 Position=320,200
 Pivot=BottomRight
+DrawOrder=1
 Texture=NOEXIT.IMG
+Palette=TAMRIEL.MNU
+
+##################################
+
+[ChooseRaceOpeningScrollImage]
+Type=Image
+Position=0,-16
+Size=320,16
+DrawOrder=2
+Texture=TOP.DFA
 Palette=TAMRIEL.MNU
 
 ##################################

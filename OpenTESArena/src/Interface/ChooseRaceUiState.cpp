@@ -4,17 +4,26 @@
 #include "ChooseRaceUiState.h"
 #include "CommonUiMVC.h"
 #include "WorldMapUiMVC.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/UiPivotType.h"
 
 namespace
 {
+	constexpr char ContextName_InitialPopup[] = "ChooseRaceInitialPopUp";
 	constexpr char ContextName_ProvinceConfirm[] = "ChooseRaceProvinceConfirm";
 	constexpr char ContextName_ProvinceConfirmed1[] = "ChooseRaceProvinceConfirmed1";
 	constexpr char ContextName_ProvinceConfirmed2[] = "ChooseRaceProvinceConfirmed2";
 	constexpr char ContextName_ProvinceConfirmed3[] = "ChooseRaceProvinceConfirmed3";
 	constexpr char ContextName_ProvinceConfirmed4[] = "ChooseRaceProvinceConfirmed4";
+
+	constexpr char ElementName_Background[] = "ChooseRaceBackground";
+	constexpr char ElementName_NoExitImage[] = "ChooseRaceNoExitImage";
+	constexpr char ElementName_OpeningScrollImage[] = "ChooseRaceOpeningScrollImage";
+
+	constexpr double OPENING_SCROLL_TOTAL_SECONDS = 1.0;
+	constexpr double OPENING_SCROLL_ANIM_PERIOD_SECONDS = OPENING_SCROLL_TOTAL_SECONDS / 10.0;
 }
 
 ChooseRaceUiState::ChooseRaceUiState()
@@ -27,11 +36,13 @@ ChooseRaceUiState::ChooseRaceUiState()
 	this->provinceConfirmed2ContextInstID = -1;
 	this->provinceConfirmed3ContextInstID = -1;
 	this->provinceConfirmed4ContextInstID = -1;
+	this->openingScrollCurrentSeconds = 0.0;
 }
 
 void ChooseRaceUiState::init(Game &game)
 {
 	this->game = &game;
+	this->openingScrollCurrentSeconds = 0.0;
 }
 
 void ChooseRaceUI::create(Game &game)
@@ -119,13 +130,12 @@ void ChooseRaceUI::create(Game &game)
 	provinceConfirmed4ContextInitInfo.drawOrder = 1;
 	state.provinceConfirmed4ContextInstID = uiManager.createContext(provinceConfirmed4ContextInitInfo);
 
+	uiManager.setContextEnabled(state.initialPopUpContextInstID, false);
 	uiManager.setContextEnabled(state.provinceConfirmContextInstID, false);
 	uiManager.setContextEnabled(state.provinceConfirmed1ContextInstID, false);
 	uiManager.setContextEnabled(state.provinceConfirmed2ContextInstID, false);
 	uiManager.setContextEnabled(state.provinceConfirmed3ContextInstID, false);
 	uiManager.setContextEnabled(state.provinceConfirmed4ContextInstID, false);
-
-	// @todo: scroll unravel animation
 }
 
 void ChooseRaceUI::destroy()
@@ -177,16 +187,72 @@ void ChooseRaceUI::destroy()
 	}
 }
 
+double ChooseRaceUI::getOpeningScrollProgressPercent()
+{
+	const ChooseRaceUiState &state = ChooseRaceUI::state;
+	return std::clamp(state.openingScrollCurrentSeconds / OPENING_SCROLL_TOTAL_SECONDS, 0.0, 1.0);
+}
+
+bool ChooseRaceUI::isOpeningScrollAnimating()
+{
+	return ChooseRaceUI::getOpeningScrollProgressPercent() < 1.0;
+}
+
 void ChooseRaceUI::update(double dt)
 {
-	// Do nothing.
-	static_cast<void>(dt);
+	ChooseRaceUiState &state = ChooseRaceUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
 
-	// @todo unravel animation
+	if (ChooseRaceUI::isOpeningScrollAnimating())
+	{
+		const UiElementInstanceID openingScrollImageElementInstID = uiManager.getElementByName(ElementName_OpeningScrollImage);
+
+		const char *scrollAnimFilename = "TOP.DFA";
+		TextureManager &textureManager = game.textureManager;
+		const std::optional<TextureFileMetadataID> scrollTextureFileMetadataID = textureManager.tryGetMetadataID(scrollAnimFilename);
+		DebugAssert(scrollTextureFileMetadataID.has_value());
+		const TextureFileMetadata &scrollTextureFileMetadata = textureManager.getMetadataHandle(*scrollTextureFileMetadataID);
+
+		const double scrollProgressPercent = ChooseRaceUI::getOpeningScrollProgressPercent();
+		const int scrollAnimTextureHeight = scrollTextureFileMetadata.getHeight(0);
+		const int startY = -scrollAnimTextureHeight;
+		const int endY = ArenaRenderUtils::SCREEN_HEIGHT;
+		const int currentY = startY + static_cast<int>(static_cast<double>(endY - startY) * scrollProgressPercent);
+		uiManager.setTransformPosition(openingScrollImageElementInstID, Int2(0, currentY));
+
+		const double scrollAnimPercent = std::clamp(std::fmod(state.openingScrollCurrentSeconds, OPENING_SCROLL_ANIM_PERIOD_SECONDS) / OPENING_SCROLL_ANIM_PERIOD_SECONDS, 0.0, 1.0);
+		const int scrollAnimFrameIndex = MathUtils::getInterpolatedIndex(scrollTextureFileMetadata.getTextureCount(), scrollAnimPercent);
+		const TextureAsset scrollTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
+		const TextureAsset scrollPaletteAsset(ArenaTextureName::CharacterCreation);
+		const UiTextureID scrollAnimFrameTextureID = uiManager.getOrAddTexture(scrollTextureAsset, scrollPaletteAsset, textureManager, game.renderer);
+		uiManager.setImageTexture(openingScrollImageElementInstID, scrollAnimFrameTextureID);
+
+		const UiElementInstanceID bgImageElementInstID = uiManager.getElementByName(ElementName_Background);
+		const UiElementInstanceID noExitImageElementInstID = uiManager.getElementByName(ElementName_NoExitImage);
+		const Rect bgClipRect(0, 0, ArenaRenderUtils::SCREEN_WIDTH, std::max(currentY, 1)); // Minor height hack so clip rect always applies.
+		uiManager.setElementClipRect(bgImageElementInstID, bgClipRect);
+		uiManager.setElementClipRect(noExitImageElementInstID, bgClipRect);
+
+		state.openingScrollCurrentSeconds += dt;
+
+		if (!ChooseRaceUI::isOpeningScrollAnimating())
+		{
+			uiManager.setElementActive(openingScrollImageElementInstID, false);
+			uiManager.setContextEnabled(state.initialPopUpContextInstID, true);
+			uiManager.setElementClipRect(bgImageElementInstID, Rect());
+			uiManager.setElementClipRect(noExitImageElementInstID, Rect());
+		}
+	}
 }
 
 void ChooseRaceUI::onMouseButtonChanged(Game &game, MouseButtonType mouseButtonType, Int2 position, bool pressed)
 {
+	if (ChooseRaceUI::isOpeningScrollAnimating())
+	{
+		return;
+	}
+
 	if (mouseButtonType == MouseButtonType::Left)
 	{
 		if (pressed)
@@ -338,6 +404,11 @@ void ChooseRaceUI::onMouseButtonChanged(Game &game, MouseButtonType mouseButtonT
 
 void ChooseRaceUI::onBackInputAction(const InputActionCallbackValues &values)
 {
+	if (ChooseRaceUI::isOpeningScrollAnimating())
+	{
+		return;
+	}
+
 	if (values.performed)
 	{
 		Game &game = values.game;

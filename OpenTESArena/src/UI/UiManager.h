@@ -91,6 +91,7 @@ public:
 	UiElementInstanceID getElementByName(const char *name) const;
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
 	Rect getElementClipRect(UiElementInstanceID elementInstID) const;
+	void setElementClipRect(UiElementInstanceID elementInstID, Rect clipRect);
 	void setElementDrawOrder(UiElementInstanceID elementInstID, int drawOrder);
 	std::vector<UiElementInstanceID> getTopMostActiveElementsOfType(UiElementType elementType) const;
 
