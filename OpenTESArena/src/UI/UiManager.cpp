@@ -1888,7 +1888,7 @@ void UiManager::update(double dt, Game &game)
 		RenderElement2D renderElement;
 		renderElement.id = textureID;
 		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
-		renderElement.clipRect = GuiUtils::makeWindowSpaceRect(clipRect.x, clipRect.y, clipRect.width, clipRect.height, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
+		renderElement.clipRect = GuiUtils::makeWindowSpaceRect(clipRect.x, clipRect.y, clipRect.width, clipRect.height, UiPivotType::TopLeft, renderSpace, windowDims.x, windowDims.y, letterboxRect);
 		this->renderElementsCache.emplace_back(std::move(renderElement));
 	}
 }
