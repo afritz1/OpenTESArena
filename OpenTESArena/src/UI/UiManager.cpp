@@ -1574,7 +1574,7 @@ void UiManager::populateCommandList(UiDrawCommandList &commandList)
 	commandList.addElements(this->renderElementsCache);
 }
 
-void UiManager::update(double dt, Game &game)
+void UiManager::updateContexts(double dt)
 {
 	// Gather all visible contexts. Only the top-most context can update (plus global context).
 	std::vector<UiContextInstanceID> activeContextInstIDs;
@@ -1623,16 +1623,15 @@ void UiManager::update(double dt, Game &game)
 			}
 		}
 	}
+}
 
-	TextureManager &textureManager = game.textureManager;
-	Renderer &renderer = game.renderer;
-
-	// Update dirty text boxes.
+void UiManager::updateComponents(double dt)
+{
 	for (UiTextBox &textBox : this->textBoxes.values)
 	{
-		constexpr double cursorPeriodSeconds = TEXT_BOX_CURSOR_PERIOD_SECONDS;
 		if (textBox.hasCursor)
 		{
+			constexpr double cursorPeriodSeconds = TEXT_BOX_CURSOR_PERIOD_SECONDS;
 			const double oldCursorSeconds = textBox.cursorCurrentSeconds;
 			textBox.cursorCurrentSeconds += dt;
 			const double newCursorSeconds = textBox.cursorCurrentSeconds;
@@ -1647,7 +1646,13 @@ void UiManager::update(double dt, Game &game)
 				textBox.cursorCurrentSeconds = std::fmod(textBox.cursorCurrentSeconds, cursorPeriodSeconds);
 			}
 		}
+	}
+}
 
+void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &renderer)
+{
+	for (UiTextBox &textBox : this->textBoxes.values)
+	{
 		if (!textBox.dirty)
 		{
 			continue;
@@ -1674,6 +1679,7 @@ void UiManager::update(double dt, Game &game)
 		bool isCursorVisible = false;
 		if (textBox.hasCursor)
 		{
+			constexpr double cursorPeriodSeconds = TEXT_BOX_CURSOR_PERIOD_SECONDS;
 			const double cursorPeriodPercent = std::clamp(textBox.cursorCurrentSeconds / cursorPeriodSeconds, 0.0, 1.0);
 			isCursorVisible = cursorPeriodPercent < 0.50;
 		}
@@ -1684,7 +1690,6 @@ void UiManager::update(double dt, Game &game)
 		textBox.dirty = false;
 	}
 
-	// Update dirty list boxes.
 	for (UiListBox &listBox : this->listBoxes.values)
 	{
 		if (!listBox.dirty)
@@ -1738,7 +1743,10 @@ void UiManager::update(double dt, Game &game)
 		renderer.unlockUiTexture(listBoxTextureID);
 		listBox.dirty = false;
 	}
+}
 
+void UiManager::updateLayouts(const Renderer &renderer)
+{
 	// Update element sizes with no dependency.
 	for (UiElement &element : this->elements.values)
 	{
@@ -1801,7 +1809,10 @@ void UiManager::update(double dt, Game &game)
 			}
 		}
 	}
+}
 
+void UiManager::updateDrawList(const Window &window)
+{
 	this->renderElementsCache.clear();
 
 	std::vector<const UiElement*> elementsToDraw;
@@ -1840,7 +1851,6 @@ void UiManager::update(double dt, Game &game)
 		return a->drawOrder < b->drawOrder;
 	});
 
-	const Window &window = game.window;
 	const Int2 windowDims = window.getPixelDimensions();
 	const Rect letterboxRect = window.getLetterboxRect();
 

@@ -167,5 +167,9 @@ public:
 
 	void populateCommandList(UiDrawCommandList &commandList);
 
-	void update(double dt, Game &game);
+	void updateContexts(double dt);
+	void updateComponents(double dt);
+	void redrawDirtyComponents(TextureManager &textureManager, Renderer &renderer);
+	void updateLayouts(const Renderer &renderer);
+	void updateDrawList(const Window &window);
 };

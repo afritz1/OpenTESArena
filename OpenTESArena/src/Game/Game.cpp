@@ -874,14 +874,24 @@ void Game::loop()
 
 			this->inputManager.update(*this, deltaTime, this->uiManager, onFinishedProcessingEventFunc);
 			this->handleContextChanges(); // Another check in case of no input events this frame.
-
-			const Int2 cursorPosition = this->inputManager.getMousePosition();
-			this->uiManager.setTransformPosition(this->cursorImageElementInstID, cursorPosition);
-			this->uiManager.update(clampedDeltaTime, *this);
 		}
 		catch (const std::exception &e)
 		{
 			DebugCrashFormat("User input exception: %s", e.what());
+		}
+
+		// Tick UI update callbacks.
+		try
+		{
+			const Int2 cursorPosition = this->inputManager.getMousePosition();
+			this->uiManager.setTransformPosition(this->cursorImageElementInstID, cursorPosition);
+
+			this->uiManager.updateContexts(clampedDeltaTime);
+			this->uiManager.updateComponents(clampedDeltaTime);
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrashFormat("UI tick exception: %s", e.what());
 		}
 
 		// Tick game state.
@@ -922,7 +932,7 @@ void Game::loop()
 				else if (inputAcceleration.isInstantJump)
 				{
 					this->player.setPhysicsVelocityY(inputAcceleration.magnitude);
-					
+
 					if (this->player.vehicleState.isInVehicle())
 					{
 						EntityChunkManager &entityChunkManager = this->sceneManager.entityChunkManager;
@@ -1084,6 +1094,9 @@ void Game::loop()
 					lightTableTextureID, ditherTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
+			this->uiManager.redrawDirtyComponents(this->textureManager, this->renderer);
+			this->uiManager.updateLayouts(this->renderer);
+			this->uiManager.updateDrawList(this->window);
 			this->uiManager.populateCommandList(uiDrawCommandList);
 
 			const int profilerLevel = this->options.getMisc_ProfilerLevel();
