@@ -44,8 +44,6 @@
 
 namespace
 {
-	static constexpr double TEXT_BOX_CURSOR_PERIOD_SECONDS = 1.0;
-
 	Int2 GetImageContentSize(const UiImage &image, const Renderer &renderer)
 	{
 		const std::optional<Int2> size = renderer.tryGetUiTextureDims(image.textureID);
@@ -1569,11 +1567,6 @@ void UiManager::endContext(const char *contextName, Game &game)
 	// @todo clear loaded textures for this context
 }
 
-void UiManager::populateCommandList(UiDrawCommandList &commandList)
-{
-	commandList.addElements(this->renderElementsCache);
-}
-
 void UiManager::updateContexts(double dt)
 {
 	// Gather all visible contexts. Only the top-most context can update (plus global context).
@@ -1631,7 +1624,7 @@ void UiManager::updateComponents(double dt)
 	{
 		if (textBox.hasCursor)
 		{
-			constexpr double cursorPeriodSeconds = TEXT_BOX_CURSOR_PERIOD_SECONDS;
+			constexpr double cursorPeriodSeconds = UiTextBox::CURSOR_PERIOD_SECONDS;
 			const double oldCursorSeconds = textBox.cursorCurrentSeconds;
 			textBox.cursorCurrentSeconds += dt;
 			const double newCursorSeconds = textBox.cursorCurrentSeconds;
@@ -1675,14 +1668,7 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 		const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(textBox.text);
 		const Palette *tabColorPalette = (textBox.tabColorPaletteID >= 0) ? &textureManager.getPaletteHandle(textBox.tabColorPaletteID) : nullptr;
 		const TextRenderShadowInfo *shadowInfoPtr = textBox.shadowInfo.has_value() ? &(*textBox.shadowInfo) : nullptr;
-
-		bool isCursorVisible = false;
-		if (textBox.hasCursor)
-		{
-			constexpr double cursorPeriodSeconds = TEXT_BOX_CURSOR_PERIOD_SECONDS;
-			const double cursorPeriodPercent = std::clamp(textBox.cursorCurrentSeconds / cursorPeriodSeconds, 0.0, 1.0);
-			isCursorVisible = cursorPeriodPercent < 0.50;
-		}
+		const bool isCursorVisible = textBox.isCursorVisible();
 
 		TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, textBox.defaultColor, tabColorPalette, textBox.alignment, textBox.lineSpacing, shadowInfoPtr, isCursorVisible, texels);
 
@@ -1901,4 +1887,9 @@ void UiManager::updateDrawList(const Window &window)
 		renderElement.clipRect = GuiUtils::makeWindowSpaceRect(clipRect.x, clipRect.y, clipRect.width, clipRect.height, UiPivotType::TopLeft, renderSpace, windowDims.x, windowDims.y, letterboxRect);
 		this->renderElementsCache.emplace_back(std::move(renderElement));
 	}
+}
+
+void UiManager::populateCommandList(UiDrawCommandList &commandList)
+{
+	commandList.addElements(this->renderElementsCache);
 }

@@ -165,11 +165,11 @@ public:
 	void beginContext(const char *contextName, Game &game);
 	void endContext(const char *contextName, Game &game);
 
-	void populateCommandList(UiDrawCommandList &commandList);
-
 	void updateContexts(double dt);
 	void updateComponents(double dt);
 	void redrawDirtyComponents(TextureManager &textureManager, Renderer &renderer);
 	void updateLayouts(const Renderer &renderer);
 	void updateDrawList(const Window &window);
+
+	void populateCommandList(UiDrawCommandList &commandList);
 };

@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "TextAlignment.h"
 #include "UiTextBox.h"
 #include "../Rendering/Renderer.h"
@@ -57,4 +59,15 @@ void UiTextBox::free(Renderer &renderer)
 		renderer.freeUiTexture(this->textureID);
 		this->textureID = -1;
 	}
+}
+
+bool UiTextBox::isCursorVisible() const
+{
+	if (!this->hasCursor)
+	{
+		return false;
+	}
+
+	const double periodPercent = std::clamp(this->cursorCurrentSeconds / UiTextBox::CURSOR_PERIOD_SECONDS, 0.0, 1.0);
+	return periodPercent < 0.50;
 }

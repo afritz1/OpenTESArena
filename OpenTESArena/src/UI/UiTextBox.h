@@ -29,6 +29,8 @@ struct UiTextBoxInitInfo
 
 struct UiTextBox
 {
+	static constexpr double CURSOR_PERIOD_SECONDS = 1.0;
+
 	std::string text;
 	bool dirty;
 
@@ -53,4 +55,6 @@ struct UiTextBox
 		bool hasCursor);
 
 	void free(Renderer &renderer);
+
+	bool isCursorVisible() const;
 };
