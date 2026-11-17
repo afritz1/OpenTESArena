@@ -43,11 +43,12 @@ namespace
 
 	const std::string Keyword_EntryType = "Type";
 	const std::string Keyword_EntryType_Image = "Image";
+	const std::string Keyword_EntryType_ImageSliced = "ImageSliced";
 	const std::string Keyword_EntryType_TextBox = "TextBox";
 	const std::string Keyword_EntryType_ListBox = "ListBox";
 	const std::string Keyword_EntryType_Button = "Button";
 	const std::string Keyword_EntryType_InputListener = "InputListener";
-	const std::string ValidEntryTypeKeys[] = { Keyword_EntryType_Image, Keyword_EntryType_TextBox, Keyword_EntryType_ListBox, Keyword_EntryType_Button, Keyword_EntryType_InputListener };
+	const std::string ValidEntryTypeKeys[] = { Keyword_EntryType_Image, Keyword_EntryType_ImageSliced, Keyword_EntryType_TextBox, Keyword_EntryType_ListBox, Keyword_EntryType_Button, Keyword_EntryType_InputListener };
 
 	const std::string Keyword_ElementPosition = "Position";
 	const std::string Keyword_ElementSize = "Size";
@@ -60,6 +61,13 @@ namespace
 	const std::string Keyword_ImageTexture = "Texture";
 	const std::string Keyword_ImagePalette = "Palette";
 	const std::string ValidImageKeys[] = { Keyword_ImageTexture, Keyword_ImagePalette };
+
+	const std::string Keyword_ImageSlicedTexture = Keyword_ImageTexture;
+	const std::string Keyword_ImageSlicedPalette = Keyword_ImagePalette;
+	const std::string Keyword_ImageSlicedContentElementName = "ContentElementName";
+	const std::string Keyword_ImageSlicedPaddingWidth = "PaddingWidth";
+	const std::string Keyword_ImageSlicedPaddingHeight = "PaddingHeight";
+	const std::string ValidImageSlicedKeys[] = { Keyword_ImageSlicedTexture, Keyword_ImageSlicedPalette, Keyword_ImageSlicedContentElementName, Keyword_ImageSlicedPaddingWidth, Keyword_ImageSlicedPaddingHeight };
 
 	const std::string Keyword_TextBoxWorstCaseText = "WorstCaseText";
 	const std::string Keyword_TextBoxText = "Text";
@@ -83,7 +91,7 @@ namespace
 
 	const std::string Keyword_ButtonMouseButtons = "MouseButtons";
 	const std::string Keyword_ButtonCallback = "Callback";
-	const std::string Keyword_ButtonContentElementName = "ContentElementName";
+	const std::string Keyword_ButtonContentElementName = Keyword_ImageSlicedContentElementName;
 	const std::string ValidButtonKeys[] = { Keyword_ButtonMouseButtons, Keyword_ButtonCallback, Keyword_ButtonContentElementName };
 
 	const std::string Keyword_InputListenerInputActionName = "InputActionName";
@@ -94,6 +102,7 @@ namespace
 	{
 		None,
 		Image,
+		ImageSliced,
 		TextBox,
 		ListBox,
 		Button,
@@ -104,6 +113,7 @@ namespace
 	{
 		UiParseEntryType entryType;
 		UiImageDefinition imageDef;
+		UiImageSlicedDefinition imageSlicedDef;
 		UiTextBoxDefinition textBoxDef;
 		UiListBoxDefinition listBoxDef;
 		UiButtonDefinition buttonDef;
@@ -118,6 +128,7 @@ namespace
 		{
 			this->entryType = UiParseEntryType::None;
 			this->imageDef.clear();
+			this->imageSlicedDef.clear();
 			this->textBoxDef.clear();
 			this->listBoxDef.clear();
 			this->buttonDef.clear();
@@ -370,6 +381,11 @@ namespace
 	bool IsKeyValidForImageEntry(const std::string &key)
 	{
 		return std::find(std::begin(ValidImageKeys), std::end(ValidImageKeys), key) != std::end(ValidImageKeys);
+	}
+
+	bool IsKeyValidForImageSlicedEntry(const std::string &key)
+	{
+		return std::find(std::begin(ValidImageSlicedKeys), std::end(ValidImageSlicedKeys), key) != std::end(ValidImageSlicedKeys);
 	}
 
 	bool IsKeyValidForTextBoxEntry(const std::string &key)
@@ -637,6 +653,66 @@ namespace
 		else
 		{
 			DebugLogErrorFormat("Unrecognized image key \"%s\".", key.c_str());
+			return false;
+		}
+
+		return true;
+	}
+
+	bool TryParseImageSlicedLine(const std::string &key, const std::string &value, UiImageSlicedDefinition *outImageSlicedDef)
+	{
+		if (TryParseElementLine(key, value, &outImageSlicedDef->element))
+		{
+			return true;
+		}
+
+		if (!IsKeyValidForImageSlicedEntry(key))
+		{
+			return false;
+		}
+
+		if (key == Keyword_ImageSlicedTexture)
+		{
+			outImageSlicedDef->texture = TextureAsset(value);
+
+			if (outImageSlicedDef->palette.filename.empty())
+			{
+				outImageSlicedDef->palette = outImageSlicedDef->texture;
+			}
+		}
+		else if (key == Keyword_ImageSlicedPalette)
+		{
+			outImageSlicedDef->palette = TextureAsset(value);
+		}
+		else if (key == Keyword_ImageSlicedContentElementName)
+		{
+			outImageSlicedDef->contentElementName = value;
+		}
+		else if (key == Keyword_ImageSlicedPaddingWidth)
+		{
+			int paddingWidth = 0;
+			if (!TryParseInteger(value, &paddingWidth))
+			{
+				DebugLogErrorFormat("Couldn't parse padding width value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outImageSlicedDef->paddingWidth = paddingWidth;
+		}
+		else if (key == Keyword_ImageSlicedPaddingHeight)
+		{
+			int paddingHeight = 0;
+			if (!TryParseInteger(value, &paddingHeight))
+			{
+				DebugLogErrorFormat("Couldn't parse padding height value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outImageSlicedDef->paddingHeight = paddingHeight;
+		}
+		else
+		{
+			DebugLogErrorFormat("Unrecognized image sliced key \"%s\".", key.c_str());
 			return false;
 		}
 
@@ -1051,6 +1127,7 @@ void UiElementDefinition::clear()
 UiImageDefinition::UiImageDefinition()
 {
 	this->type = UiImageDefinitionType::Empty;
+	this->patternType = static_cast<UiTexturePatternType>(-1);
 	this->generatedWidth = -1;
 	this->generatedHeight = -1;
 }
@@ -1058,8 +1135,28 @@ UiImageDefinition::UiImageDefinition()
 void UiImageDefinition::clear()
 {
 	this->element.clear();
+	this->type = UiImageDefinitionType::Empty;
+	this->patternType = static_cast<UiTexturePatternType>(-1);
 	this->texture = TextureAsset();
 	this->palette = TextureAsset();
+	this->generatedWidth = -1;
+	this->generatedHeight = -1;
+}
+
+UiImageSlicedDefinition::UiImageSlicedDefinition()
+{
+	this->paddingWidth = 0;
+	this->paddingHeight = 0;
+}
+
+void UiImageSlicedDefinition::clear()
+{
+	this->element.clear();
+	this->texture = TextureAsset();
+	this->palette = TextureAsset();
+	this->contentElementName.clear();
+	this->paddingWidth = 0;
+	this->paddingHeight = 0;
 }
 
 void UiTextBoxDefinition::clear()
@@ -1133,6 +1230,7 @@ void UiContextDefinition::clear()
 {
 	this->name.clear();
 	this->imageDefs.clear();
+	this->imageSlicedDefs.clear();
 	this->textBoxDefs.clear();
 	this->listBoxDefs.clear();
 	this->buttonDefs.clear();
@@ -1207,6 +1305,10 @@ bool UiLibrary::init(const char *folderPath)
 					{
 						parseState.entryType = UiParseEntryType::Image;
 					}
+					else if (value == Keyword_EntryType_ImageSliced)
+					{
+						parseState.entryType = UiParseEntryType::ImageSliced;
+					}
 					else if (value == Keyword_EntryType_TextBox)
 					{
 						parseState.entryType = UiParseEntryType::TextBox;
@@ -1239,6 +1341,12 @@ bool UiLibrary::init(const char *folderPath)
 						if (!TryParseImageLine(key, value, &parseState.imageDef))
 						{
 							DebugLogErrorFormat("Couldn't parse \"%s\" and \"%s\" for image entry \"%s\".", key.c_str(), value.c_str(), entryName.c_str());
+						}
+						break;
+					case UiParseEntryType::ImageSliced:
+						if (!TryParseImageSlicedLine(key, value, &parseState.imageSlicedDef))
+						{
+							DebugLogErrorFormat("Couldn't parse \"%s\" and \"%s\" for image sliced entry \"%s\".", key.c_str(), value.c_str(), entryName.c_str());
 						}
 						break;
 					case UiParseEntryType::TextBox:
@@ -1279,6 +1387,10 @@ bool UiLibrary::init(const char *folderPath)
 			case UiParseEntryType::Image:
 				parseState.imageDef.element.name = entryName;
 				contextDef.imageDefs.emplace_back(parseState.imageDef);
+				break;
+			case UiParseEntryType::ImageSliced:
+				parseState.imageSlicedDef.element.name = entryName;
+				contextDef.imageSlicedDefs.emplace_back(parseState.imageSlicedDef);
 				break;
 			case UiParseEntryType::TextBox:
 				parseState.textBoxDef.element.name = entryName;

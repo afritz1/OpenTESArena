@@ -44,6 +44,14 @@ void UiElement::initImage(const char *name, const char *contextName, Rect clipRe
 	this->imageInstID = instID;
 }
 
+void UiElement::initImageSliced(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageSlicedInstanceID instID)
+{
+	this->initInternal(name, contextName, clipRect, drawOrder, renderSpace, transformInstID);
+
+	this->type = UiElementType::ImageSliced;
+	this->imageSlicedInstID = instID;
+}
+
 void UiElement::initTextBox(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID)
 {
 	this->initInternal(name, contextName, clipRect, drawOrder, renderSpace, transformInstID);

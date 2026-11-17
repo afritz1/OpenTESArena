@@ -11,6 +11,7 @@ enum class UiTransformSizeType;
 using UiElementInstanceID = int;
 
 using UiImageInstanceID = int;
+using UiImageSlicedInstanceID = int;
 using UiTextBoxInstanceID = int;
 using UiListBoxInstanceID = int;
 using UiButtonInstanceID = int;
@@ -18,6 +19,7 @@ using UiButtonInstanceID = int;
 enum class UiElementType
 {
 	Image,
+	ImageSliced,
 	TextBox,
 	ListBox,
 	Button
@@ -54,6 +56,7 @@ struct UiElement
 	union
 	{
 		UiImageInstanceID imageInstID;
+		UiImageSlicedInstanceID imageSlicedInstID;
 		UiTextBoxInstanceID textBoxInstID;
 		UiListBoxInstanceID listBoxInstID;
 		UiButtonInstanceID buttonInstID;
@@ -64,6 +67,7 @@ struct UiElement
 	void initInternal(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID);
 
 	void initImage(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
+	void initImageSliced(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageSlicedInstanceID instID);
 	void initTextBox(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
 	void initListBox(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiListBoxInstanceID instID);
 	void initButton(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
