@@ -1914,7 +1914,7 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 		}
 
 		Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-		TextureUtils::populateGeneratedTexture(UiTexturePatternType::Parchment, dstTexels, textureManager, renderer); // @todo provide imageSliced textureBuilderIDs instead
+		TextureUtils::populate9SlicedTexture(imageSliced.textureBuilderIDs, imageSliced.paletteID, dstTexels, textureManager, renderer);
 		renderer.unlockUiTexture(imageSliced.textureID);
 
 		imageSliced.dirty = false;

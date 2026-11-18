@@ -61,6 +61,9 @@ namespace TextureUtils
 	static constexpr int PARCHMENT_MIN_WIDTH = 40;
 	static constexpr int PARCHMENT_MIN_HEIGHT = PARCHMENT_MIN_WIDTH;
 
+	// Draws the 3x3 provided texture builders into the output texture.
+	void populate9SlicedTexture(Span<const TextureBuilderID> textureBuilderIDs, PaletteID paletteID, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer);
+
 	// Draws the provided pattern type into the output texture.
 	void populateGeneratedTexture(UiTexturePatternType type, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer);
 

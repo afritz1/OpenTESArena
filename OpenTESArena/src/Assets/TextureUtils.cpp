@@ -16,15 +16,17 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextRenderUtils.h"
 
-void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer)
+void TextureUtils::populate9SlicedTexture(Span<const TextureBuilderID> textureBuilderIDs, PaletteID paletteID, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer)
 {
+	DebugAssert(textureBuilderIDs.getCount() == 9);
 	const int outputWidth = outPixels.getWidth();
 	const int outputHeight = outPixels.getHeight();
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
 
 	constexpr uint32_t clearColor = Colors::TransparentRGBA;
 	outPixels.fill(clearColor);
 
-	auto writeToOutput = [&outPixels](Span2D<const uint8_t> srcTexels, const Palette &palette, int dstX, int dstY)
+	auto writeTileToOutput = [&outPixels](Span2D<const uint8_t> srcTexels, const Palette &palette, int dstX, int dstY)
 	{
 		for (int y = 0; y < srcTexels.getHeight(); y++)
 		{
@@ -36,6 +38,62 @@ void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<ui
 			}
 		}
 	};
+
+	const TextureBuilder &topLeftTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[0]);
+	const TextureBuilder &topTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[1]);
+	const TextureBuilder &topRightTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[2]);
+	const TextureBuilder &leftTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[3]);
+	const TextureBuilder &bodyTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[4]);
+	const TextureBuilder &rightTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[5]);
+	const TextureBuilder &bottomLeftTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[6]);
+	const TextureBuilder &bottomTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[7]);
+	const TextureBuilder &bottomRightTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[8]);
+	Span2D<const uint8_t> topLeftTexels = topLeftTextureBuilder.getTexels8();
+	Span2D<const uint8_t> topTexels = topTextureBuilder.getTexels8();
+	Span2D<const uint8_t> topRightTexels = topRightTextureBuilder.getTexels8();
+	Span2D<const uint8_t> leftTexels = leftTextureBuilder.getTexels8();
+	Span2D<const uint8_t> bodyTexels = bodyTextureBuilder.getTexels8();
+	Span2D<const uint8_t> rightTexels = rightTextureBuilder.getTexels8();
+	Span2D<const uint8_t> bottomLeftTexels = bottomLeftTextureBuilder.getTexels8();
+	Span2D<const uint8_t> bottomTexels = bottomTextureBuilder.getTexels8();
+	Span2D<const uint8_t> bottomRightTexels = bottomRightTextureBuilder.getTexels8();
+
+	// Draw body tiles.
+	for (int y = topLeftTexels.getHeight(); y < (outputHeight - topRightTexels.getHeight()); y += bodyTexels.getHeight())
+	{
+		for (int x = topLeftTexels.getWidth(); x < (outputWidth - topRightTexels.getWidth()); x += bodyTexels.getWidth())
+		{
+			writeTileToOutput(bodyTexels, palette, x, y);
+		}
+	}
+
+	// Draw edge tiles.
+	for (int y = topLeftTexels.getHeight(); y < (outputHeight - bottomLeftTexels.getHeight()); y += leftTexels.getHeight())
+	{
+		writeTileToOutput(leftTexels, palette, 0, y);
+		writeTileToOutput(rightTexels, palette, outputWidth - rightTexels.getWidth(), y);
+	}
+
+	for (int x = topLeftTexels.getWidth(); x < (outputWidth - topRightTexels.getWidth()); x += topTexels.getWidth())
+	{
+		writeTileToOutput(topTexels, palette, x, 0);
+		writeTileToOutput(bottomTexels, palette, x, outputHeight - bottomTexels.getHeight());
+	}
+
+	// Draw corner tiles.
+	writeTileToOutput(topLeftTexels, palette, 0, 0);
+	writeTileToOutput(topRightTexels, palette, outputWidth - topRightTexels.getWidth(), 0);
+	writeTileToOutput(bottomLeftTexels, palette, 0, outputHeight - bottomLeftTexels.getHeight());
+	writeTileToOutput(bottomRightTexels, palette, outputWidth - bottomRightTexels.getWidth(), outputHeight - bottomRightTexels.getHeight());
+}
+
+void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer)
+{
+	const int outputWidth = outPixels.getWidth();
+	const int outputHeight = outPixels.getHeight();
+
+	constexpr uint32_t clearColor = Colors::TransparentRGBA;
+	outPixels.fill(clearColor);
 
 	if (type == UiTexturePatternType::Parchment)
 	{
@@ -50,7 +108,6 @@ void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<ui
 			return;
 		}
 
-		const Palette &palette = textureManager.getPaletteHandle(*tilesPaletteID);
 		const std::string &tilesFilename = ArenaTextureName::Parchment;
 		const std::optional<TextureBuilderIdGroup> tilesTextureBuilderIDs = textureManager.tryGetTextureBuilderIDs(tilesFilename.c_str());
 		if (!tilesTextureBuilderIDs.has_value())
@@ -59,52 +116,20 @@ void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<ui
 			return;
 		}
 
-		const TextureBuilder &topLeftTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(0));
-		const TextureBuilder &topTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(1));
-		const TextureBuilder &topRightTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(2));
-		const TextureBuilder &leftTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(3));
-		const TextureBuilder &bodyTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(4));
-		const TextureBuilder &rightTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(5));
-		const TextureBuilder &bottomLeftTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(6));
-		const TextureBuilder &bottomTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(7));
-		const TextureBuilder &bottomRightTextureBuilder = textureManager.getTextureBuilderHandle(tilesTextureBuilderIDs->getID(8));
-		Span2D<const uint8_t> topLeftTexels = topLeftTextureBuilder.getTexels8();
-		Span2D<const uint8_t> topTexels = topTextureBuilder.getTexels8();
-		Span2D<const uint8_t> topRightTexels = topRightTextureBuilder.getTexels8();
-		Span2D<const uint8_t> leftTexels = leftTextureBuilder.getTexels8();
-		Span2D<const uint8_t> bodyTexels = bodyTextureBuilder.getTexels8();
-		Span2D<const uint8_t> rightTexels = rightTextureBuilder.getTexels8();
-		Span2D<const uint8_t> bottomLeftTexels = bottomLeftTextureBuilder.getTexels8();
-		Span2D<const uint8_t> bottomTexels = bottomTextureBuilder.getTexels8();
-		Span2D<const uint8_t> bottomRightTexels = bottomRightTextureBuilder.getTexels8();
-
-		// Draw body tiles.
-		for (int y = topLeftTexels.getHeight(); y < (outputHeight - topRightTexels.getHeight()); y += bodyTexels.getHeight())
+		const TextureBuilderID tilesTextureBuilderIDsList[9] =
 		{
-			for (int x = topLeftTexels.getWidth(); x < (outputWidth - topRightTexels.getWidth()); x += bodyTexels.getWidth())
-			{
-				writeToOutput(bodyTexels, palette, x, y);
-			}
-		}
+			tilesTextureBuilderIDs->getID(0),
+			tilesTextureBuilderIDs->getID(1),
+			tilesTextureBuilderIDs->getID(2),
+			tilesTextureBuilderIDs->getID(3),
+			tilesTextureBuilderIDs->getID(4),
+			tilesTextureBuilderIDs->getID(5),
+			tilesTextureBuilderIDs->getID(6),
+			tilesTextureBuilderIDs->getID(7),
+			tilesTextureBuilderIDs->getID(8)
+		};
 
-		// Draw edge tiles.
-		for (int y = topLeftTexels.getHeight(); y < (outputHeight - bottomLeftTexels.getHeight()); y += leftTexels.getHeight())
-		{
-			writeToOutput(leftTexels, palette, 0, y);
-			writeToOutput(rightTexels, palette, outputWidth - rightTexels.getWidth(), y);
-		}
-
-		for (int x = topLeftTexels.getWidth(); x < (outputWidth - topRightTexels.getWidth()); x += topTexels.getWidth())
-		{
-			writeToOutput(topTexels, palette, x, 0);
-			writeToOutput(bottomTexels, palette, x, outputHeight - bottomTexels.getHeight());
-		}
-
-		// Draw corner tiles.
-		writeToOutput(topLeftTexels, palette, 0, 0);
-		writeToOutput(topRightTexels, palette, outputWidth - topRightTexels.getWidth(), 0);
-		writeToOutput(bottomLeftTexels, palette, 0, outputHeight - bottomLeftTexels.getHeight());
-		writeToOutput(bottomRightTexels, palette, outputWidth - bottomRightTexels.getWidth(), outputHeight - bottomRightTexels.getHeight());
+		TextureUtils::populate9SlicedTexture(tilesTextureBuilderIDsList, *tilesPaletteID, outPixels, textureManager, renderer);
 	}
 	else if (type == UiTexturePatternType::Dark)
 	{
