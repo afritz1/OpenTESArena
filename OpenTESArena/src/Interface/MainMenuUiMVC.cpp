@@ -445,20 +445,27 @@ UiTextureID MainMenuUiView::allocTestArrowsTexture(TextureManager &textureManage
 UiTextureID MainMenuUiView::allocTestButtonTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const Rect rect = MainMenuUiView::getTestButtonRect();
-	const Surface surface = TextureUtils::generate(MainMenuUiView::TestButtonPatternType, rect.width, rect.height, textureManager, renderer);
+	const int textureWidth = rect.width;
+	const int textureHeight = rect.height;
 
-	Span2D<const uint32_t> pixels = surface.getPixels();
-	const UiTextureID textureID = renderer.createUiTexture(pixels.getWidth(), pixels.getHeight());
+	const UiTextureID textureID = renderer.createUiTexture(textureWidth, textureHeight);
 	if (textureID < 0)
 	{
-		DebugLogError("Couldn't create UI texture for test button.");
+		DebugLogErrorFormat("Couldn't create %dx%d test button UI texture.", textureWidth, textureHeight);
 		return -1;
 	}
 
-	if (!renderer.populateUiTextureNoPalette(textureID, pixels))
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
 	{
-		DebugLogError("Couldn't populate UI texture for test button.");
+		DebugLogErrorFormat("Couldn't lock %dx%d test button UI texture for writing.", textureWidth, textureHeight);
+		return -1;
 	}
+
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+	TextureUtils::populateGeneratedTexture(MainMenuUiView::TestButtonPatternType, dstTexels, textureManager, renderer);
+
+	renderer.unlockUiTexture(textureID);
 
 	return textureID;
 }

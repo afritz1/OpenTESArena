@@ -629,20 +629,18 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(ProvinceDefinitionID
 	return textureID;
 }
 
-UiTextureID ProvinceMapUiView::allocTextPopUpTexture(int textWidth, int textHeight,
-	TextureManager &textureManager, Renderer &renderer)
+UiTextureID ProvinceMapUiView::allocTextPopUpTexture(int textWidth, int textHeight, TextureManager &textureManager, Renderer &renderer)
 {
-	const Surface surface = TextureUtils::generate(
-		ProvinceMapUiView::TextPopUpTexturePatternType,
-		ProvinceMapUiView::getTextPopUpTextureWidth(textWidth),
-		ProvinceMapUiView::getTextPopUpTextureHeight(textHeight),
-		textureManager,
-		renderer);
+	const int textureWidth = ProvinceMapUiView::getTextPopUpTextureWidth(textWidth);
+	const int textureHeight = ProvinceMapUiView::getTextPopUpTextureHeight(textHeight);
+	Buffer2D<uint32_t> generatedTexture(textureWidth, textureHeight);
+	TextureUtils::populateGeneratedTexture(ProvinceMapUiView::TextPopUpTexturePatternType, generatedTexture, textureManager, renderer);
 
 	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	if (!TextureUtils::tryAllocUiTextureFromPixels(generatedTexture, renderer, &textureID))
 	{
-		DebugCrash("Couldn't create text pop-up texture.");
+		DebugLogError("Couldn't create province map text pop-up texture.");
+		return -1;
 	}
 
 	return textureID;
@@ -704,25 +702,25 @@ TextureAsset ProvinceSearchUiView::getListPaletteTextureAsset(const BinaryAssetL
 
 UiTextureID ProvinceSearchUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const int width = ProvinceSearchUiView::TextureWidth;
-	const int height = ProvinceSearchUiView::TextureHeight;
-	const Surface surface = TextureUtils::generate(ProvinceSearchUiView::TexturePattern, width, height, textureManager, renderer);
-
-	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	const int textureWidth = ProvinceSearchUiView::TextureWidth;
+	const int textureHeight = ProvinceSearchUiView::TextureHeight;
+	const UiTextureID textureID = renderer.createUiTexture(textureWidth, textureHeight);
 	if (textureID < 0)
 	{
-		DebugCrashFormat("Couldn't create parchment texture with dims %dx%d.", width, height);
+		DebugLogErrorFormat("Couldn't create %dx%d parchment texture.", textureWidth, textureHeight);
+		return -1;
 	}
 
 	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
 	if (!lockedTexture.isValid())
 	{
-		DebugCrash("Couldn't lock parchment texels for writing.");
+		DebugLogErrorFormat("Couldn't lock %dx%d parchment texels for writing.", textureWidth, textureHeight);
+		return -1;
 	}
 
-	Span2D<const uint32_t> srcTexels = surface.getPixels();
-	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-	std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();	
+	TextureUtils::populateGeneratedTexture(ProvinceSearchUiView::TexturePattern, dstTexels, textureManager, renderer);
+
 	renderer.unlockUiTexture(textureID);
 
 	return textureID;

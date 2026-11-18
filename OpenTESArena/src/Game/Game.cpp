@@ -1094,8 +1094,8 @@ void Game::loop()
 					lightTableTextureID, ditherTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
-			this->uiManager.redrawDirtyComponents(this->textureManager, this->renderer);
 			this->uiManager.updateLayouts(this->renderer);
+			this->uiManager.redrawDirtyComponents(this->textureManager, this->renderer);
 			this->uiManager.updateDrawList(this->window);
 			this->uiManager.populateCommandList(uiDrawCommandList);
 

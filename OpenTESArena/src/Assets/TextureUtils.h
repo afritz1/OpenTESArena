@@ -58,8 +58,14 @@ public:
 
 namespace TextureUtils
 {
-	// Generates a new texture from a pattern.
-	Surface generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager, Renderer &renderer);
+	static constexpr int PARCHMENT_MIN_WIDTH = 40;
+	static constexpr int PARCHMENT_MIN_HEIGHT = PARCHMENT_MIN_WIDTH;
+
+	// Draws the 3x3 provided texture builders into the output texture.
+	void populate9SlicedTexture(Span<const TextureBuilderID> textureBuilderIDs, PaletteID paletteID, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer);
+
+	// Draws the provided pattern type into the output texture.
+	void populateGeneratedTexture(UiTexturePatternType type, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer);
 
 	// Generates a tooltip texture with pre-defined font/color/background.
 	Surface createTooltip(const std::string &text, const FontLibrary &fontLibrary);
@@ -72,10 +78,12 @@ namespace TextureUtils
 	bool tryAllocUiTexture(const TextureAsset &textureAsset, const TextureAsset &paletteTextureAsset,
 		TextureManager &textureManager, Renderer &renderer, UiTextureID *outID);
 
+	bool tryAllocUiTextureFromPixels(Span2D<const uint32_t> pixels, Renderer &renderer, UiTextureID *outID);
+
 	// Convenience function for allocating a UI texture from an SDL surface. Note that the usage of this generally
 	// means there is waste with the allocation of the input surface, and this should just be a UI texture allocation
 	// and write instead eventually (instead of a copy).
-	bool tryAllocUiTextureFromSurface(const Surface &surface, TextureManager &textureManager, Renderer &renderer, UiTextureID *outID);
+	bool tryAllocUiTextureFromSurface(const Surface &surface, Renderer &renderer, UiTextureID *outID);
 }
 
 using PaletteIdGroup = TextureIdSequence<PaletteID>;

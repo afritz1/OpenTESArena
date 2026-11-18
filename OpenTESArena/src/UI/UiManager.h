@@ -61,6 +61,7 @@ private:
 	KeyValuePool<UiTransformInstanceID, UiTransform> transforms;
 	KeyValuePool<UiElementInstanceID, UiElement> elements;
 	KeyValuePool<UiImageInstanceID, UiImage> images;
+	KeyValuePool<UiImageSlicedInstanceID, UiImageSliced> imageSliceds;
 	KeyValuePool<UiTextBoxInstanceID, UiTextBox> textBoxes;
 	KeyValuePool<UiListBoxInstanceID, UiListBox> listBoxes;
 	KeyValuePool<UiButtonInstanceID, UiButton> buttons;
@@ -106,6 +107,9 @@ public:
 	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID, const Renderer &renderer);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
+
+	UiElementInstanceID createImageSliced(const UiElementInitInfo &initInfo, const UiImageSlicedInitInfo &imageSlicedInitInfo, UiContextInstanceID contextInstID, TextureManager &textureManager, Renderer &renderer);
+	void freeImageSliced(UiElementInstanceID elementInstID, Renderer &renderer);
 
 	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);
 	std::string getTextBoxText(UiElementInstanceID elementInstID) const;
@@ -167,8 +171,8 @@ public:
 
 	void updateContexts(double dt);
 	void updateComponents(double dt);
-	void redrawDirtyComponents(TextureManager &textureManager, Renderer &renderer);
 	void updateLayouts(const Renderer &renderer);
+	void redrawDirtyComponents(TextureManager &textureManager, Renderer &renderer);
 	void updateDrawList(const Window &window);
 
 	void populateCommandList(UiDrawCommandList &commandList);

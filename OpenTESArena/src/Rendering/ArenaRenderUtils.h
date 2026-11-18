@@ -4,6 +4,7 @@
 #include <string>
 
 #include "../Assets/MIFUtils.h"
+#include "../Math/Vector2.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Span.h"
@@ -40,8 +41,12 @@ namespace ArenaRenderUtils
 {
 	constexpr int SCREEN_WIDTH = 320;
 	constexpr int SCREEN_HEIGHT = 200;
+	constexpr Int2 SCREEN_SIZE(SCREEN_WIDTH, SCREEN_HEIGHT);
+	constexpr Int2 SCREEN_CENTER(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 	constexpr int SCENE_UI_HEIGHT = 53;
 	constexpr int SCENE_VIEW_HEIGHT = SCREEN_HEIGHT - SCENE_UI_HEIGHT;
+	constexpr Int2 SCENE_VIEW_SIZE(SCREEN_WIDTH, SCENE_VIEW_HEIGHT);
+	constexpr Int2 SCENE_VIEW_CENTER(SCREEN_WIDTH / 2, SCENE_VIEW_HEIGHT / 2);
 	constexpr int FOG_WIDTH = SCREEN_WIDTH;
 	constexpr int FOG_HEIGHT = SCENE_VIEW_HEIGHT - 1;
 	constexpr double SCREEN_WIDTH_REAL = static_cast<double>(SCREEN_WIDTH);

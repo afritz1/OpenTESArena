@@ -1,4 +1,5 @@
 #include <cstring>
+#include <numeric>
 
 #include "FontLibrary.h"
 #include "GuiUtils.h"
@@ -135,6 +136,7 @@ void UiManager::shutdown(Renderer &renderer)
 	this->transforms.clear();
 	this->elements.clear();
 	this->images.clear();
+	this->imageSliceds.clear();
 	this->textBoxes.clear();
 	this->listBoxes.clear();
 	this->buttons.clear();
@@ -201,14 +203,23 @@ UiTextureID UiManager::getOrAddTexture(UiTexturePatternType patternType, int wid
 		}
 	}
 
-	const Surface surface = TextureUtils::generate(patternType, width, height, textureManager, renderer);
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
-		DebugLogErrorFormat("Couldn't generate UI texture with pattern %d and dimensions %dx%d.", patternType, width, height);
+		DebugLogErrorFormat("Couldn't allocate UI texture with dimensions %dx%d for pattern %d.", width, height, patternType);
 		return -1;
 	}
+
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock UI texture with dimensions %dx%d for pattern %d.", width, height, patternType);
+		return -1;
+	}
+
+	Span2D<uint32_t> lockedTexels = lockedTexture.getTexels32();
+	TextureUtils::populateGeneratedTexture(patternType, lockedTexels, textureManager, renderer);
+	renderer.unlockUiTexture(textureID);
 
 	GeneratedUiTexture newTexture;
 	newTexture.patternType = patternType;
@@ -487,6 +498,123 @@ void UiManager::freeImage(UiElementInstanceID elementInstID)
 	}
 
 	this->images.free(element->imageInstID);
+	this->transforms.free(element->transformInstID);
+	this->elements.free(elementInstID);
+}
+
+UiElementInstanceID UiManager::createImageSliced(const UiElementInitInfo &initInfo, const UiImageSlicedInitInfo &imageSlicedInitInfo,
+	UiContextInstanceID contextInstID, TextureManager &textureManager, Renderer &renderer)
+{
+	UiContext &context = this->contexts.get(contextInstID);
+	const char *contextName = context.name.c_str();
+
+	const UiElementInstanceID elementInstID = this->elements.alloc();
+	if (elementInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate element for image sliced (context %s).", contextName);
+		return -1;
+	}
+
+	const UiTransformInstanceID transformInstID = this->transforms.alloc();
+	if (transformInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate transform for image sliced (context %s).", contextName);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	const UiImageSlicedInstanceID imageSlicedInstID = this->imageSliceds.alloc();
+	if (imageSlicedInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate image sliced (context %s).", contextName);
+		this->transforms.free(transformInstID);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	const std::string &textureFilename = imageSlicedInitInfo.textureAsset.filename;
+	const std::optional<TextureBuilderIdGroup> textureBuilderIdGroup = textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
+	if (!textureBuilderIdGroup.has_value())
+	{
+		DebugLogErrorFormat("Missing texture asset \"%s\" for image sliced (context %s).", textureFilename.c_str(), contextName);
+		this->imageSliceds.free(imageSlicedInstID);
+		this->transforms.free(transformInstID);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+	else if (textureBuilderIdGroup->count != UiImageSliced::TEXTURE_COUNT)
+	{
+		DebugLogErrorFormat("Texture asset \"%s\" for image sliced has %d textures, needs 9 (context %s).", textureFilename.c_str(), textureBuilderIdGroup->count, contextName);
+		this->imageSliceds.free(imageSlicedInstID);
+		this->transforms.free(transformInstID);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	TextureBuilderID textureBuilderIDs[UiImageSliced::TEXTURE_COUNT];
+	std::iota(std::begin(textureBuilderIDs), std::end(textureBuilderIDs), textureBuilderIdGroup->getID(0));
+
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(imageSlicedInitInfo.paletteAsset);
+	if (!paletteID.has_value())
+	{
+		DebugLogErrorFormat("Missing palette \"%s\" for image sliced (context %s).", imageSlicedInitInfo.paletteAsset.filename.c_str(), contextName);
+		this->imageSliceds.free(imageSlicedInstID);
+		this->transforms.free(transformInstID);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	Int2 contentSize = initInfo.size; // Can't rely on content element having been created yet so can't support Content type here.	
+	if (contentSize != Int2::Zero)
+	{
+		contentSize.x += imageSlicedInitInfo.paddingWidth * 2;
+		contentSize.y += imageSlicedInitInfo.paddingHeight * 2;
+	}
+
+	const UiTextureID textureID = this->invalidTextureID; // To be generated later this frame.
+
+	UiImageSliced &imageSliced = this->imageSliceds.get(imageSlicedInstID);
+	imageSliced.init(textureID, textureBuilderIDs, *paletteID, imageSlicedInitInfo.contentElementName, imageSlicedInitInfo.minimumWidth, imageSlicedInitInfo.minimumHeight, imageSlicedInitInfo.paddingWidth, imageSlicedInitInfo.paddingHeight);
+
+	UiTransform &transform = this->transforms.get(transformInstID);
+	transform.init(initInfo.position, contentSize, initInfo.sizeType, initInfo.pivotType);
+
+	UiElement &element = this->elements.get(elementInstID);
+	element.initImageSliced(initInfo.name.c_str(), contextName, initInfo.clipRect, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageSlicedInstID);
+
+	context.imageSlicedElementInstIDs.emplace_back(elementInstID);
+
+	return elementInstID;
+}
+
+void UiManager::freeImageSliced(UiElementInstanceID elementInstID, Renderer &renderer)
+{
+	UiElement *element = this->elements.tryGet(elementInstID);
+	if (element == nullptr)
+	{
+		return;
+	}
+
+	DebugAssert(element->type == UiElementType::ImageSliced);
+
+	const UiContextInstanceID contextInstID = this->getContextByName(element->contextName);
+	if (contextInstID >= 0)
+	{
+		UiContext &context = this->contexts.get(contextInstID);
+		const auto iter = std::find(context.imageSlicedElementInstIDs.begin(), context.imageSlicedElementInstIDs.end(), elementInstID);
+		if (iter != context.imageSlicedElementInstIDs.end())
+		{
+			context.imageSlicedElementInstIDs.erase(iter);
+		}
+	}
+
+	UiImageSliced &imageSliced = this->imageSliceds.get(element->imageSlicedInstID);
+	if (imageSliced.textureID != this->invalidTextureID)
+	{
+		imageSliced.free(renderer);
+	}
+
+	this->imageSliceds.free(element->imageSlicedInstID);
 	this->transforms.free(element->transformInstID);
 	this->elements.free(elementInstID);
 }
@@ -1239,6 +1367,19 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		return initInfo;
 	};
 
+	auto imageSlicedDefToInitInfo = [](const UiImageSlicedDefinition &def)
+	{
+		UiImageSlicedInitInfo initInfo;
+		initInfo.textureAsset = def.texture;
+		initInfo.paletteAsset = def.palette;
+		initInfo.contentElementName = def.contentElementName;
+		initInfo.minimumWidth = def.minimumWidth;
+		initInfo.minimumHeight = def.minimumHeight;
+		initInfo.paddingWidth = def.paddingWidth;
+		initInfo.paddingHeight = def.paddingHeight;
+		return initInfo;
+	};
+
 	auto textBoxDefToInitInfo = [](const UiTextBoxDefinition &def)
 	{
 		UiTextBoxInitInfo initInfo;
@@ -1299,6 +1440,13 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		}
 
 		this->createImage(elementInitInfo, textureID, contextInstID, renderer);
+	}
+
+	for (const UiImageSlicedDefinition &imageSlicedDef : contextDef.imageSlicedDefs)
+	{
+		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(imageSlicedDef.element);
+		const UiImageSlicedInitInfo imageSlicedInitInfo = imageSlicedDefToInitInfo(imageSlicedDef);
+		this->createImageSliced(elementInitInfo, imageSlicedInitInfo, contextInstID, textureManager, renderer);
 	}
 
 	for (const UiTextBoxDefinition &textBoxDef : contextDef.textBoxDefs)
@@ -1440,6 +1588,12 @@ void UiManager::clearContextElements(UiContextInstanceID contextInstID, InputMan
 	{
 		const UiElementInstanceID instID = context.imageElementInstIDs[i];
 		this->freeImage(instID);
+	}
+
+	for (int i = static_cast<int>(context.imageSlicedElementInstIDs.size()) - 1; i >= 0; i--)
+	{
+		const UiElementInstanceID instID = context.imageSlicedElementInstIDs[i];
+		this->freeImageSliced(instID, renderer);
 	}
 
 	for (int i = static_cast<int>(context.textBoxElementInstIDs.size()) - 1; i >= 0; i--)
@@ -1642,8 +1796,130 @@ void UiManager::updateComponents(double dt)
 	}
 }
 
+void UiManager::updateLayouts(const Renderer &renderer)
+{
+	// Update element sizes with no dependency.
+	for (UiElement &element : this->elements.values)
+	{
+		UiTransform &transform = this->transforms.get(element.transformInstID);
+		if (transform.sizeType == UiTransformSizeType::Content)
+		{
+			switch (element.type)
+			{
+			case UiElementType::Image:
+			{
+				const UiImage &image = this->images.get(element.imageInstID);
+				transform.size = GetImageContentSize(image, renderer);
+				break;
+			}
+			case UiElementType::TextBox:
+			{
+				const UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+				transform.size = GetTextBoxContentSize(textBox);
+				break;
+			}
+			case UiElementType::ListBox:
+			{
+				const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+				transform.size = GetListBoxContentSize(listBox);
+				break;
+			}
+			case UiElementType::ImageSliced:
+			case UiElementType::Button:
+				break;
+			default:
+				DebugNotImplementedMsg(std::to_string(static_cast<int>(element.type)));
+				break;
+			}
+		}
+	}
+
+	auto getTransformByName = [this](const std::string &elementName) -> const UiTransform&
+	{
+		const UiElementInstanceID elementInstID = this->getElementByName(elementName.c_str());
+		const UiElement &element = this->elements.get(elementInstID);
+		return this->transforms.get(element.transformInstID);
+	};
+
+	// Update element sizes with dependency (after independent ones).
+	for (UiElement &element : this->elements.values)
+	{
+		UiTransform &transform = this->transforms.get(element.transformInstID);
+		if (transform.sizeType == UiTransformSizeType::Content)
+		{
+			switch (element.type)
+			{
+			case UiElementType::Image:
+			case UiElementType::TextBox:
+			case UiElementType::ListBox:
+				break;
+			case UiElementType::ImageSliced:
+			{
+				UiImageSliced &imageSliced = this->imageSliceds.get(element.imageSlicedInstID);
+				const UiTransform &contentTransform = getTransformByName(imageSliced.contentElementName);
+				const Int2 newTransformSize(
+					std::max(contentTransform.size.x + (imageSliced.paddingWidth * 2), imageSliced.minimumWidth),
+					std::max(contentTransform.size.y + (imageSliced.paddingHeight * 2), imageSliced.minimumHeight));
+				imageSliced.dirty |= transform.size != newTransformSize;
+				transform.size = newTransformSize;
+				break;
+			}
+			case UiElementType::Button:
+			{
+				const UiButton &button = this->buttons.get(element.buttonInstID);
+				const UiTransform &contentTransform = getTransformByName(button.contentElementName);
+				transform.size = contentTransform.size;
+				break;
+			}
+			default:
+				DebugNotImplementedMsg(std::to_string(static_cast<int>(element.type)));
+				break;
+			}
+		}
+	}
+}
+
 void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &renderer)
 {
+	for (const UiElement &element : this->elements.values)
+	{
+		if (element.type != UiElementType::ImageSliced)
+		{
+			continue;
+		}
+
+		UiImageSliced &imageSliced = this->imageSliceds.get(element.imageSlicedInstID);
+		if (!imageSliced.dirty)
+		{
+			continue;
+		}
+
+		if (imageSliced.textureID >= 0)
+		{
+			if (imageSliced.textureID != this->invalidTextureID)
+			{
+				renderer.freeUiTexture(imageSliced.textureID);
+			}
+
+			const UiTransform &transform = this->transforms.get(element.transformInstID);
+			const Int2 textureDims = transform.size; // Includes padding.
+			imageSliced.textureID = renderer.createUiTexture(textureDims.x, textureDims.y);
+		}
+
+		LockedTexture lockedTexture = renderer.lockUiTexture(imageSliced.textureID);
+		if (!lockedTexture.isValid())
+		{
+			DebugLogError("Couldn't lock image sliced UI texture for updating.");
+			return;
+		}
+
+		Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+		TextureUtils::populate9SlicedTexture(imageSliced.textureBuilderIDs, imageSliced.paletteID, dstTexels, textureManager, renderer);
+		renderer.unlockUiTexture(imageSliced.textureID);
+
+		imageSliced.dirty = false;
+	}
+
 	for (UiTextBox &textBox : this->textBoxes.values)
 	{
 		if (!textBox.dirty)
@@ -1731,72 +2007,6 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 	}
 }
 
-void UiManager::updateLayouts(const Renderer &renderer)
-{
-	// Update element sizes with no dependency.
-	for (UiElement &element : this->elements.values)
-	{
-		UiTransform &transform = this->transforms.get(element.transformInstID);
-		if (transform.sizeType == UiTransformSizeType::Content)
-		{
-			switch (element.type)
-			{
-			case UiElementType::Image:
-			{
-				const UiImage &image = this->images.get(element.imageInstID);
-				transform.size = GetImageContentSize(image, renderer);
-				break;
-			}
-			case UiElementType::TextBox:
-			{
-				const UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
-				transform.size = GetTextBoxContentSize(textBox);
-				break;
-			}
-			case UiElementType::ListBox:
-			{
-				const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
-				transform.size = GetListBoxContentSize(listBox);
-				break;
-			}
-			case UiElementType::Button:
-				break;
-			default:
-				DebugNotImplementedMsg(std::to_string(static_cast<int>(element.type)));
-				break;
-			}
-		}
-	}
-
-	// Update element sizes with dependency (after independent ones).
-	for (UiElement &element : this->elements.values)
-	{
-		UiTransform &transform = this->transforms.get(element.transformInstID);
-		if (transform.sizeType == UiTransformSizeType::Content)
-		{
-			switch (element.type)
-			{
-			case UiElementType::Image:
-			case UiElementType::TextBox:
-			case UiElementType::ListBox:
-				break;
-			case UiElementType::Button:
-			{
-				const UiButton &button = this->buttons.get(element.buttonInstID);
-				const UiElementInstanceID contentElementInstID = this->getElementByName(button.contentElementName.c_str());
-				const UiElement &contentElement = this->elements.get(contentElementInstID);
-				const UiTransform &contentTransform = this->transforms.get(contentElement.transformInstID);
-				transform.size = contentTransform.size;
-				break;
-			}
-			default:
-				DebugNotImplementedMsg(std::to_string(static_cast<int>(element.type)));
-				break;
-			}
-		}
-	}
-}
-
 void UiManager::updateDrawList(const Window &window)
 {
 	this->renderElementsCache.clear();
@@ -1855,6 +2065,12 @@ void UiManager::updateDrawList(const Window &window)
 		{
 			const UiImage &image = this->images.get(element->imageInstID);
 			textureID = image.textureID;
+			break;
+		}
+		case UiElementType::ImageSliced:
+		{
+			const UiImageSliced &imageSliced = this->imageSliceds.get(element->imageSlicedInstID);
+			textureID = imageSliced.textureID;
 			break;
 		}
 		case UiElementType::TextBox:

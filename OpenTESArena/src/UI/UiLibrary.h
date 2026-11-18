@@ -63,6 +63,22 @@ struct UiImageDefinition
 	void clear();
 };
 
+struct UiImageSlicedDefinition
+{
+	UiElementDefinition element;
+	TextureAsset texture; // Must be a sequence of 9 textures.
+	TextureAsset palette;
+	std::string contentElementName;
+	int minimumWidth;
+	int minimumHeight;
+	int paddingWidth;
+	int paddingHeight;
+
+	UiImageSlicedDefinition();
+
+	void clear();
+};
+
 struct UiTextBoxDefinition
 {
 	UiElementDefinition element;
@@ -127,6 +143,7 @@ struct UiContextDefinition
 {
 	std::string name;
 	std::vector<UiImageDefinition> imageDefs;
+	std::vector<UiImageSlicedDefinition> imageSlicedDefs;
 	std::vector<UiTextBoxDefinition> textBoxDefs;
 	std::vector<UiListBoxDefinition> listBoxDefs;
 	std::vector<UiButtonDefinition> buttonDefs;

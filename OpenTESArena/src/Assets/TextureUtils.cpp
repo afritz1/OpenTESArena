@@ -16,180 +16,166 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextRenderUtils.h"
 
-Surface TextureUtils::generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager, Renderer &renderer)
+void TextureUtils::populate9SlicedTexture(Span<const TextureBuilderID> textureBuilderIDs, PaletteID paletteID, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer)
 {
-	// Initialize the scratch surface to transparent.
-	Surface surface = Surface::createWithFormat(width, height, RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
-	const uint32_t clearColor = surface.mapRGBA(0, 0, 0, 0);
-	surface.fill(clearColor);
+	DebugAssert(textureBuilderIDs.getCount() == 9);
+	const int outputWidth = outPixels.getWidth();
+	const int outputHeight = outPixels.getHeight();
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+
+	constexpr uint32_t clearColor = Colors::TransparentRGBA;
+	outPixels.fill(clearColor);
+
+	auto writeTileToOutput = [&outPixels](Span2D<const uint8_t> srcTexels, const Palette &palette, int dstX, int dstY)
+	{
+		for (int y = 0; y < srcTexels.getHeight(); y++)
+		{
+			for (int x = 0; x < srcTexels.getWidth(); x++)
+			{
+				const uint8_t srcColor = srcTexels.get(x, y);
+				const uint32_t dstColor = palette[srcColor].toRGBA();
+				outPixels.set(dstX + x, dstY + y, dstColor);
+			}
+		}
+	};
+
+	const TextureBuilder &topLeftTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[0]);
+	const TextureBuilder &topTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[1]);
+	const TextureBuilder &topRightTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[2]);
+	const TextureBuilder &leftTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[3]);
+	const TextureBuilder &bodyTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[4]);
+	const TextureBuilder &rightTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[5]);
+	const TextureBuilder &bottomLeftTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[6]);
+	const TextureBuilder &bottomTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[7]);
+	const TextureBuilder &bottomRightTextureBuilder = textureManager.getTextureBuilderHandle(textureBuilderIDs[8]);
+	Span2D<const uint8_t> topLeftTexels = topLeftTextureBuilder.getTexels8();
+	Span2D<const uint8_t> topTexels = topTextureBuilder.getTexels8();
+	Span2D<const uint8_t> topRightTexels = topRightTextureBuilder.getTexels8();
+	Span2D<const uint8_t> leftTexels = leftTextureBuilder.getTexels8();
+	Span2D<const uint8_t> bodyTexels = bodyTextureBuilder.getTexels8();
+	Span2D<const uint8_t> rightTexels = rightTextureBuilder.getTexels8();
+	Span2D<const uint8_t> bottomLeftTexels = bottomLeftTextureBuilder.getTexels8();
+	Span2D<const uint8_t> bottomTexels = bottomTextureBuilder.getTexels8();
+	Span2D<const uint8_t> bottomRightTexels = bottomRightTextureBuilder.getTexels8();
+
+	// Draw body tiles.
+	for (int y = topLeftTexels.getHeight(); y < (outputHeight - topRightTexels.getHeight()); y += bodyTexels.getHeight())
+	{
+		for (int x = topLeftTexels.getWidth(); x < (outputWidth - topRightTexels.getWidth()); x += bodyTexels.getWidth())
+		{
+			writeTileToOutput(bodyTexels, palette, x, y);
+		}
+	}
+
+	// Draw edge tiles.
+	for (int y = topLeftTexels.getHeight(); y < (outputHeight - bottomLeftTexels.getHeight()); y += leftTexels.getHeight())
+	{
+		writeTileToOutput(leftTexels, palette, 0, y);
+		writeTileToOutput(rightTexels, palette, outputWidth - rightTexels.getWidth(), y);
+	}
+
+	for (int x = topLeftTexels.getWidth(); x < (outputWidth - topRightTexels.getWidth()); x += topTexels.getWidth())
+	{
+		writeTileToOutput(topTexels, palette, x, 0);
+		writeTileToOutput(bottomTexels, palette, x, outputHeight - bottomTexels.getHeight());
+	}
+
+	// Draw corner tiles.
+	writeTileToOutput(topLeftTexels, palette, 0, 0);
+	writeTileToOutput(topRightTexels, palette, outputWidth - topRightTexels.getWidth(), 0);
+	writeTileToOutput(bottomLeftTexels, palette, 0, outputHeight - bottomLeftTexels.getHeight());
+	writeTileToOutput(bottomRightTexels, palette, outputWidth - bottomRightTexels.getWidth(), outputHeight - bottomRightTexels.getHeight());
+}
+
+void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer)
+{
+	const int outputWidth = outPixels.getWidth();
+	const int outputHeight = outPixels.getHeight();
+
+	constexpr uint32_t clearColor = Colors::TransparentRGBA;
+	outPixels.fill(clearColor);
 
 	if (type == UiTexturePatternType::Parchment)
 	{
-		DebugAssert(width >= 40);
-		DebugAssert(height >= 40);
+		DebugAssert(outputWidth >= TextureUtils::PARCHMENT_MIN_WIDTH);
+		DebugAssert(outputHeight >= TextureUtils::PARCHMENT_MIN_HEIGHT);
 
-		// Get the nine parchment tiles.
 		const std::string &tilesPaletteFilename = ArenaTextureName::CharacterCreation;
 		const std::optional<PaletteID> tilesPaletteID = textureManager.tryGetPaletteID(tilesPaletteFilename.c_str());
 		if (!tilesPaletteID.has_value())
 		{
-			DebugCrash("Couldn't get tile palette ID for \"" + tilesPaletteFilename + "\".");
+			DebugLogErrorFormat("Couldn't get tile palette ID for \"%s\".", tilesPaletteFilename.c_str());
+			return;
 		}
 
 		const std::string &tilesFilename = ArenaTextureName::Parchment;
 		const std::optional<TextureBuilderIdGroup> tilesTextureBuilderIDs = textureManager.tryGetTextureBuilderIDs(tilesFilename.c_str());
 		if (!tilesTextureBuilderIDs.has_value())
 		{
-			DebugCrash("Couldn't get tiles texture builder IDs for \"" + tilesFilename + "\".");
+			DebugLogErrorFormat("Couldn't get tiles texture builder IDs for \"%s\".", tilesFilename.c_str());
+			return;
 		}
 
-		// Lambda for making a temp SDL surface wrapper for writing to the final texture. This is a
-		// temp compatibility layer for keeping from changing the SDL blit code below, since making a
-		// new surface from a texture builder is wasteful.
-		auto makeSurface = [&textureManager, tilesPaletteID](TextureBuilderID textureBuilderID)
+		const TextureBuilderID tilesTextureBuilderIDsList[9] =
 		{
-			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-			Surface surface = Surface::createWithFormat(textureBuilder.width, textureBuilder.height, RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
-
-			// Parchment tiles should all be 8-bit for now.
-			Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
-
-			uint32_t *dstPixels = surface.getPixels().begin();
-			const Palette &palette = textureManager.getPaletteHandle(*tilesPaletteID);
-			std::transform(srcTexels.begin(), srcTexels.end(), dstPixels,
-				[&palette](const uint8_t srcTexel)
-			{
-				return palette[srcTexel].toRGBA();
-			});
-
-			return surface;
+			tilesTextureBuilderIDs->getID(0),
+			tilesTextureBuilderIDs->getID(1),
+			tilesTextureBuilderIDs->getID(2),
+			tilesTextureBuilderIDs->getID(3),
+			tilesTextureBuilderIDs->getID(4),
+			tilesTextureBuilderIDs->getID(5),
+			tilesTextureBuilderIDs->getID(6),
+			tilesTextureBuilderIDs->getID(7),
+			tilesTextureBuilderIDs->getID(8)
 		};
 
-		// Four corner tiles.
-		const TextureBuilderID topLeftTextureBuilderID = tilesTextureBuilderIDs->getID(0);
-		const TextureBuilderID topRightTextureBuilderID = tilesTextureBuilderIDs->getID(2);
-		const TextureBuilderID bottomLeftTextureBuilderID = tilesTextureBuilderIDs->getID(6);
-		const TextureBuilderID bottomRightTextureBuilderID = tilesTextureBuilderIDs->getID(8);
-		const Surface topLeft = makeSurface(topLeftTextureBuilderID);
-		const Surface topRight = makeSurface(topRightTextureBuilderID);
-		const Surface bottomLeft = makeSurface(bottomLeftTextureBuilderID);
-		const Surface bottomRight = makeSurface(bottomRightTextureBuilderID);
-
-		// Four side tiles.
-		const TextureBuilderID topTextureBuilderID = tilesTextureBuilderIDs->getID(1);
-		const TextureBuilderID leftTextureBuilderID = tilesTextureBuilderIDs->getID(3);
-		const TextureBuilderID rightTextureBuilderID = tilesTextureBuilderIDs->getID(5);
-		const TextureBuilderID bottomTextureBuilderID = tilesTextureBuilderIDs->getID(7);
-		const Surface top = makeSurface(topTextureBuilderID);
-		const Surface left = makeSurface(leftTextureBuilderID);
-		const Surface right = makeSurface(rightTextureBuilderID);
-		const Surface bottom = makeSurface(bottomTextureBuilderID);
-
-		// One body tile.
-		const TextureBuilderID bodyTextureBuilderID = tilesTextureBuilderIDs->getID(4);
-		const Surface body = makeSurface(bodyTextureBuilderID);
-
-		// Draw body tiles.
-		for (int y = topLeft.getHeight(); y < (surface.getHeight() - topRight.getHeight()); y += body.getHeight())
-		{
-			for (int x = topLeft.getWidth(); x < (surface.getWidth() - topRight.getWidth()); x += body.getWidth())
-			{
-				const Rect rect(x, y, body.getWidth(), body.getHeight());
-				body.blit(surface, rect);
-			}
-		}
-
-		// Draw edge tiles.
-		for (int y = topLeft.getHeight(); y < (surface.getHeight() - bottomLeft.getHeight()); y += left.getHeight())
-		{
-			const Rect leftRect(0, y, left.getWidth(), left.getHeight());
-			const Rect rightRect(surface.getWidth() - right.getWidth(), y, right.getWidth(), right.getHeight());
-
-			// Remove any traces of body tiles underneath.
-			surface.fillRect(leftRect, clearColor);
-			surface.fillRect(rightRect, clearColor);
-
-			left.blit(surface, leftRect);
-			right.blit(surface, rightRect);
-		}
-
-		for (int x = topLeft.getWidth(); x < (surface.getWidth() - topRight.getWidth()); x += top.getWidth())
-		{
-			const Rect topRect(x, 0, top.getWidth(), top.getHeight());
-			const Rect bottomRect(x, surface.getHeight() - bottom.getHeight(), bottom.getWidth(), bottom.getHeight());
-
-			// Remove any traces of other tiles underneath.
-			surface.fillRect(topRect, clearColor);
-			surface.fillRect(bottomRect, clearColor);
-
-			top.blit(surface, topRect);
-			bottom.blit(surface, bottomRect);
-		}
-
-		// Draw corner tiles.
-		const Rect topLeftRect(0, 0, topLeft.getWidth(), topLeft.getHeight());
-		const Rect topRightRect(surface.getWidth() - topRight.getWidth(), 0, topRight.getWidth(), topRight.getHeight());
-		const Rect bottomLeftRect(0, surface.getHeight() - bottomLeft.getHeight(), bottomLeft.getWidth(), bottomLeft.getHeight());
-		const Rect bottomRightRect(surface.getWidth() - bottomRight.getWidth(), surface.getHeight() - bottomRight.getHeight(), bottomRight.getWidth(), bottomRight.getHeight());
-
-		// Remove any traces of other tiles underneath.
-		surface.fillRect(topLeftRect, clearColor);
-		surface.fillRect(topRightRect, clearColor);
-		surface.fillRect(bottomLeftRect, clearColor);
-		surface.fillRect(bottomRightRect, clearColor);
-
-		topLeft.blit(surface, topLeftRect);
-		topRight.blit(surface, topRightRect);
-		bottomLeft.blit(surface, bottomLeftRect);
-		bottomRight.blit(surface, bottomRightRect);
+		TextureUtils::populate9SlicedTexture(tilesTextureBuilderIDsList, *tilesPaletteID, outPixels, textureManager, renderer);
 	}
 	else if (type == UiTexturePatternType::Dark)
 	{
-		DebugAssert(width >= 4);
-		DebugAssert(height >= 4);
+		DebugAssert(outputWidth >= 4);
+		DebugAssert(outputHeight >= 4);
 
-		// Get all the colors used with the dark pop-up.
-		const uint32_t fillColor = surface.mapRGBA(28, 24, 36, 255);
-		const uint32_t topColor = surface.mapRGBA(36, 36, 48, 255);
-		const uint32_t bottomColor = surface.mapRGBA(12, 12, 24, 255);
-		const uint32_t rightColor = surface.mapRGBA(56, 69, 77, 255);
-		const uint32_t leftColor = bottomColor;
-		const uint32_t topRightColor = surface.mapRGBA(69, 85, 89, 255);
-		const uint32_t bottomRightColor = surface.mapRGBA(36, 36, 48, 255);
+		constexpr uint32_t fillColor = Color(28, 24, 36, 255).toRGBA();
+		constexpr uint32_t topColor = Color(36, 36, 48, 255).toRGBA();
+		constexpr uint32_t bottomColor = Color(12, 12, 24, 255).toRGBA();
+		constexpr uint32_t rightColor = Color(56, 69, 77, 255).toRGBA();
+		constexpr uint32_t leftColor = bottomColor;
+		constexpr uint32_t topRightColor = Color(69, 85, 89, 255).toRGBA();
+		constexpr uint32_t bottomRightColor = Color(36, 36, 48, 255).toRGBA();
 
-		surface.fill(fillColor);
+		outPixels.fill(fillColor);
 
 		// Color edges.
-		Span2D<uint32_t> dstPixels = surface.getPixels();
-		for (int x = 0; x < surface.getWidth(); x++)
+		for (int x = 0; x < outputWidth; x++)
 		{
-			dstPixels.set(x, 0, topColor);
-			dstPixels.set(x, 1, topColor);
-			dstPixels.set(x, surface.getHeight() - 2, bottomColor);
-			dstPixels.set(x, surface.getHeight() - 1, bottomColor);
+			outPixels.set(x, 0, topColor);
+			outPixels.set(x, 1, topColor);
+			outPixels.set(x, outputHeight - 2, bottomColor);
+			outPixels.set(x, outputHeight - 1, bottomColor);
 		}
 
-		for (int y = 0; y < surface.getHeight(); y++)
+		for (int y = 0; y < outputHeight; y++)
 		{
-			dstPixels.set(0, y, leftColor);
-			dstPixels.set(1, y, leftColor);
-			dstPixels.set(surface.getWidth() - 2, y, rightColor);
-			dstPixels.set(surface.getWidth() - 1, y, rightColor);
+			outPixels.set(0, y, leftColor);
+			outPixels.set(1, y, leftColor);
+			outPixels.set(outputWidth - 2, y, rightColor);
+			outPixels.set(outputWidth - 1, y, rightColor);
 		}
 
 		// Color corners.
-		dstPixels.set(1, 0, topColor);
-		dstPixels.set(surface.getWidth() - 2, 0, topColor);
-		dstPixels.set(surface.getWidth() - 1, 0, topRightColor);
-		dstPixels.set(surface.getWidth() - 2, 1, topRightColor);
-		dstPixels.set(surface.getWidth() - 2, surface.getHeight() - 2, bottomRightColor);
-		dstPixels.set(surface.getWidth() - 2, surface.getHeight() - 1, bottomColor);
-		dstPixels.set(surface.getWidth() - 1, surface.getHeight() - 1, bottomRightColor);
+		outPixels.set(1, 0, topColor);
+		outPixels.set(outputWidth - 2, 0, topColor);
+		outPixels.set(outputWidth - 1, 0, topRightColor);
+		outPixels.set(outputWidth - 2, 1, topRightColor);
+		outPixels.set(outputWidth - 2, outputHeight - 2, bottomRightColor);
+		outPixels.set(outputWidth - 2, outputHeight - 1, bottomColor);
+		outPixels.set(outputWidth - 1, outputHeight - 1, bottomRightColor);
 	}
 	else if (type == UiTexturePatternType::ShopkeeperTitle)
 	{
-		DebugAssert(width >= (6 + 6));
-		DebugAssert(height == 20);
+		DebugAssert(outputWidth >= (6 + 6));
+		DebugAssert(outputHeight == 20);
 
 		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(ArenaPaletteName::Default);
 		DebugAssert(paletteID.has_value());
@@ -207,12 +193,11 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 
 		const Rect leftRect(0, 0, leftTextureBuilder.width, leftTextureBuilder.height);
 		const Rect middleRect(leftTextureBuilder.width, 0, middleTextureBuilder.width, middleTextureBuilder.height);
-		const Rect rightRect(width - rightTextureBuilder.width, 0, rightTextureBuilder.width, rightTextureBuilder.height);
+		const Rect rightRect(outputWidth - rightTextureBuilder.width, 0, rightTextureBuilder.width, rightTextureBuilder.height);
 
 		Span2D<const uint8_t> leftSrcPixels = leftTextureBuilder.getTexels8();
 		Span2D<const uint8_t> middleSrcPixels = middleTextureBuilder.getTexels8();
 		Span2D<const uint8_t> rightSrcPixels = rightTextureBuilder.getTexels8();
-		Span2D<uint32_t> dstPixels = surface.getPixels();
 
 		// Left edge.
 		for (int y = 0; y < leftRect.height; y++)
@@ -221,13 +206,13 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 			{
 				const uint8_t srcColor = leftSrcPixels.get(x, y);
 				const uint32_t srcColorRGBA = palette[srcColor].toRGBA();
-				dstPixels.set(x, y, srcColorRGBA);
+				outPixels.set(x, y, srcColorRGBA);
 			}
 		}
 
 		// Middle.
 		int middleXOffset = middleRect.x;
-		for (int remainingWidthToFill = width - leftRect.width - rightRect.width; remainingWidthToFill > 0; remainingWidthToFill -= middleRect.width)
+		for (int remainingWidthToFill = outputWidth - leftRect.width - rightRect.width; remainingWidthToFill > 0; remainingWidthToFill -= middleRect.width)
 		{			
 			const int currentMiddleWidth = std::min(middleRect.width, remainingWidthToFill);
 			for (int y = 0; y < middleRect.height; y++)
@@ -236,7 +221,7 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 				{
 					const uint8_t srcColor = middleSrcPixels.get(x, y);
 					const uint32_t srcColorRGBA = palette[srcColor].toRGBA();
-					dstPixels.set(middleXOffset + x, y, srcColorRGBA);
+					outPixels.set(middleXOffset + x, y, srcColorRGBA);
 				}
 			}
 
@@ -250,65 +235,61 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 			{
 				const uint8_t srcColor = rightSrcPixels.get(x, y);
 				const uint32_t srcColorRGBA = palette[srcColor].toRGBA();
-				dstPixels.set(rightRect.x + x, y, srcColorRGBA);
+				outPixels.set(rightRect.x + x, y, srcColorRGBA);
 			}
 		}
 	}
 	else if (type == UiTexturePatternType::PlayerInventoryHighlight)
 	{
-		DebugAssert(width >= 2);
-		DebugAssert(height >= 2);
+		DebugAssert(outputWidth >= 2);
+		DebugAssert(outputHeight >= 2);
 
-		const uint32_t highlightColor = surface.mapRGBA(199, 32, 0, 255);
+		constexpr uint32_t highlightColor = Color(199, 32, 0, 255).toRGBA();
 
-		Span2D<uint32_t> dstPixels = surface.getPixels();
-		for (int x = 0; x < width; x++)
+		for (int x = 0; x < outputWidth; x++)
 		{
-			dstPixels.set(x, 0, highlightColor);
-			dstPixels.set(x, height - 1, highlightColor);
+			outPixels.set(x, 0, highlightColor);
+			outPixels.set(x, outputHeight - 1, highlightColor);
 		}
 
-		for (int y = 0; y < height; y++)
+		for (int y = 0; y < outputHeight; y++)
 		{
-			dstPixels.set(0, y, highlightColor);
-			dstPixels.set(width - 1, y, highlightColor);
+			outPixels.set(0, y, highlightColor);
+			outPixels.set(outputWidth - 1, y, highlightColor);
 		}
 	}
 	else if (type == UiTexturePatternType::Custom1)
 	{
-		DebugAssert(width >= 3);
-		DebugAssert(height >= 3);
+		DebugAssert(outputWidth >= 3);
+		DebugAssert(outputHeight >= 3);
 
-		const uint32_t fillColor = surface.mapRGBA(85, 85, 97, 255);
-		const uint32_t lightBorder = surface.mapRGBA(125, 125, 145, 255);
-		const uint32_t darkBorder = surface.mapRGBA(40, 40, 48, 255);
+		constexpr uint32_t fillColor = Color(85, 85, 97, 255).toRGBA();
+		constexpr uint32_t lightBorder = Color(125, 125, 145, 255).toRGBA();
+		constexpr uint32_t darkBorder = Color(40, 40, 48, 255).toRGBA();
 
-		surface.fill(fillColor);
+		outPixels.fill(fillColor);
 
 		// Color edges.
-		Span2D<uint32_t> dstPixels = surface.getPixels();
-		for (int x = 0; x < surface.getWidth(); x++)
+		for (int x = 0; x < outputWidth; x++)
 		{
-			dstPixels.set(x, 0, lightBorder);
-			dstPixels.set(x, surface.getHeight() - 1, darkBorder);
+			outPixels.set(x, 0, lightBorder);
+			outPixels.set(x, outputHeight - 1, darkBorder);
 		}
 
-		for (int y = 0; y < surface.getHeight(); y++)
+		for (int y = 0; y < outputHeight; y++)
 		{
-			dstPixels.set(0, y, darkBorder);
-			dstPixels.set(surface.getWidth() - 1, y, lightBorder);
+			outPixels.set(0, y, darkBorder);
+			outPixels.set(outputWidth - 1, y, lightBorder);
 		}
 
 		// Color corners.
-		dstPixels.set(0, 0, fillColor);
-		dstPixels.set(surface.getWidth() - 1, surface.getHeight() - 1, fillColor);
+		outPixels.set(0, 0, fillColor);
+		outPixels.set(outputWidth - 1, outputHeight - 1, fillColor);
 	}
 	else
 	{
-		DebugCrash("Unrecognized pattern type.");
+		DebugLogErrorFormat("Unrecognized pattern type %d.", type);
 	}
-
-	return surface;
 }
 
 Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &fontLibrary)
@@ -406,25 +387,28 @@ bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset, const Tex
 	return true;
 }
 
-bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureManager &textureManager,
-	Renderer &renderer, UiTextureID *outID)
+bool TextureUtils::tryAllocUiTextureFromPixels(Span2D<const uint32_t> pixels, Renderer &renderer, UiTextureID *outID)
 {
-	const int width = surface.getWidth();
-	const int height = surface.getHeight();
-	Span2D<const uint32_t> srcTexels = surface.getPixels();
+	const int width = pixels.getWidth();
+	const int height = pixels.getHeight();
 
 	const UiTextureID textureID = renderer.createUiTexture(width, height);
 	if (textureID < 0)
 	{
-		DebugLogError("Couldn't create UI texture from surface.");
+		DebugLogErrorFormat("Couldn't create %dx%d UI texture from pixels.", width, height);
 		return false;
 	}
 
-	if (!renderer.populateUiTextureNoPalette(textureID, srcTexels))
+	if (!renderer.populateUiTextureNoPalette(textureID, pixels))
 	{
 		DebugLogError("Couldn't populate UI texture from surface.");
 	}
 
 	*outID = textureID;
 	return true;
+}
+
+bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, Renderer &renderer, UiTextureID *outID)
+{
+	return TextureUtils::tryAllocUiTextureFromPixels(surface.getPixels(), renderer, outID);
 }
