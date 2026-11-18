@@ -457,23 +457,28 @@ void ChooseRaceUI::onProvinceConfirmPopUpAcceptButtonSelected(MouseButtonType mo
 	provinceConfirmed1TextBoxInitInfo.defaultColor = ChooseRaceUiView::ProvinceConfirmedFirstTextColor;
 	provinceConfirmed1TextBoxInitInfo.alignment = ChooseRaceUiView::ProvinceConfirmedFirstTextAlignment;
 	provinceConfirmed1TextBoxInitInfo.lineSpacing = ChooseRaceUiView::ProvinceConfirmedFirstTextLineSpacing;
-	const UiElementInstanceID provinceConfirmed1TextBoxElementInstID = uiManager.createTextBox(provinceConfirmed1TextBoxElementInitInfo, provinceConfirmed1TextBoxInitInfo, state.provinceConfirmed1ContextInstID, renderer);
-	const Rect provinceConfirmed1TextBoxTransformRect = uiManager.getTransformGlobalRect(provinceConfirmed1TextBoxElementInstID);
+	uiManager.createTextBox(provinceConfirmed1TextBoxElementInitInfo, provinceConfirmed1TextBoxInitInfo, state.provinceConfirmed1ContextInstID, renderer);
 
-	const Rect provinceConfirmed1ImageRect = ChooseRaceUiView::getProvinceConfirmedFirstTextureRect(provinceConfirmed1TextBoxTransformRect.width, provinceConfirmed1TextBoxTransformRect.height);
-	UiElementInitInfo provinceConfirmed1ImageElementInitInfo;
-	provinceConfirmed1ImageElementInitInfo.name = "ProvinceConfirmed1PopUpAcceptImage";
-	provinceConfirmed1ImageElementInitInfo.position = provinceConfirmed1ImageRect.getCenter();
-	provinceConfirmed1ImageElementInitInfo.pivotType = UiPivotType::Middle;
-	provinceConfirmed1ImageElementInitInfo.drawOrder = 0;
+	UiElementInitInfo provinceConfirmed1ImageSlicedElementInitInfo;
+	provinceConfirmed1ImageSlicedElementInitInfo.name = "ProvinceConfirmed1PopUpAcceptImage";
+	provinceConfirmed1ImageSlicedElementInitInfo.position = ArenaRenderUtils::SCREEN_CENTER;
+	provinceConfirmed1ImageSlicedElementInitInfo.pivotType = UiPivotType::Middle;
+	provinceConfirmed1ImageSlicedElementInitInfo.drawOrder = 0;
 
-	const UiTextureID provinceConfirmed1ImageTextureID = uiManager.getOrAddTexture(ChooseRaceUiView::ProvinceConfirmedFirstTextPatternType, provinceConfirmed1ImageRect.width, provinceConfirmed1ImageRect.height, textureManager, renderer);
-	uiManager.createImage(provinceConfirmed1ImageElementInitInfo, provinceConfirmed1ImageTextureID, state.provinceConfirmed1ContextInstID, renderer);
+	UiImageSlicedInitInfo provinceConfirmed1ImageSlicedInitInfo;
+	provinceConfirmed1ImageSlicedInitInfo.contentElementName = provinceConfirmed1TextBoxElementInitInfo.name;
+	provinceConfirmed1ImageSlicedInitInfo.textureAsset = TextureAsset(ArenaTextureName::Parchment);
+	provinceConfirmed1ImageSlicedInitInfo.paletteAsset = TextureAsset(ArenaTextureName::CharacterCreation);
+	provinceConfirmed1ImageSlicedInitInfo.minimumWidth = TextureUtils::PARCHMENT_MIN_WIDTH;
+	provinceConfirmed1ImageSlicedInitInfo.minimumHeight = TextureUtils::PARCHMENT_MIN_HEIGHT;
+	provinceConfirmed1ImageSlicedInitInfo.paddingWidth = 10;
+	provinceConfirmed1ImageSlicedInitInfo.paddingHeight = 0;
+	uiManager.createImageSliced(provinceConfirmed1ImageSlicedElementInitInfo, provinceConfirmed1ImageSlicedInitInfo, state.provinceConfirmed1ContextInstID, textureManager, renderer);
 
 	UiElementInitInfo provinceConfirmed1ButtonElementInitInfo;
 	provinceConfirmed1ButtonElementInitInfo.name = "ProvinceConfirmed1PopUpAcceptButton";
 	provinceConfirmed1ButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	provinceConfirmed1ButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	provinceConfirmed1ButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	provinceConfirmed1ButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo provinceConfirmed1ButtonInitInfo;
@@ -528,18 +533,23 @@ void ChooseRaceUI::onProvinceConfirmed1PopUpBackButtonSelected(MouseButtonType m
 	provinceConfirmed2TextBoxInitInfo.defaultColor = ChooseRaceUiView::ProvinceConfirmedSecondTextColor;
 	provinceConfirmed2TextBoxInitInfo.alignment = ChooseRaceUiView::ProvinceConfirmedSecondTextAlignment;
 	provinceConfirmed2TextBoxInitInfo.lineSpacing = ChooseRaceUiView::ProvinceConfirmedSecondTextLineSpacing;
-	const UiElementInstanceID provinceConfirmed2TextBoxElementInstID = uiManager.createTextBox(provinceConfirmed2TextBoxElementInitInfo, provinceConfirmed2TextBoxInitInfo, state.provinceConfirmed2ContextInstID, renderer);
-	const Rect provinceConfirmed2TextBoxTransformRect = uiManager.getTransformGlobalRect(provinceConfirmed2TextBoxElementInstID);
+	uiManager.createTextBox(provinceConfirmed2TextBoxElementInitInfo, provinceConfirmed2TextBoxInitInfo, state.provinceConfirmed2ContextInstID, renderer);
 
-	const Rect provinceConfirmed2ImageRect = ChooseRaceUiView::getProvinceConfirmedSecondTextureRect(provinceConfirmed2TextBoxTransformRect.width, provinceConfirmed2TextBoxTransformRect.height);
-	UiElementInitInfo provinceConfirmed2ImageElementInitInfo;
-	provinceConfirmed2ImageElementInitInfo.name = "ProvinceConfirmed2PopUpAcceptImage";
-	provinceConfirmed2ImageElementInitInfo.position = provinceConfirmed2ImageRect.getCenter();
-	provinceConfirmed2ImageElementInitInfo.pivotType = UiPivotType::Middle;
-	provinceConfirmed2ImageElementInitInfo.drawOrder = 0;
+	UiElementInitInfo provinceConfirmed2ImageSlicedElementInitInfo;
+	provinceConfirmed2ImageSlicedElementInitInfo.name = "ProvinceConfirmed2PopUpAcceptImage";
+	provinceConfirmed2ImageSlicedElementInitInfo.position = ArenaRenderUtils::SCREEN_CENTER;
+	provinceConfirmed2ImageSlicedElementInitInfo.pivotType = UiPivotType::Middle;
+	provinceConfirmed2ImageSlicedElementInitInfo.drawOrder = 0;
 
-	const UiTextureID provinceConfirmed2ImageTextureID = uiManager.getOrAddTexture(ChooseRaceUiView::ProvinceConfirmedSecondTextPatternType, provinceConfirmed2ImageRect.width, provinceConfirmed2ImageRect.height, textureManager, renderer);
-	uiManager.createImage(provinceConfirmed2ImageElementInitInfo, provinceConfirmed2ImageTextureID, state.provinceConfirmed2ContextInstID, renderer);
+	UiImageSlicedInitInfo provinceConfirmed2ImageSlicedInitInfo;
+	provinceConfirmed2ImageSlicedInitInfo.contentElementName = provinceConfirmed2TextBoxElementInitInfo.name;
+	provinceConfirmed2ImageSlicedInitInfo.textureAsset = TextureAsset(ArenaTextureName::Parchment);
+	provinceConfirmed2ImageSlicedInitInfo.paletteAsset = TextureAsset(ArenaTextureName::CharacterCreation);
+	provinceConfirmed2ImageSlicedInitInfo.minimumWidth = TextureUtils::PARCHMENT_MIN_WIDTH;
+	provinceConfirmed2ImageSlicedInitInfo.minimumHeight = TextureUtils::PARCHMENT_MIN_HEIGHT;
+	provinceConfirmed2ImageSlicedInitInfo.paddingWidth = 10;
+	provinceConfirmed2ImageSlicedInitInfo.paddingHeight = 7;
+	uiManager.createImageSliced(provinceConfirmed2ImageSlicedElementInitInfo, provinceConfirmed2ImageSlicedInitInfo, state.provinceConfirmed2ContextInstID, textureManager, renderer);
 
 	UiElementInitInfo provinceConfirmed2ButtonElementInitInfo;
 	provinceConfirmed2ButtonElementInitInfo.name = "ProvinceConfirmed2PopUpAcceptButton";
@@ -582,18 +592,23 @@ void ChooseRaceUI::onProvinceConfirmed2PopUpBackButtonSelected(MouseButtonType m
 	provinceConfirmed3TextBoxInitInfo.defaultColor = ChooseRaceUiView::ProvinceConfirmedThirdTextColor;
 	provinceConfirmed3TextBoxInitInfo.alignment = ChooseRaceUiView::ProvinceConfirmedThirdTextAlignment;
 	provinceConfirmed3TextBoxInitInfo.lineSpacing = ChooseRaceUiView::ProvinceConfirmedThirdTextLineSpacing;
-	const UiElementInstanceID provinceConfirmed3TextBoxElementInstID = uiManager.createTextBox(provinceConfirmed3TextBoxElementInitInfo, provinceConfirmed3TextBoxInitInfo, state.provinceConfirmed3ContextInstID, renderer);
-	const Rect provinceConfirmed3TextBoxTransformRect = uiManager.getTransformGlobalRect(provinceConfirmed3TextBoxElementInstID);
+	uiManager.createTextBox(provinceConfirmed3TextBoxElementInitInfo, provinceConfirmed3TextBoxInitInfo, state.provinceConfirmed3ContextInstID, renderer);
 
-	const Rect provinceConfirmed3ImageRect = ChooseRaceUiView::getProvinceConfirmedThirdTextureRect(provinceConfirmed3TextBoxTransformRect.width, provinceConfirmed3TextBoxTransformRect.height);
-	UiElementInitInfo provinceConfirmed3ImageElementInitInfo;
-	provinceConfirmed3ImageElementInitInfo.name = "ProvinceConfirmed3PopUpAcceptImage";
-	provinceConfirmed3ImageElementInitInfo.position = provinceConfirmed3ImageRect.getCenter();
-	provinceConfirmed3ImageElementInitInfo.pivotType = UiPivotType::Middle;
-	provinceConfirmed3ImageElementInitInfo.drawOrder = 0;
+	UiElementInitInfo provinceConfirmed3ImageSlicedElementInitInfo;
+	provinceConfirmed3ImageSlicedElementInitInfo.name = "ProvinceConfirmed3PopUpAcceptImage";
+	provinceConfirmed3ImageSlicedElementInitInfo.position = ArenaRenderUtils::SCREEN_CENTER;
+	provinceConfirmed3ImageSlicedElementInitInfo.pivotType = UiPivotType::Middle;
+	provinceConfirmed3ImageSlicedElementInitInfo.drawOrder = 0;
 
-	const UiTextureID provinceConfirmed3ImageTextureID = uiManager.getOrAddTexture(ChooseRaceUiView::ProvinceConfirmedThirdTextPatternType, provinceConfirmed3ImageRect.width, provinceConfirmed3ImageRect.height, textureManager, renderer);
-	uiManager.createImage(provinceConfirmed3ImageElementInitInfo, provinceConfirmed3ImageTextureID, state.provinceConfirmed3ContextInstID, renderer);
+	UiImageSlicedInitInfo provinceConfirmed3ImageSlicedInitInfo;
+	provinceConfirmed3ImageSlicedInitInfo.contentElementName = provinceConfirmed3TextBoxElementInitInfo.name;
+	provinceConfirmed3ImageSlicedInitInfo.textureAsset = TextureAsset(ArenaTextureName::Parchment);
+	provinceConfirmed3ImageSlicedInitInfo.paletteAsset = TextureAsset(ArenaTextureName::CharacterCreation);
+	provinceConfirmed3ImageSlicedInitInfo.minimumWidth = TextureUtils::PARCHMENT_MIN_WIDTH;
+	provinceConfirmed3ImageSlicedInitInfo.minimumHeight = TextureUtils::PARCHMENT_MIN_HEIGHT;
+	provinceConfirmed3ImageSlicedInitInfo.paddingWidth = 10;
+	provinceConfirmed3ImageSlicedInitInfo.paddingHeight = 9;
+	uiManager.createImageSliced(provinceConfirmed3ImageSlicedElementInitInfo, provinceConfirmed3ImageSlicedInitInfo, state.provinceConfirmed3ContextInstID, textureManager, renderer);
 
 	UiElementInitInfo provinceConfirmed3ButtonElementInitInfo;
 	provinceConfirmed3ButtonElementInitInfo.name = "ProvinceConfirmed3PopUpAcceptButton";
@@ -636,18 +651,23 @@ void ChooseRaceUI::onProvinceConfirmed3PopUpBackButtonSelected(MouseButtonType m
 	provinceConfirmed4TextBoxInitInfo.defaultColor = ChooseRaceUiView::ProvinceConfirmedFourthTextColor;
 	provinceConfirmed4TextBoxInitInfo.alignment = ChooseRaceUiView::ProvinceConfirmedFourthTextAlignment;
 	provinceConfirmed4TextBoxInitInfo.lineSpacing = ChooseRaceUiView::ProvinceConfirmedFourthTextLineSpacing;
-	const UiElementInstanceID provinceConfirmed4TextBoxElementInstID = uiManager.createTextBox(provinceConfirmed4TextBoxElementInitInfo, provinceConfirmed4TextBoxInitInfo, state.provinceConfirmed4ContextInstID, renderer);
-	const Rect provinceConfirmed4TextBoxTransformRect = uiManager.getTransformGlobalRect(provinceConfirmed4TextBoxElementInstID);
+	uiManager.createTextBox(provinceConfirmed4TextBoxElementInitInfo, provinceConfirmed4TextBoxInitInfo, state.provinceConfirmed4ContextInstID, renderer);
 
-	const Rect provinceConfirmed4ImageRect = ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(provinceConfirmed4TextBoxTransformRect.width, provinceConfirmed4TextBoxTransformRect.height);
-	UiElementInitInfo provinceConfirmed4ImageElementInitInfo;
-	provinceConfirmed4ImageElementInitInfo.name = "ProvinceConfirmed4PopUpAcceptImage";
-	provinceConfirmed4ImageElementInitInfo.position = provinceConfirmed4ImageRect.getCenter();
-	provinceConfirmed4ImageElementInitInfo.pivotType = UiPivotType::Middle;
-	provinceConfirmed4ImageElementInitInfo.drawOrder = 0;
+	UiElementInitInfo provinceConfirmed4ImageSlicedElementInitInfo;
+	provinceConfirmed4ImageSlicedElementInitInfo.name = "ProvinceConfirmed4PopUpAcceptImage";
+	provinceConfirmed4ImageSlicedElementInitInfo.position = ArenaRenderUtils::SCREEN_CENTER;
+	provinceConfirmed4ImageSlicedElementInitInfo.pivotType = UiPivotType::Middle;
+	provinceConfirmed4ImageSlicedElementInitInfo.drawOrder = 0;
 
-	const UiTextureID provinceConfirmed4ImageTextureID = uiManager.getOrAddTexture(ChooseRaceUiView::ProvinceConfirmedFourthTextPatternType, provinceConfirmed4ImageRect.width, provinceConfirmed4ImageRect.height, textureManager, renderer);
-	uiManager.createImage(provinceConfirmed4ImageElementInitInfo, provinceConfirmed4ImageTextureID, state.provinceConfirmed4ContextInstID, renderer);
+	UiImageSlicedInitInfo provinceConfirmed4ImageSlicedInitInfo;
+	provinceConfirmed4ImageSlicedInitInfo.contentElementName = provinceConfirmed4TextBoxElementInitInfo.name;
+	provinceConfirmed4ImageSlicedInitInfo.textureAsset = TextureAsset(ArenaTextureName::Parchment);
+	provinceConfirmed4ImageSlicedInitInfo.paletteAsset = TextureAsset(ArenaTextureName::CharacterCreation);
+	provinceConfirmed4ImageSlicedInitInfo.minimumWidth = TextureUtils::PARCHMENT_MIN_WIDTH;
+	provinceConfirmed4ImageSlicedInitInfo.minimumHeight = TextureUtils::PARCHMENT_MIN_HEIGHT;
+	provinceConfirmed4ImageSlicedInitInfo.paddingWidth = 10;
+	provinceConfirmed4ImageSlicedInitInfo.paddingHeight = 4;
+	uiManager.createImageSliced(provinceConfirmed4ImageSlicedElementInitInfo, provinceConfirmed4ImageSlicedInitInfo, state.provinceConfirmed4ContextInstID, textureManager, renderer);
 
 	UiElementInitInfo provinceConfirmed4ButtonElementInitInfo;
 	provinceConfirmed4ButtonElementInitInfo.name = "ProvinceConfirmed4PopUpAcceptButton";

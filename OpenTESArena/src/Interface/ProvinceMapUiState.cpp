@@ -2,6 +2,7 @@
 #include "ProvinceMapUiMVC.h"
 #include "ProvinceMapUiState.h"
 #include "WorldMapUiState.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -689,19 +690,23 @@ void ProvinceMapUI::showTextPopUp(const char *str)
 	textPopUpTextBoxInitInfo.defaultColor = ProvinceMapUiView::TextPopUpTextColor;
 	textPopUpTextBoxInitInfo.alignment = ProvinceMapUiView::TextPopUpTextAlignment;
 	textPopUpTextBoxInitInfo.lineSpacing = ProvinceMapUiView::TextPopUpLineSpacing;
-	const UiElementInstanceID textPopUpTextBoxElementInstID = uiManager.createTextBox(textPopUpTextBoxElementInitInfo, textPopUpTextBoxInitInfo, state.textPopUpContextInstID, renderer);
-	const Rect textPopUpTextBoxRect = uiManager.getTransformGlobalRect(textPopUpTextBoxElementInstID);
+	uiManager.createTextBox(textPopUpTextBoxElementInitInfo, textPopUpTextBoxInitInfo, state.textPopUpContextInstID, renderer);
 
-	UiElementInitInfo textPopUpImageElementInitInfo;
-	textPopUpImageElementInitInfo.name = "ProvinceMapTextPopUpImage";
-	textPopUpImageElementInitInfo.position = ProvinceMapUiView::TextPopUpTextureCenterPoint;
-	textPopUpImageElementInitInfo.pivotType = UiPivotType::Middle;
-	textPopUpImageElementInitInfo.drawOrder = 0;
+	UiElementInitInfo textPopUpImageSlicedElementInitInfo;
+	textPopUpImageSlicedElementInitInfo.name = "ProvinceMapTextPopUpImage";
+	textPopUpImageSlicedElementInitInfo.position = ProvinceMapUiView::TextPopUpTextureCenterPoint;
+	textPopUpImageSlicedElementInitInfo.pivotType = UiPivotType::Middle;
+	textPopUpImageSlicedElementInitInfo.drawOrder = 0;
 
-	const int textPopUpImageTextureWidth = ProvinceMapUiView::getTextPopUpTextureWidth(textPopUpTextBoxRect.width);
-	const int textPopUpImageTextureHeight = ProvinceMapUiView::getTextPopUpTextureHeight(textPopUpTextBoxRect.height);
-	const UiTextureID textPopUpImageTextureID = uiManager.getOrAddTexture(ProvinceMapUiView::TextPopUpTexturePatternType, textPopUpImageTextureWidth, textPopUpImageTextureHeight, textureManager, renderer);
-	uiManager.createImage(textPopUpImageElementInitInfo, textPopUpImageTextureID, state.textPopUpContextInstID, renderer);
+	UiImageSlicedInitInfo textPopUpImageSlicedInitInfo;
+	textPopUpImageSlicedInitInfo.contentElementName = "ProvinceMapTextPopUpTextBox";
+	textPopUpImageSlicedInitInfo.textureAsset = TextureAsset(ArenaTextureName::Parchment);
+	textPopUpImageSlicedInitInfo.paletteAsset = TextureAsset(ArenaTextureName::CharacterCreation);
+	textPopUpImageSlicedInitInfo.minimumWidth = TextureUtils::PARCHMENT_MIN_WIDTH;
+	textPopUpImageSlicedInitInfo.minimumHeight = TextureUtils::PARCHMENT_MIN_HEIGHT;
+	textPopUpImageSlicedInitInfo.paddingWidth = 10;
+	textPopUpImageSlicedInitInfo.paddingHeight = 8;
+	uiManager.createImageSliced(textPopUpImageSlicedElementInitInfo, textPopUpImageSlicedInitInfo, state.textPopUpContextInstID, textureManager, renderer);
 
 	UiElementInitInfo textPopUpBackButtonElementInitInfo;
 	textPopUpBackButtonElementInitInfo.name = "ProvinceMapTextPopUpBackButton";
