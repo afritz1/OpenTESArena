@@ -93,7 +93,7 @@ Color LoadSaveUiView::getEntryTextColor()
 
 Int2 LoadSaveUiView::getEntryCenterPoint(int index)
 {
-	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 8 + (index * 14));
+	return Int2(ArenaRenderUtils::SCREEN_CENTER.x, 8 + (index * 14));
 }
 
 TextureAsset LoadSaveUiView::getPaletteTextureAsset()

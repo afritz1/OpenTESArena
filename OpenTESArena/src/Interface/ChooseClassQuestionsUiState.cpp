@@ -179,7 +179,7 @@ void ChooseClassQuestionsUI::update(double dt)
 
 	const UiElementInstanceID questionsTextBoxElementInstID = uiManager.getElementByName(ElementName_QuestionsTextBox);
 	const int currentScrollPixelAmount = static_cast<int>(state.currentScrollAmount);
-	const Int2 questionsTextBoxPosition(ArenaRenderUtils::SCREEN_WIDTH / 2, 142 - currentScrollPixelAmount);
+	const Int2 questionsTextBoxPosition(ArenaRenderUtils::SCREEN_CENTER.x, 142 - currentScrollPixelAmount);
 	uiManager.setTransformPosition(questionsTextBoxElementInstID, questionsTextBoxPosition);
 
 	const double scrollAnimPercent = std::clamp(std::fmod(state.currentScrollAmount, SCROLL_ANIM_REPEAT_AMOUNT) / SCROLL_ANIM_REPEAT_AMOUNT, 0.0, 1.0);

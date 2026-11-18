@@ -183,7 +183,7 @@ void LevelUpUI::create(Game &game)
 
 	UiElementInitInfo remainingPointsPopUpTextBoxElementInitInfo;
 	remainingPointsPopUpTextBoxElementInitInfo.name = "LevelUpRemainingPointsPopUpTextBox";
-	remainingPointsPopUpTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
+	remainingPointsPopUpTextBoxElementInitInfo.position = ArenaRenderUtils::SCREEN_CENTER;
 	remainingPointsPopUpTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	remainingPointsPopUpTextBoxElementInitInfo.drawOrder = 1;
 

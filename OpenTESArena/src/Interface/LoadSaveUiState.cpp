@@ -134,7 +134,7 @@ void LoadSaveUI::onEntrySelected(int index)
 
 	UiElementInitInfo popUpTextBoxElementInitInfo;
 	popUpTextBoxElementInitInfo.name = "LoadSavePopUpTextBox";
-	popUpTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
+	popUpTextBoxElementInitInfo.position = ArenaRenderUtils::SCREEN_CENTER;
 	popUpTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	popUpTextBoxElementInitInfo.drawOrder = 1;
 

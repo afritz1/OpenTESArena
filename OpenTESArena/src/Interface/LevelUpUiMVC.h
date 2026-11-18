@@ -28,9 +28,7 @@ namespace LevelUpUiModel
 
 namespace LevelUpUiView
 {
-	const Int2 AppearanceTextCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	const Int2 AppearanceTextCenterPoint = ArenaRenderUtils::SCREEN_CENTER;
 	const std::string AppearanceTextFontName = ArenaFontName::Arena;
 	const Color AppearanceTextColor(199, 199, 199);
 	constexpr TextAlignment AppearanceTextAlignment = TextAlignment::MiddleCenter;

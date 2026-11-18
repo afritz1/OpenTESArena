@@ -530,11 +530,11 @@ void CharacterEquipmentUI::showDropItemMessageBox(const char *titleText, const s
 
 	const int titleImageTextureHeight = 30;
 	const int totalMessageBoxHeight = titleImageTextureHeight * (messageBoxButtonCount + 1);
-	const int titleTextBoxPositionY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (totalMessageBoxHeight / 2) + (titleImageTextureHeight / 2);
+	const int titleTextBoxPositionY = ArenaRenderUtils::SCREEN_CENTER.y - (totalMessageBoxHeight / 2) + (titleImageTextureHeight / 2);
 
 	UiElementInitInfo titleTextBoxElementInitInfo;
 	titleTextBoxElementInitInfo.name = "CharacterEquipmentDropItemModalTitleTextBox";
-	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, titleTextBoxPositionY);
+	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, titleTextBoxPositionY);
 	titleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	titleTextBoxElementInitInfo.drawOrder = 1;
 

@@ -340,7 +340,7 @@ UiTextureID WorldMapUiView::allocHighlightedTextTexture(int originalProvinceInde
 
 Int2 FastTravelUiView::getAnimationTextureCenter()
 {
-	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
+	return ArenaRenderUtils::SCREEN_CENTER;
 }
 
 std::string FastTravelUiView::getAnimationFilename()

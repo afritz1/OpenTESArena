@@ -84,19 +84,17 @@ namespace ProvinceMapUiView
 	constexpr int LocationTextShadowOffsetY = 0;
 	Int2 getLocationTextClampedCenter(const Rect &unclampedRect);
 
-	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
+	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_CENTER.x, 98);
 	const std::string TextPopUpFontName = ArenaFontName::Arena;
 	const Color TextPopUpTextColor(52, 24, 8);
 	constexpr TextAlignment TextPopUpTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int TextPopUpLineSpacing = 1;
 
-	const Int2 TextPopUpTextureCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	const Int2 TextPopUpTextureCenterPoint = ArenaRenderUtils::SCREEN_CENTER;
 	int getTextPopUpTextureWidth(int textWidth); // @todo: these should be merged into a plain old allocPopUpTexture()
 	int getTextPopUpTextureHeight(int textHeight);
 
-	const Int2 DiseaseWarningPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
+	const Int2 DiseaseWarningPopUpCenterPoint(ArenaRenderUtils::SCREEN_CENTER.x, 80);
 
 	constexpr UiTexturePatternType TextPopUpTexturePatternType = UiTexturePatternType::Parchment;
 
@@ -152,7 +150,7 @@ namespace ProvinceSearchUiView
 	const std::string TextEntryFontName = ArenaFontName::Arena;
 	const Color TextEntryColor(52, 24, 8);
 
-	constexpr Int2 TextureCenter((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	constexpr Int2 TextureCenter = ArenaRenderUtils::SCREEN_CENTER;
 	constexpr int TextureWidth = 280;
 	constexpr int TextureHeight = 40;
 	constexpr UiTexturePatternType TexturePattern = UiTexturePatternType::Parchment;

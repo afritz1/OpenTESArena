@@ -748,46 +748,22 @@ MessageBoxItemsProperties ChooseRaceUiView::getProvinceConfirmMessageBoxItemsPro
 
 Rect ChooseRaceUiView::getProvinceConfirmedFirstTextureRect(int textWidth, int textHeight)
 {
-	const Int2 center(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-	return Rect(
-		center,
-		textWidth + 20,
-		std::max(textHeight, 40));
+	return Rect(ArenaRenderUtils::SCREEN_CENTER, textWidth + 20, std::max(textHeight, 40));
 }
 
 Rect ChooseRaceUiView::getProvinceConfirmedSecondTextureRect(int textWidth, int textHeight)
 {
-	const Int2 center(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-	return Rect(
-		center,
-		textWidth + 20,
-		std::max(textHeight + 14, 40));
+	return Rect(ArenaRenderUtils::SCREEN_CENTER, textWidth + 20, std::max(textHeight + 14, 40));
 }
 
 Rect ChooseRaceUiView::getProvinceConfirmedThirdTextureRect(int textWidth, int textHeight)
 {
-	const Int2 center(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-	return Rect(
-		center,
-		textWidth + 20,
-		std::max(textHeight + 18, 40));
+	return Rect(ArenaRenderUtils::SCREEN_CENTER, textWidth + 20, std::max(textHeight + 18, 40));
 }
 
 Rect ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(int textWidth, int textHeight)
 {
-	const Int2 center(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-	return Rect(
-		center,
-		textWidth + 20,
-		std::max(textHeight + 8, 40));
+	return Rect(ArenaRenderUtils::SCREEN_CENTER, textWidth + 20, std::max(textHeight + 8, 40));
 }
 
 Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary)

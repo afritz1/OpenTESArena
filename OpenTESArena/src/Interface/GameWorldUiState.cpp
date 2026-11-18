@@ -736,7 +736,7 @@ void GameWorldUI::update(double dt)
 		constexpr int boatClassicTextureHeight = 78;
 		constexpr int boatModernTextureExtraHeight = ArenaRenderUtils::SCENE_UI_HEIGHT / 4; // Original art doesn't look good stretched out.
 		constexpr int boatModernTextureHeight = boatClassicTextureHeight + boatModernTextureExtraHeight;
-		uiManager.setTransformPosition(boatImageElementInstID, Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT));
+		uiManager.setTransformPosition(boatImageElementInstID, Int2(ArenaRenderUtils::SCREEN_CENTER.x, ArenaRenderUtils::SCREEN_HEIGHT));
 		uiManager.setTransformSize(boatImageElementInstID, Int2(ArenaRenderUtils::SCREEN_WIDTH, boatModernTextureHeight));
 	}
 
@@ -1204,7 +1204,7 @@ void GameWorldUI::showCampModal()
 
 	UiElementInitInfo campModalTitleImageElementInitInfo;
 	campModalTitleImageElementInitInfo.name = "GameWorldCampModalTitleImage";
-	campModalTitleImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
+	campModalTitleImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, 80);
 	campModalTitleImageElementInitInfo.pivotType = UiPivotType::Middle;
 	uiManager.createImage(campModalTitleImageElementInitInfo, campModalImageTextureID, state.campModalContextInstID, renderer);
 
@@ -1224,7 +1224,7 @@ void GameWorldUI::showCampModal()
 
 	UiElementInitInfo campModalManualHoursImageElementInitInfo;
 	campModalManualHoursImageElementInitInfo.name = "GameWorldCampModalManualHoursImage";
-	campModalManualHoursImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, campModalTitleImageElementInitInfo.position.y + campModalImageTextureHeight);
+	campModalManualHoursImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, campModalTitleImageElementInitInfo.position.y + campModalImageTextureHeight);
 	campModalManualHoursImageElementInitInfo.pivotType = UiPivotType::Middle;
 	uiManager.createImage(campModalManualHoursImageElementInitInfo, campModalImageTextureID, state.campModalContextInstID, renderer);
 
@@ -1263,7 +1263,7 @@ void GameWorldUI::showCampModal()
 
 	UiElementInitInfo campModalUntilHealedImageElementInitInfo;
 	campModalUntilHealedImageElementInitInfo.name = "GameWorldCampModalUntilHealedImage";
-	campModalUntilHealedImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, campModalManualHoursImageElementInitInfo.position.y + campModalImageTextureHeight);
+	campModalUntilHealedImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, campModalManualHoursImageElementInitInfo.position.y + campModalImageTextureHeight);
 	campModalUntilHealedImageElementInitInfo.pivotType = UiPivotType::Middle;
 	uiManager.createImage(campModalUntilHealedImageElementInitInfo, campModalImageTextureID, state.campModalContextInstID, renderer);
 
@@ -1382,11 +1382,11 @@ void GameWorldUI::showCampManualHoursModal()
 	constexpr int imageTextureHeight = 30;
 	const UiTextureID imageTextureID = uiManager.getOrAddTexture(UiTexturePatternType::Dark, imageTextureWidth, imageTextureHeight, textureManager, renderer);
 
-	const int imageY = game.options.getGraphics_ModernInterface() ? (ArenaRenderUtils::SCREEN_HEIGHT / 2) : (ArenaRenderUtils::SCENE_VIEW_HEIGHT / 2);
+	const int imageY = game.options.getGraphics_ModernInterface() ? ArenaRenderUtils::SCREEN_CENTER.y : ArenaRenderUtils::SCENE_VIEW_CENTER.y;
 
 	UiElementInitInfo imageElementInitInfo;
 	imageElementInitInfo.name = "GameWorldCampManualHoursModalImage";
-	imageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, imageY);
+	imageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, imageY);
 	imageElementInitInfo.pivotType = UiPivotType::Middle;
 	const UiElementInstanceID imageElementInstID = uiManager.createImage(imageElementInitInfo, imageTextureID, state.campManualHoursModalContextInstID, renderer);
 	const Rect imageGlobalRect = uiManager.getTransformGlobalRect(imageElementInstID);
@@ -1856,12 +1856,12 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 
 	const int titleImageTextureHeight = 24;
 	const int totalMessageBoxHeight = titleImageTextureHeight * (messageBoxButtonCount + 1);
-	const int titleTextBoxPositionY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (totalMessageBoxHeight / 2) + (titleImageTextureHeight / 2);
+	const int titleTextBoxPositionY = ArenaRenderUtils::SCREEN_CENTER.y - (totalMessageBoxHeight / 2) + (titleImageTextureHeight / 2);
 	const PaletteID paletteID = *textureManager.tryGetPaletteID(GameWorldUiView::getPaletteTextureAsset());
 
 	UiElementInitInfo titleTextBoxElementInitInfo;
 	titleTextBoxElementInitInfo.name = "GameWorldConversationModalTitleTextBox";
-	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, titleTextBoxPositionY);
+	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, titleTextBoxPositionY);
 	titleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	titleTextBoxElementInitInfo.drawOrder = 1;
 
@@ -2375,7 +2375,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 
 	UiElementInitInfo listBoxImageElementInitInfo;
 	listBoxImageElementInitInfo.name = "GameWorldConversationModalListBoxImage";
-	listBoxImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, listBoxImageY);
+	listBoxImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, listBoxImageY);
 	listBoxImageElementInitInfo.pivotType = listBoxImagePivotType;
 	const UiElementInstanceID listBoxImageElementInstID = uiManager.createImage(listBoxImageElementInitInfo, listBoxTextureID, state.conversationModalContextInstID, renderer);
 	const Rect listBoxImageGlobalRect = uiManager.getTransformGlobalRect(listBoxImageElementInstID);
@@ -2492,7 +2492,7 @@ void GameWorldUI::showShopkeeperBackground(const char *titleText)
 
 	UiElementInitInfo titleTextBoxElementInitInfo;
 	titleTextBoxElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleTextBox";
-	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 10);
+	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, 10);
 	titleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	titleTextBoxElementInitInfo.drawOrder = 1;
 
@@ -2510,7 +2510,7 @@ void GameWorldUI::showShopkeeperBackground(const char *titleText)
 
 	UiElementInitInfo titleImageElementInitInfo;
 	titleImageElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleImage";
-	titleImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 0);
+	titleImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, 0);
 	titleImageElementInitInfo.pivotType = UiPivotType::Top;
 	titleImageElementInitInfo.drawOrder = 0;
 	uiManager.createImage(titleImageElementInitInfo, titleImageTextureID, state.shopkeeperBgContextInstID, renderer);
@@ -2521,7 +2521,7 @@ void GameWorldUI::showShopkeeperBackground(const char *titleText)
 
 	UiElementInitInfo barterBgImageElementInitInfo;
 	barterBgImageElementInitInfo.name = "GameWorldShopkeeperBackgroundBarterImage";
-	barterBgImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
+	barterBgImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, ArenaRenderUtils::SCREEN_HEIGHT);
 	barterBgImageElementInitInfo.pivotType = UiPivotType::Bottom;
 	uiManager.createImage(barterBgImageElementInitInfo, barterBgImageTextureID, state.shopkeeperBgContextInstID, renderer);
 
@@ -2579,7 +2579,7 @@ void GameWorldUI::setShopkeeperPlayerGoldVisible(bool visible)
 	{
 		UiElementInitInfo textBoxElementInitInfo;
 		textBoxElementInitInfo.name = PlayerGoldTextBoxElementName;
-		textBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
+		textBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_CENTER.x, 160);
 		textBoxElementInitInfo.pivotType = UiPivotType::Middle;
 		textBoxElementInitInfo.drawOrder = 1;
 

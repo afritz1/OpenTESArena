@@ -116,16 +116,16 @@ namespace CharacterCreationUiView
 
 namespace ChooseClassQuestionsUiView
 {
-	const Int2 InitialPopUpTextureCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	const Int2 InitialPopUpTextureCenterPoint = ArenaRenderUtils::SCREEN_CENTER;
 	constexpr UiTexturePatternType InitialPopUpPatternType = UiTexturePatternType::Parchment;
 	
-	const Int2 InitialPopUpTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	const Int2 InitialPopUpTextCenterPoint = ArenaRenderUtils::SCREEN_CENTER;
 	const std::string InitialPopUpFontName = ArenaFontName::A;
 	const Color InitialPopUpColor(52, 24, 8);
 	constexpr TextAlignment InitialPopUpAlignment = TextAlignment::MiddleCenter;
 	constexpr int InitialPopUpLineSpacing = 1;
 
-	const Int2 SuggestedClassPopUpTextCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
+	const Int2 SuggestedClassPopUpTextCenterPoint(ArenaRenderUtils::SCREEN_CENTER.x, 80);
 	const std::string SuggestedClassPopUpFontName = ArenaFontName::A;
 	const Color SuggestedClassPopUpTextColor(52, 24, 8);
 	constexpr TextAlignment SuggestedClassPopUpTextAlignment = TextAlignment::MiddleCenter;
@@ -218,22 +218,16 @@ namespace ChooseRaceUiView
 
 namespace ChooseAttributesUiView
 {
-	const Int2 InitialTextCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 2);
+	const Int2 InitialTextCenterPoint = ArenaRenderUtils::SCREEN_CENTER;
 	const std::string InitialTextFontName = ArenaFontName::Arena;
 	const Color InitialTextColor(199, 199, 199);
 	constexpr TextAlignment InitialTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int InitialTextLineSpacing = 1;
 	constexpr UiTexturePatternType InitialTextPatternType = UiTexturePatternType::Dark;
 
-	const Int2 InitialTextureCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	const Int2 InitialTextureCenterPoint = ArenaRenderUtils::SCREEN_CENTER;
 
-	const Int2 MessageBoxTitleCenterPoint(
-		ArenaRenderUtils::SCREEN_WIDTH / 2,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
+	const Int2 MessageBoxTitleCenterPoint = ArenaRenderUtils::SCREEN_CENTER - Int2(0, 22);
 	const std::string MessageBoxTitleFontName = ArenaFontName::A;
 	const Color MessageBoxTitleColor(199, 199, 199);
 	constexpr UiTexturePatternType MessageBoxPatternType = UiTexturePatternType::Dark;
@@ -241,9 +235,7 @@ namespace ChooseAttributesUiView
 	const std::string MessageBoxItemFontName = ArenaFontName::A;
 	const Color MessageBoxItemTextColor(190, 113, 0);
 
-	const Int2 AppearanceTextCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	const Int2 AppearanceTextCenterPoint = ArenaRenderUtils::SCREEN_CENTER;
 	const std::string AppearanceTextFontName = ArenaFontName::Arena;
 	const Color AppearanceTextColor(199, 199, 199);
 	constexpr TextAlignment AppearanceTextAlignment = TextAlignment::MiddleCenter;

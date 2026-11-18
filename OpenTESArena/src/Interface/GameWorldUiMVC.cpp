@@ -726,7 +726,7 @@ int GameWorldUiView::getStatusPopUpTextureHeight(int textHeight)
 
 Int2 GameWorldUiView::getGameWorldInterfacePosition()
 {
-	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
+	return Int2(ArenaRenderUtils::SCREEN_CENTER.x, ArenaRenderUtils::SCREEN_HEIGHT);
 }
 
 Int2 GameWorldUiView::getNoMagicTexturePosition()
@@ -758,7 +758,7 @@ Int2 GameWorldUiView::getTriggerTextPosition(Game &game, int gameWorldInterfaceT
 	const Options &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
-	const int textX = ArenaRenderUtils::SCREEN_WIDTH / 2;
+	const int textX = ArenaRenderUtils::SCREEN_CENTER.x;
 
 	const int interfaceOffsetY = modernInterface ? (gameWorldInterfaceTextureHeight / 2) : gameWorldInterfaceTextureHeight;
 	const int textY = ArenaRenderUtils::SCREEN_HEIGHT - interfaceOffsetY - 3;
@@ -768,7 +768,7 @@ Int2 GameWorldUiView::getTriggerTextPosition(Game &game, int gameWorldInterfaceT
 
 Int2 GameWorldUiView::getActionTextPosition()
 {
-	const int textX = ArenaRenderUtils::SCREEN_WIDTH / 2;
+	const int textX = ArenaRenderUtils::SCREEN_CENTER.x;
 	const int textY = 20;
 	return Int2(textX, textY);
 }
@@ -850,7 +850,7 @@ Rect GameWorldUiView::getCompassClipRect()
 	constexpr int width = 32;
 	constexpr int height = 7;
 	return Rect(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (width / 2),
+		ArenaRenderUtils::SCREEN_CENTER.x - (width / 2),
 		height,
 		width,
 		height);
@@ -870,7 +870,7 @@ Int2 GameWorldUiView::getCompassSliderPosition(Game &game, const VoxelDouble2 &p
 
 Int2 GameWorldUiView::getCompassFramePosition()
 {
-	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 0);
+	return Int2(ArenaRenderUtils::SCREEN_CENTER.x, 0);
 }
 
 Int2 GameWorldUiView::getWeaponAnimationOffset(const std::string &weaponFilename, int frameIndex,
@@ -893,13 +893,11 @@ Int2 GameWorldUiView::getInterfaceCenter(Game &game)
 	const bool modernInterface = game.options.getGraphics_ModernInterface();
 	if (modernInterface)
 	{
-		return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
+		return ArenaRenderUtils::SCREEN_CENTER;
 	}
 	else
 	{
-		return Int2(
-			ArenaRenderUtils::SCREEN_WIDTH / 2,
-			(ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.height) / 2);
+		return Int2(ArenaRenderUtils::SCREEN_CENTER.x, (ArenaRenderUtils::SCREEN_HEIGHT - GameWorldUiView::UiBottomRegion.height) / 2);
 	}
 }
 
@@ -1382,8 +1380,8 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		DebugCrash("Couldn't init physics ray cast text box.");
 	}
 
-	const int originalX = ArenaRenderUtils::SCREEN_WIDTH / 2;
-	const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;*/
+	const int originalX = ArenaRenderUtils::SCREEN_CENTER.x;
+	const int originalY = ArenaRenderUtils::SCREEN_CENTER.y + 10;*/
 	//renderer.drawOriginal(textBox.getTextureID(), originalX, originalY);
 }
 
