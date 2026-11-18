@@ -16,21 +16,25 @@ std::string PauseMenuUiModel::getVolumeString(double percent)
 
 UiTextureID PauseMenuUiView::allocOptionsButtonTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	constexpr Rect buttonRect(162, 88, 145, 15);
-	const Surface surface = TextureUtils::generate(UiTexturePatternType::Custom1, buttonRect.width, buttonRect.height, textureManager, renderer);
-
-	Span2D<const uint32_t> pixels = surface.getPixels();
-	const UiTextureID textureID = renderer.createUiTexture(pixels.getWidth(), pixels.getHeight());
+	constexpr int buttonWidth = 145;
+	constexpr int buttonHeight = 15;
+	const UiTextureID textureID = renderer.createUiTexture(buttonWidth, buttonHeight);
 	if (textureID < 0)
 	{
 		DebugLogError("Couldn't create options button texture for pause menu.");
 		return -1;
 	}
 
-	if (!renderer.populateUiTextureNoPalette(textureID, pixels))
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
 	{
-		DebugLogError("Couldn't populate options button texture for pause menu.");
+		DebugLogError("Couldn't lock options button texture for writing.");
+		return -1;
 	}
+
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+	TextureUtils::populateGeneratedTexture(UiTexturePatternType::Custom1, dstTexels, textureManager, renderer);
+	renderer.unlockUiTexture(textureID);
 
 	return textureID;
 }

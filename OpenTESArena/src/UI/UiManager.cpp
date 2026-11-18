@@ -203,14 +203,23 @@ UiTextureID UiManager::getOrAddTexture(UiTexturePatternType patternType, int wid
 		}
 	}
 
-	const Surface surface = TextureUtils::generate(patternType, width, height, textureManager, renderer);
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
-		DebugLogErrorFormat("Couldn't generate UI texture with pattern %d and dimensions %dx%d.", patternType, width, height);
+		DebugLogErrorFormat("Couldn't allocate UI texture with dimensions %dx%d for pattern %d.", width, height, patternType);
 		return -1;
 	}
+
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock UI texture with dimensions %dx%d for pattern %d.", width, height, patternType);
+		return -1;
+	}
+
+	Span2D<uint32_t> lockedTexels = lockedTexture.getTexels32();
+	TextureUtils::populateGeneratedTexture(patternType, lockedTexels, textureManager, renderer);
+	renderer.unlockUiTexture(textureID);
 
 	GeneratedUiTexture newTexture;
 	newTexture.patternType = patternType;
@@ -1904,14 +1913,10 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 			return;
 		}
 
-		Span2D<uint32_t> texels = lockedTexture.getTexels32();
-		texels.fill(0);
-
-		const Surface tempSurface = TextureUtils::generate(UiTexturePatternType::Parchment, texels.getWidth(), texels.getHeight(), textureManager, renderer);
-		const Span2D<const uint32_t> srcPixels = tempSurface.getPixels();
-		std::copy(srcPixels.begin(), srcPixels.end(), texels.begin());
-
+		Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+		TextureUtils::populateGeneratedTexture(UiTexturePatternType::Parchment, dstTexels, textureManager, renderer); // @todo provide imageSliced textureBuilderIDs instead
 		renderer.unlockUiTexture(imageSliced.textureID);
+
 		imageSliced.dirty = false;
 	}
 
