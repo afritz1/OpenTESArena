@@ -26,7 +26,7 @@ void TextureUtils::populate9SlicedTexture(Span<const TextureBuilderID> textureBu
 	constexpr uint32_t clearColor = Colors::TransparentRGBA;
 	outPixels.fill(clearColor);
 
-	auto writeTileToOutput = [&outPixels](Span2D<const uint8_t> srcTexels, const Palette &palette, int dstX, int dstY)
+	auto writeTileToOutput = [&outPixels, &palette](Span2D<const uint8_t> srcTexels, int dstX, int dstY)
 	{
 		for (int y = 0; y < srcTexels.getHeight(); y++)
 		{
@@ -63,28 +63,28 @@ void TextureUtils::populate9SlicedTexture(Span<const TextureBuilderID> textureBu
 	{
 		for (int x = topLeftTexels.getWidth(); x < (outputWidth - topRightTexels.getWidth()); x += bodyTexels.getWidth())
 		{
-			writeTileToOutput(bodyTexels, palette, x, y);
+			writeTileToOutput(bodyTexels, x, y);
 		}
 	}
 
 	// Draw edge tiles.
 	for (int y = topLeftTexels.getHeight(); y < (outputHeight - bottomLeftTexels.getHeight()); y += leftTexels.getHeight())
 	{
-		writeTileToOutput(leftTexels, palette, 0, y);
-		writeTileToOutput(rightTexels, palette, outputWidth - rightTexels.getWidth(), y);
+		writeTileToOutput(leftTexels, 0, y);
+		writeTileToOutput(rightTexels, outputWidth - rightTexels.getWidth(), y);
 	}
 
 	for (int x = topLeftTexels.getWidth(); x < (outputWidth - topRightTexels.getWidth()); x += topTexels.getWidth())
 	{
-		writeTileToOutput(topTexels, palette, x, 0);
-		writeTileToOutput(bottomTexels, palette, x, outputHeight - bottomTexels.getHeight());
+		writeTileToOutput(topTexels, x, 0);
+		writeTileToOutput(bottomTexels, x, outputHeight - bottomTexels.getHeight());
 	}
 
 	// Draw corner tiles.
-	writeTileToOutput(topLeftTexels, palette, 0, 0);
-	writeTileToOutput(topRightTexels, palette, outputWidth - topRightTexels.getWidth(), 0);
-	writeTileToOutput(bottomLeftTexels, palette, 0, outputHeight - bottomLeftTexels.getHeight());
-	writeTileToOutput(bottomRightTexels, palette, outputWidth - bottomRightTexels.getWidth(), outputHeight - bottomRightTexels.getHeight());
+	writeTileToOutput(topLeftTexels, 0, 0);
+	writeTileToOutput(topRightTexels, outputWidth - topRightTexels.getWidth(), 0);
+	writeTileToOutput(bottomLeftTexels, 0, outputHeight - bottomLeftTexels.getHeight());
+	writeTileToOutput(bottomRightTexels, outputWidth - bottomRightTexels.getWidth(), outputHeight - bottomRightTexels.getHeight());
 }
 
 void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<uint32_t> outPixels, TextureManager &textureManager, Renderer &renderer)
