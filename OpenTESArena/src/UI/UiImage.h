@@ -18,6 +18,8 @@ struct UiImageSlicedInitInfo
 	TextureAsset textureAsset; // Must be 9 textures.
 	TextureAsset paletteAsset;
 	std::string contentElementName;
+	int minimumWidth;
+	int minimumHeight;
 	int paddingWidth; // Extra pixels added to left and right sides.
 	int paddingHeight; // Extra pixels added to top and bottom sides.
 
@@ -32,6 +34,8 @@ struct UiImageSliced
 	TextureBuilderID textureBuilderIDs[TEXTURE_COUNT];
 	PaletteID paletteID;
 	std::string contentElementName;
+	int minimumWidth;
+	int minimumHeight;
 	int paddingWidth;
 	int paddingHeight;
 	bool dirty;
@@ -39,7 +43,7 @@ struct UiImageSliced
 	UiImageSliced();
 
 	void init(UiTextureID textureID, Span<const TextureBuilderID> textureBuilderIDs, PaletteID paletteID,
-		const std::string &contentElementName, int paddingWidth, int paddingHeight);
+		const std::string &contentElementName, int minimumWidth, int minimumHeight, int paddingWidth, int paddingHeight);
 
 	void free(Renderer &renderer);
 };

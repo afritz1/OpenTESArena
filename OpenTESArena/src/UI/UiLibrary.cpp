@@ -65,9 +65,11 @@ namespace
 	const std::string Keyword_ImageSlicedTexture = Keyword_ImageTexture;
 	const std::string Keyword_ImageSlicedPalette = Keyword_ImagePalette;
 	const std::string Keyword_ImageSlicedContentElementName = "ContentElementName";
+	const std::string Keyword_ImageSlicedMinimumWidth = "MinimumWidth";
+	const std::string Keyword_ImageSlicedMinimumHeight = "MinimumHeight";
 	const std::string Keyword_ImageSlicedPaddingWidth = "PaddingWidth";
 	const std::string Keyword_ImageSlicedPaddingHeight = "PaddingHeight";
-	const std::string ValidImageSlicedKeys[] = { Keyword_ImageSlicedTexture, Keyword_ImageSlicedPalette, Keyword_ImageSlicedContentElementName, Keyword_ImageSlicedPaddingWidth, Keyword_ImageSlicedPaddingHeight };
+	const std::string ValidImageSlicedKeys[] = { Keyword_ImageSlicedTexture, Keyword_ImageSlicedPalette, Keyword_ImageSlicedContentElementName, Keyword_ImageSlicedMinimumWidth, Keyword_ImageSlicedMinimumHeight, Keyword_ImageSlicedPaddingWidth, Keyword_ImageSlicedPaddingHeight };
 
 	const std::string Keyword_TextBoxWorstCaseText = "WorstCaseText";
 	const std::string Keyword_TextBoxText = "Text";
@@ -688,6 +690,28 @@ namespace
 		{
 			outImageSlicedDef->contentElementName = value;
 		}
+		else if (key == Keyword_ImageSlicedMinimumWidth)
+		{
+			int minimumWidth = 0;
+			if (!TryParseInteger(value, &minimumWidth))
+			{
+				DebugLogErrorFormat("Couldn't parse minimum width value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outImageSlicedDef->minimumWidth = minimumWidth;
+		}
+		else if (key == Keyword_ImageSlicedMinimumHeight)
+		{
+			int minimumHeight = 0;
+			if (!TryParseInteger(value, &minimumHeight))
+			{
+				DebugLogErrorFormat("Couldn't parse minimum height value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outImageSlicedDef->minimumHeight = minimumHeight;
+		}
 		else if (key == Keyword_ImageSlicedPaddingWidth)
 		{
 			int paddingWidth = 0;
@@ -1145,6 +1169,8 @@ void UiImageDefinition::clear()
 
 UiImageSlicedDefinition::UiImageSlicedDefinition()
 {
+	this->minimumWidth = 0;
+	this->minimumHeight = 0;
 	this->paddingWidth = 0;
 	this->paddingHeight = 0;
 }
@@ -1155,6 +1181,8 @@ void UiImageSlicedDefinition::clear()
 	this->texture = TextureAsset();
 	this->palette = TextureAsset();
 	this->contentElementName.clear();
+	this->minimumWidth = 0;
+	this->minimumHeight = 0;
 	this->paddingWidth = 0;
 	this->paddingHeight = 0;
 }

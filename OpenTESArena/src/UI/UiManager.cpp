@@ -565,7 +565,7 @@ UiElementInstanceID UiManager::createImageSliced(const UiElementInitInfo &initIn
 	const UiTextureID textureID = this->invalidTextureID; // To be generated later this frame.
 
 	UiImageSliced &imageSliced = this->imageSliceds.get(imageSlicedInstID);
-	imageSliced.init(textureID, textureBuilderIDs, *paletteID, imageSlicedInitInfo.contentElementName, imageSlicedInitInfo.paddingWidth, imageSlicedInitInfo.paddingHeight);
+	imageSliced.init(textureID, textureBuilderIDs, *paletteID, imageSlicedInitInfo.contentElementName, imageSlicedInitInfo.minimumWidth, imageSlicedInitInfo.minimumHeight, imageSlicedInitInfo.paddingWidth, imageSlicedInitInfo.paddingHeight);
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, contentSize, initInfo.sizeType, initInfo.pivotType);
@@ -1364,6 +1364,8 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		initInfo.textureAsset = def.texture;
 		initInfo.paletteAsset = def.palette;
 		initInfo.contentElementName = def.contentElementName;
+		initInfo.minimumWidth = def.minimumWidth;
+		initInfo.minimumHeight = def.minimumHeight;
 		initInfo.paddingWidth = def.paddingWidth;
 		initInfo.paddingHeight = def.paddingHeight;
 		return initInfo;
@@ -1846,7 +1848,9 @@ void UiManager::updateLayouts(const Renderer &renderer)
 			{
 				UiImageSliced &imageSliced = this->imageSliceds.get(element.imageSlicedInstID);
 				const UiTransform &contentTransform = getTransformByName(imageSliced.contentElementName);
-				const Int2 newTransformSize = contentTransform.size + Int2(imageSliced.paddingWidth * 2, imageSliced.paddingHeight * 2);
+				const Int2 newTransformSize(
+					std::max(contentTransform.size.x + (imageSliced.paddingWidth * 2), imageSliced.minimumWidth),
+					std::max(contentTransform.size.y + (imageSliced.paddingHeight * 2), imageSliced.minimumHeight));
 				imageSliced.dirty |= transform.size != newTransformSize;
 				transform.size = newTransformSize;
 				break;
@@ -1903,7 +1907,9 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 		Span2D<uint32_t> texels = lockedTexture.getTexels32();
 		texels.fill(0);
 
-		DebugNotImplemented();
+		const Surface tempSurface = TextureUtils::generate(UiTexturePatternType::Parchment, texels.getWidth(), texels.getHeight(), textureManager, renderer);
+		const Span2D<const uint32_t> srcPixels = tempSurface.getPixels();
+		std::copy(srcPixels.begin(), srcPixels.end(), texels.begin());
 
 		renderer.unlockUiTexture(imageSliced.textureID);
 		imageSliced.dirty = false;
@@ -2054,6 +2060,12 @@ void UiManager::updateDrawList(const Window &window)
 		{
 			const UiImage &image = this->images.get(element->imageInstID);
 			textureID = image.textureID;
+			break;
+		}
+		case UiElementType::ImageSliced:
+		{
+			const UiImageSliced &imageSliced = this->imageSliceds.get(element->imageSlicedInstID);
+			textureID = imageSliced.textureID;
 			break;
 		}
 		case UiElementType::TextBox:

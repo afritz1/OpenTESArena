@@ -25,8 +25,8 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 
 	if (type == UiTexturePatternType::Parchment)
 	{
-		DebugAssert(width >= 40);
-		DebugAssert(height >= 40);
+		DebugAssert(width >= TextureUtils::PARCHMENT_MIN_WIDTH);
+		DebugAssert(height >= TextureUtils::PARCHMENT_MIN_HEIGHT);
 
 		// Get the nine parchment tiles.
 		const std::string &tilesPaletteFilename = ArenaTextureName::CharacterCreation;

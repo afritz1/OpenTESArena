@@ -69,6 +69,8 @@ struct UiImageSlicedDefinition
 	TextureAsset texture; // Must be a sequence of 9 textures.
 	TextureAsset palette;
 	std::string contentElementName;
+	int minimumWidth;
+	int minimumHeight;
 	int paddingWidth;
 	int paddingHeight;
 

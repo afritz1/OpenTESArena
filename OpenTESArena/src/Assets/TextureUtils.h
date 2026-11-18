@@ -58,6 +58,9 @@ public:
 
 namespace TextureUtils
 {
+	static constexpr int PARCHMENT_MIN_WIDTH = 40;
+	static constexpr int PARCHMENT_MIN_HEIGHT = PARCHMENT_MIN_WIDTH;
+
 	// Generates a new texture from a pattern.
 	Surface generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager, Renderer &renderer);
 
