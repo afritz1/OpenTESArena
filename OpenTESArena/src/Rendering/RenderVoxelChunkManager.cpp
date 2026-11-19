@@ -65,14 +65,14 @@ namespace
 
 			if (cacheIter == textures.end())
 			{
-				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-				if (!textureBuilderID.has_value())
+				const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+				if (textureBuilderID < 0)
 				{
 					DebugLogWarningFormat("Couldn't load voxel texture \"%s\".", textureAsset.filename.c_str());
 					continue;
 				}
 
-				const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+				const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 				const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
 				if (textureID < 0)
 				{
@@ -189,14 +189,14 @@ namespace
 			else if (chasmDef.animType == VoxelChasmAnimationType::Animated)
 			{
 				const TextureAsset &firstFrameTextureAsset = chasmDef.animated.textureAssets[0];
-				const std::optional<TextureBuilderID> firstFrameTextureBuilderID = textureManager.tryGetTextureBuilderID(firstFrameTextureAsset);
-				if (!firstFrameTextureBuilderID.has_value())
+				const TextureBuilderID firstFrameTextureBuilderID = textureManager.getTextureBuilderID(firstFrameTextureAsset);
+				if (firstFrameTextureBuilderID < 0)
 				{
 					DebugLogWarning("Couldn't load first frame of chasm texture \"" + firstFrameTextureAsset.filename + "\".");
 					return;
 				}
 
-				const TextureBuilder &firstFrameTextureBuilder = textureManager.getTextureBuilderHandle(*firstFrameTextureBuilderID);
+				const TextureBuilder &firstFrameTextureBuilder = textureManager.getTextureBuilderHandle(firstFrameTextureBuilderID);
 				int newObjectTextureWidth = firstFrameTextureBuilder.width;
 				int newObjectTextureHeight = firstFrameTextureBuilder.height * chasmDef.animated.textureAssets.getCount();
 
@@ -222,14 +222,14 @@ namespace
 				int newObjectTextureCurrentY = 0;
 				for (const TextureAsset &textureAsset : chasmDef.animated.textureAssets)
 				{
-					const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-					if (!textureBuilderID.has_value())
+					const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+					if (textureBuilderID < 0)
 					{
 						DebugLogWarning("Couldn't load chasm texture builder \"" + textureAsset.filename + "\".");
 						continue;
 					}
 
-					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 					Span2D<const uint8_t> textureBuilderTexels = textureBuilder.getTexels8();
 					const int dstByteOffset = (newObjectTextureCurrentY * newObjectTextureWidth) * bytesPerTexel;
 					uint8_t *dstTexels = lockedTexture.getTexels8().begin();

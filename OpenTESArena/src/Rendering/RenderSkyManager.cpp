@@ -299,14 +299,14 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 
 	auto allocBgTextureIdByFilename = [this, &textureManager, &allocBgTextureID](const std::string &filename)
 	{
-		const std::optional<TextureBuilderID> skyGradientTextureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
-		if (!skyGradientTextureBuilderID.has_value())
+		const TextureBuilderID skyGradientTextureBuilderID = textureManager.getTextureBuilderID(filename.c_str());
+		if (skyGradientTextureBuilderID < 0)
 		{
 			DebugLogError("Couldn't get texture builder ID for background \"" + filename + "\".");
 			return -1;
 		}
 
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*skyGradientTextureBuilderID);
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(skyGradientTextureBuilderID);
 		return allocBgTextureID(textureBuilder.getTexels8());
 	};
 
@@ -617,14 +617,14 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 
 		if (iter == this->generalSkyObjectTextures.end())
 		{
-			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-			if (!textureBuilderID.has_value())
+			const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+			if (textureBuilderID < 0)
 			{
 				DebugLogErrorFormat("Couldn't get texture builder ID for sky object texture \"%s\".", textureAsset.filename.c_str());
 				return;
 			}
 
-			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
 			if (textureID < 0)
 			{

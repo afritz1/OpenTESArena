@@ -101,16 +101,16 @@ void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<ui
 		DebugAssert(outputHeight >= TextureUtils::PARCHMENT_MIN_HEIGHT);
 
 		const std::string &tilesPaletteFilename = ArenaTextureName::CharacterCreation;
-		const std::optional<PaletteID> tilesPaletteID = textureManager.tryGetPaletteID(tilesPaletteFilename.c_str());
-		if (!tilesPaletteID.has_value())
+		const PaletteID tilesPaletteID = textureManager.getPaletteID(tilesPaletteFilename.c_str());
+		if (tilesPaletteID < 0)
 		{
 			DebugLogErrorFormat("Couldn't get tile palette ID for \"%s\".", tilesPaletteFilename.c_str());
 			return;
 		}
 
 		const std::string &tilesFilename = ArenaTextureName::Parchment;
-		const std::optional<TextureBuilderIdGroup> tilesTextureBuilderIDs = textureManager.tryGetTextureBuilderIDs(tilesFilename.c_str());
-		if (!tilesTextureBuilderIDs.has_value())
+		const TextureBuilderIdGroup tilesTextureBuilderIDs = textureManager.getTextureBuilderIDs(tilesFilename.c_str());
+		if (!tilesTextureBuilderIDs.isValid())
 		{
 			DebugLogErrorFormat("Couldn't get tiles texture builder IDs for \"%s\".", tilesFilename.c_str());
 			return;
@@ -118,18 +118,18 @@ void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<ui
 
 		const TextureBuilderID tilesTextureBuilderIDsList[9] =
 		{
-			tilesTextureBuilderIDs->getID(0),
-			tilesTextureBuilderIDs->getID(1),
-			tilesTextureBuilderIDs->getID(2),
-			tilesTextureBuilderIDs->getID(3),
-			tilesTextureBuilderIDs->getID(4),
-			tilesTextureBuilderIDs->getID(5),
-			tilesTextureBuilderIDs->getID(6),
-			tilesTextureBuilderIDs->getID(7),
-			tilesTextureBuilderIDs->getID(8)
+			tilesTextureBuilderIDs.getID(0),
+			tilesTextureBuilderIDs.getID(1),
+			tilesTextureBuilderIDs.getID(2),
+			tilesTextureBuilderIDs.getID(3),
+			tilesTextureBuilderIDs.getID(4),
+			tilesTextureBuilderIDs.getID(5),
+			tilesTextureBuilderIDs.getID(6),
+			tilesTextureBuilderIDs.getID(7),
+			tilesTextureBuilderIDs.getID(8)
 		};
 
-		TextureUtils::populate9SlicedTexture(tilesTextureBuilderIDsList, *tilesPaletteID, outPixels, textureManager, renderer);
+		TextureUtils::populate9SlicedTexture(tilesTextureBuilderIDsList, tilesPaletteID, outPixels, textureManager, renderer);
 	}
 	else if (type == UiTexturePatternType::Dark)
 	{
@@ -177,19 +177,15 @@ void TextureUtils::populateGeneratedTexture(UiTexturePatternType type, Span2D<ui
 		DebugAssert(outputWidth >= (6 + 6));
 		DebugAssert(outputHeight == 20);
 
-		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(ArenaPaletteName::Default);
-		DebugAssert(paletteID.has_value());
-		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+		const PaletteID paletteID = textureManager.getPaletteID(ArenaPaletteName::Default);
+		const Palette &palette = textureManager.getPaletteHandle(paletteID);
 
-		const std::optional<TextureBuilderID> leftTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleLeft.c_str());
-		const std::optional<TextureBuilderID> middleTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleMiddle.c_str());
-		const std::optional<TextureBuilderID> rightTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleRight.c_str());
-		DebugAssert(leftTextureBuilderID.has_value());
-		DebugAssert(middleTextureBuilderID.has_value());
-		DebugAssert(rightTextureBuilderID.has_value());
-		const TextureBuilder &leftTextureBuilder = textureManager.getTextureBuilderHandle(*leftTextureBuilderID);
-		const TextureBuilder &middleTextureBuilder = textureManager.getTextureBuilderHandle(*middleTextureBuilderID);
-		const TextureBuilder &rightTextureBuilder = textureManager.getTextureBuilderHandle(*rightTextureBuilderID);
+		const TextureBuilderID leftTextureBuilderID = textureManager.getTextureBuilderID(ArenaTextureName::BarterTitleLeft.c_str());
+		const TextureBuilderID middleTextureBuilderID = textureManager.getTextureBuilderID(ArenaTextureName::BarterTitleMiddle.c_str());
+		const TextureBuilderID rightTextureBuilderID = textureManager.getTextureBuilderID(ArenaTextureName::BarterTitleRight.c_str());
+		const TextureBuilder &leftTextureBuilder = textureManager.getTextureBuilderHandle(leftTextureBuilderID);
+		const TextureBuilder &middleTextureBuilder = textureManager.getTextureBuilderHandle(middleTextureBuilderID);
+		const TextureBuilder &rightTextureBuilder = textureManager.getTextureBuilderHandle(rightTextureBuilderID);
 
 		const Rect leftRect(0, 0, leftTextureBuilder.width, leftTextureBuilder.height);
 		const Rect middleRect(leftTextureBuilder.width, 0, middleTextureBuilder.width, middleTextureBuilder.height);
@@ -333,14 +329,14 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 Buffer<TextureAsset> TextureUtils::makeTextureAssets(const std::string &filename,
 	TextureManager &textureManager)
 {
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(filename.c_str());
-	if (!metadataID.has_value())
+	const TextureFileMetadataID metadataID = textureManager.getMetadataID(filename.c_str());
+	if (metadataID < 0)
 	{
 		DebugLogError("Couldn't get texture file metadata for \"" + filename + "\".");
 		return Buffer<TextureAsset>();
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 	const int textureCount = textureFileMetadata.getTextureCount();
 	Buffer<TextureAsset> textureAssets(textureCount);
 	for (int i = 0; i < textureCount; i++)
@@ -355,22 +351,22 @@ Buffer<TextureAsset> TextureUtils::makeTextureAssets(const std::string &filename
 bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset, const TextureAsset &paletteTextureAsset,
 	TextureManager &textureManager, Renderer &renderer, UiTextureID *outID)
 {
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
-	if (!paletteID.has_value())
+	const PaletteID paletteID = textureManager.getPaletteID(paletteTextureAsset);
+	if (paletteID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get palette ID for \"%s\".", paletteTextureAsset.filename.c_str());
 		return false;
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-	if (!textureBuilderID.has_value())
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+	if (textureBuilderID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get texture builder ID for \"%s\".", textureAsset.filename.c_str());
 		return false;
 	}
 
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 	const UiTextureID textureID = renderer.createUiTexture(textureBuilder.width, textureBuilder.height);
 	if (textureID < 0)
 	{

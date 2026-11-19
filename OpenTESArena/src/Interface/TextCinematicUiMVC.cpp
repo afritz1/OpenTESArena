@@ -126,26 +126,26 @@ std::vector<std::string> TextCinematicUiModel::getSubtitleTextPages(const std::s
 Buffer<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::string &animFilename,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(animFilename.c_str());
-	if (!paletteID.has_value())
+	const PaletteID paletteID = textureManager.getPaletteID(animFilename.c_str());
+	if (paletteID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get palette ID for \"%s\".", animFilename.c_str());
 		return Buffer<UiTextureID>();
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs = textureManager.tryGetTextureBuilderIDs(animFilename.c_str());
-	if (!textureBuilderIDs.has_value())
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const TextureBuilderIdGroup textureBuilderIDs = textureManager.getTextureBuilderIDs(animFilename.c_str());
+	if (!textureBuilderIDs.isValid())
 	{
 		DebugLogErrorFormat("Couldn't get texture builder IDs for \"%s\".", animFilename.c_str());
 		return Buffer<UiTextureID>();
 	}
 
-	const int textureCount = textureBuilderIDs->count;
+	const int textureCount = textureBuilderIDs.count;
 	Buffer<UiTextureID> textureIDs(textureCount);
 	for (int i = 0; i < textureCount; i++)
 	{
-		const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(i);
+		const TextureBuilderID textureBuilderID = textureBuilderIDs.getID(i);
 		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 		const UiTextureID textureID = renderer.createUiTexture(textureBuilder.width, textureBuilder.height);
 		if (textureID < 0)

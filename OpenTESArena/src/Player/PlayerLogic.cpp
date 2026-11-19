@@ -1221,13 +1221,13 @@ void PlayerLogic::handleAttack(Game &game, Int2 mouseDelta)
 			// Cursor must be above game world interface. In the original game, it has to be an "X", but relaxing that here.
 			TextureManager &textureManager = game.textureManager;
 			const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
-			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
-			if (!metadataID.has_value())
+			const TextureFileMetadataID metadataID = textureManager.getMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
+			if (metadataID < 0)
 			{
 				DebugCrash("Couldn't get game world interface metadata ID for \"" + gameWorldInterfaceTextureAsset.filename + "\".");
 			}
 
-			const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+			const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 			const int gameWorldInterfaceHeight = metadata.getHeight(0);
 			const Int2 mousePosition = inputManager.getMousePosition();
 			const int originalCursorY = window.nativeToOriginal(mousePosition).y;

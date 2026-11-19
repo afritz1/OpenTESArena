@@ -737,14 +737,14 @@ Int2 GameWorldUiView::getNoMagicTexturePosition()
 int GameWorldUiView::getKeyTextureCount(TextureManager &textureManager)
 {
 	const TextureAsset textureAsset = GameWorldUiView::getKeyTextureAsset(0);
-	std::optional<TextureFileMetadataID> textureFileMetadataID = textureManager.tryGetMetadataID(textureAsset.filename.c_str());
-	if (!textureFileMetadataID.has_value())
+	const TextureFileMetadataID textureFileMetadataID = textureManager.getMetadataID(textureAsset.filename.c_str());
+	if (textureFileMetadataID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get texture file metadata ID for key textures \"%s\".", textureAsset.filename.c_str());
 		return 0;
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*textureFileMetadataID);
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(textureFileMetadataID);
 	return textureFileMetadata.getTextureCount();
 }
 
@@ -831,9 +831,9 @@ UiListBoxInitInfo GameWorldUiView::getLootListBoxProperties()
 
 PaletteID GameWorldUiView::getCampModalTextBoxPaletteID(TextureManager &textureManager)
 {	
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(ArenaPaletteName::Default.c_str());
-	DebugAssert(paletteID.has_value());
-	return *paletteID;
+	const PaletteID paletteID = textureManager.getPaletteID(ArenaPaletteName::Default.c_str());
+	DebugAssert(paletteID >= 0);
+	return paletteID;
 }
 
 Int2 GameWorldUiView::getTooltipPosition(Game &game)
@@ -878,13 +878,13 @@ Int2 GameWorldUiView::getWeaponAnimationOffset(const std::string &weaponFilename
 {
 	// @todo: this is obsoleted by WeaponAnimationDefinition
 
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(weaponFilename.c_str());
-	if (!metadataID.has_value())
+	const TextureFileMetadataID metadataID = textureManager.getMetadataID(weaponFilename.c_str());
+	if (metadataID < 0)
 	{
 		DebugCrash("Couldn't get weapon animation metadata from \"" + weaponFilename + "\".");
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 	return textureFileMetadata.getOffset(frameIndex);
 }
 
@@ -1683,14 +1683,14 @@ void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
 
 	TextureManager &textureManager = game.textureManager;
 	const std::string &cinematicFilename = defPtr->animFilename;
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
-	if (!metadataID.has_value())
+	const TextureFileMetadataID metadataID = textureManager.getMetadataID(cinematicFilename.c_str());
+	if (metadataID < 0)
 	{
 		DebugLogError("Couldn't get texture file metadata for death cinematic \"" + cinematicFilename + "\".");
 		return;
 	}
 
-	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 	TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
 	textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { PauseMenuUiController::onNewGameButtonSelected(game); });

@@ -533,8 +533,8 @@ UiElementInstanceID UiManager::createImageSliced(const UiElementInitInfo &initIn
 	}
 
 	const std::string &textureFilename = imageSlicedInitInfo.textureAsset.filename;
-	const std::optional<TextureBuilderIdGroup> textureBuilderIdGroup = textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
-	if (!textureBuilderIdGroup.has_value())
+	const TextureBuilderIdGroup textureBuilderIdGroup = textureManager.getTextureBuilderIDs(textureFilename.c_str());
+	if (!textureBuilderIdGroup.isValid())
 	{
 		DebugLogErrorFormat("Missing texture asset \"%s\" for image sliced (context %s).", textureFilename.c_str(), contextName);
 		this->imageSliceds.free(imageSlicedInstID);
@@ -542,9 +542,9 @@ UiElementInstanceID UiManager::createImageSliced(const UiElementInitInfo &initIn
 		this->elements.free(elementInstID);
 		return -1;
 	}
-	else if (textureBuilderIdGroup->count != UiImageSliced::TEXTURE_COUNT)
+	else if (textureBuilderIdGroup.count != UiImageSliced::TEXTURE_COUNT)
 	{
-		DebugLogErrorFormat("Texture asset \"%s\" for image sliced has %d textures, needs 9 (context %s).", textureFilename.c_str(), textureBuilderIdGroup->count, contextName);
+		DebugLogErrorFormat("Texture asset \"%s\" for image sliced has %d textures, needs 9 (context %s).", textureFilename.c_str(), textureBuilderIdGroup.count, contextName);
 		this->imageSliceds.free(imageSlicedInstID);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
@@ -552,10 +552,10 @@ UiElementInstanceID UiManager::createImageSliced(const UiElementInitInfo &initIn
 	}
 
 	TextureBuilderID textureBuilderIDs[UiImageSliced::TEXTURE_COUNT];
-	std::iota(std::begin(textureBuilderIDs), std::end(textureBuilderIDs), textureBuilderIdGroup->getID(0));
+	std::iota(std::begin(textureBuilderIDs), std::end(textureBuilderIDs), textureBuilderIdGroup.getID(0));
 
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(imageSlicedInitInfo.paletteAsset);
-	if (!paletteID.has_value())
+	const PaletteID paletteID = textureManager.getPaletteID(imageSlicedInitInfo.paletteAsset);
+	if (paletteID < 0)
 	{
 		DebugLogErrorFormat("Missing palette \"%s\" for image sliced (context %s).", imageSlicedInitInfo.paletteAsset.filename.c_str(), contextName);
 		this->imageSliceds.free(imageSlicedInstID);
@@ -574,7 +574,7 @@ UiElementInstanceID UiManager::createImageSliced(const UiElementInitInfo &initIn
 	const UiTextureID textureID = this->invalidTextureID; // To be generated later this frame.
 
 	UiImageSliced &imageSliced = this->imageSliceds.get(imageSlicedInstID);
-	imageSliced.init(textureID, textureBuilderIDs, *paletteID, imageSlicedInitInfo.contentElementName, imageSlicedInitInfo.minimumWidth, imageSlicedInitInfo.minimumHeight, imageSlicedInitInfo.paddingWidth, imageSlicedInitInfo.paddingHeight);
+	imageSliced.init(textureID, textureBuilderIDs, paletteID, imageSlicedInitInfo.contentElementName, imageSlicedInitInfo.minimumWidth, imageSlicedInitInfo.minimumHeight, imageSlicedInitInfo.paddingWidth, imageSlicedInitInfo.paddingHeight);
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, contentSize, initInfo.sizeType, initInfo.pivotType);

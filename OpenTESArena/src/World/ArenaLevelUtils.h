@@ -75,8 +75,6 @@ namespace ArenaLevelUtils
 	int getServiceSaveFileNumber(WEInt doorX, SNInt doorY);
 	int getWildernessServiceSaveFileNumber(int wildX, int wildY);
 
-	PaletteID getGameWorldPaletteID(const std::string &filename, TextureManager &textureManager);
-
 	// Allocation for game world palette textures used with the renderer.
 	ObjectTextureID allocGameWorldPaletteTexture(PaletteID paletteID, TextureManager &textureManager, Renderer &renderer);
 	ObjectTextureID allocLightTableTexture(const std::string &filename, TextureManager &textureManager, Renderer &renderer);

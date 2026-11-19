@@ -1857,7 +1857,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 	const int titleImageTextureHeight = 24;
 	const int totalMessageBoxHeight = titleImageTextureHeight * (messageBoxButtonCount + 1);
 	const int titleTextBoxPositionY = ArenaRenderUtils::SCREEN_CENTER.y - (totalMessageBoxHeight / 2) + (titleImageTextureHeight / 2);
-	const PaletteID paletteID = *textureManager.tryGetPaletteID(GameWorldUiView::getPaletteTextureAsset());
+	const PaletteID paletteID = textureManager.getPaletteID(GameWorldUiView::getPaletteTextureAsset());
 
 	UiElementInitInfo titleTextBoxElementInitInfo;
 	titleTextBoxElementInitInfo.name = "GameWorldConversationModalTitleTextBox";

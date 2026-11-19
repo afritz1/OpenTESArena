@@ -395,26 +395,25 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 	return true;
 }
 
-std::optional<PaletteIdGroup> TextureManager::tryGetPaletteIDs(const char *filename)
+PaletteIdGroup TextureManager::getPaletteIDs(const char *filename)
 {
 	if (String::isNullOrEmpty(filename))
 	{
 		DebugLogWarning("Missing palette filename.");
-		return std::nullopt;
+		return PaletteIdGroup();
 	}
 
 	std::string paletteName(filename);
 	auto iter = this->paletteIDs.find(paletteName);
 	if (iter == this->paletteIDs.end())
 	{
-		// Load palette(s) from file.
-		Buffer<Palette> palettes;
-		if (TextureManager::tryLoadPalettes(filename, &palettes))
+		Buffer<Palette> loadedPalettes;
+		if (TextureManager::tryLoadPalettes(filename, &loadedPalettes))
 		{
 			const PaletteID id = static_cast<PaletteID>(this->palettes.size());
 			PaletteIdGroup ids(id, 1);
 
-			for (Palette &palette : palettes)
+			for (Palette &palette : loadedPalettes)
 			{
 				this->palettes.emplace_back(std::move(palette));
 			}
@@ -423,64 +422,60 @@ std::optional<PaletteIdGroup> TextureManager::tryGetPaletteIDs(const char *filen
 		}
 		else
 		{
-			DebugLogWarning("Couldn't load palette file \"" + paletteName + "\".");
-			return std::nullopt;
+			DebugLogWarningFormat("Couldn't load palette file \"%s\".", paletteName.c_str());
+			return PaletteIdGroup();
 		}
 	}
 
 	return iter->second;
 }
 
-std::optional<PaletteID> TextureManager::tryGetPaletteID(const char *filename)
+PaletteID TextureManager::getPaletteID(const char *filename)
 {
-	const std::optional<PaletteIdGroup> ids = this->tryGetPaletteIDs(filename);
-	if (ids.has_value())
+	const PaletteIdGroup ids = this->getPaletteIDs(filename);
+	if (!ids.isValid())
 	{
-		return ids->getID(0);
+		return -1;
 	}
-	else
-	{
-		return std::nullopt;
-	}
+
+	return ids.getID(0);
 }
 
-std::optional<PaletteID> TextureManager::tryGetPaletteID(const TextureAsset &textureAsset)
+PaletteID TextureManager::getPaletteID(const TextureAsset &textureAsset)
 {
-	const std::optional<PaletteIdGroup> ids = this->tryGetPaletteIDs(textureAsset.filename.c_str());
-	if (ids.has_value())
+	const PaletteIdGroup ids = this->getPaletteIDs(textureAsset.filename.c_str());
+	if (!ids.isValid())
 	{
-		const int index = (textureAsset.index >= 0) ? textureAsset.index : 0;
-		return ids->getID(index);
+		return -1;
 	}
-	else
-	{
-		return std::nullopt;
-	}
+
+	const int index = (textureAsset.index >= 0) ? textureAsset.index : 0;
+	return ids.getID(index);
 }
 
-std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(const char *filename)
+TextureBuilderIdGroup TextureManager::getTextureBuilderIDs(const char *filename)
 {
 	if (String::isNullOrEmpty(filename))
 	{
 		DebugLogWarning("Missing texture builder filename.");
-		return std::nullopt;
+		return TextureBuilderIdGroup();
 	}
 
 	std::string filenameStr(filename);
 	auto iter = this->textureBuilderIDs.find(filenameStr);
 	if (iter == this->textureBuilderIDs.end())
 	{
-		Buffer<TextureBuilder> textureBuilders;
-		if (!TextureManager::tryLoadTextureData(filename, &textureBuilders, nullptr))
+		Buffer<TextureBuilder> loadedTextureBuilders;
+		if (!TextureManager::tryLoadTextureData(filename, &loadedTextureBuilders, nullptr))
 		{
-			DebugLogWarning("Couldn't load texture builders from \"" + filenameStr + "\".");
-			return std::nullopt;
+			DebugLogWarningFormat("Couldn't load texture builders from \"%s\".", filename);
+			return TextureBuilderIdGroup();
 		}
 
 		const TextureBuilderID startID = static_cast<TextureBuilderID>(this->textureBuilders.size());
-		TextureBuilderIdGroup ids(startID, textureBuilders.getCount());
+		TextureBuilderIdGroup ids(startID, loadedTextureBuilders.getCount());
 
-		for (TextureBuilder &textureBuilder : textureBuilders)
+		for (TextureBuilder &textureBuilder : loadedTextureBuilders)
 		{
 			this->textureBuilders.emplace_back(std::move(textureBuilder));
 		}
@@ -491,54 +486,50 @@ std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(con
 	return iter->second;
 }
 
-std::optional<TextureBuilderID> TextureManager::tryGetTextureBuilderID(const char *filename)
+TextureBuilderID TextureManager::getTextureBuilderID(const char *filename)
 {
-	const std::optional<TextureBuilderIdGroup> ids = this->tryGetTextureBuilderIDs(filename);
-	if (ids.has_value())
+	const TextureBuilderIdGroup ids = this->getTextureBuilderIDs(filename);
+	if (!ids.isValid())
 	{
-		return ids->getID(0);
+		return -1;
 	}
-	else
-	{
-		return std::nullopt;
-	}
+
+	return ids.getID(0);
 }
 
-std::optional<PaletteID> TextureManager::tryGetTextureBuilderID(const TextureAsset &textureAsset)
+TextureBuilderID TextureManager::getTextureBuilderID(const TextureAsset &textureAsset)
 {
-	const std::optional<TextureBuilderIdGroup> ids = this->tryGetTextureBuilderIDs(textureAsset.filename.c_str());
-	if (ids.has_value())
+	const TextureBuilderIdGroup ids = this->getTextureBuilderIDs(textureAsset.filename.c_str());
+	if (!ids.isValid())
 	{
-		const int index = (textureAsset.index >= 0) ? textureAsset.index : 0;
-		return ids->getID(index);
+		return -1;
 	}
-	else
-	{
-		return std::nullopt;
-	}
+
+	const int index = (textureAsset.index >= 0) ? textureAsset.index : 0;
+	return ids.getID(index);
 }
 
-std::optional<TextureFileMetadataID> TextureManager::tryGetMetadataID(const char *filename)
+TextureFileMetadataID TextureManager::getMetadataID(const char *filename)
 {
 	if (String::isNullOrEmpty(filename))
 	{
 		DebugLogWarning("Missing texture file metadata filename.");
-		return std::nullopt;
+		return -1;
 	}
 
 	std::string filenameStr(filename);
 	auto iter = this->metadataIndices.find(filenameStr);
 	if (iter == this->metadataIndices.end())
 	{
-		TextureFileMetadata metadata;
-		if (!TextureManager::tryLoadTextureData(filename, nullptr, &metadata))
+		TextureFileMetadata loadedMetadata;
+		if (!TextureManager::tryLoadTextureData(filename, nullptr, &loadedMetadata))
 		{
-			DebugLogWarning("Couldn't load texture file metadata from \"" + filenameStr + "\".");
-			return std::nullopt;
+			DebugLogWarningFormat("Couldn't load texture file metadata from \"%s\".", filename);
+			return -1;
 		}
 
 		const TextureFileMetadataID id = static_cast<TextureFileMetadataID>(this->metadatas.size());
-		this->metadatas.emplace_back(std::move(metadata));
+		this->metadatas.emplace_back(std::move(loadedMetadata));
 
 		iter = this->metadataIndices.emplace(std::move(filenameStr), id).first;
 	}

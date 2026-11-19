@@ -831,9 +831,9 @@ MessageBoxItemsProperties ChooseAttributesUiView::getMessageBoxItemsProperties(c
 
 PaletteID ChooseAttributesUiView::getMessageBoxTextBoxPaletteID(TextureManager &textureManager)
 {
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(ArenaPaletteName::CharSheet.c_str());
-	DebugAssert(paletteID.has_value());
-	return *paletteID;
+	const PaletteID paletteID = textureManager.getPaletteID(ArenaPaletteName::CharSheet.c_str());
+	DebugAssert(paletteID >= 0);
+	return paletteID;
 }
 
 int ChooseAttributesUiView::getDistributePointsTextBoxTextureWidth(int textWidth)
@@ -861,13 +861,13 @@ Int2 ChooseAttributesUiView::getBodyOffset(Game &game)
 	const TextureAsset textureAsset = ChooseAttributesUiView::getBodyTextureAsset(game);
 
 	TextureManager &textureManager = game.textureManager;
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-	if (!textureBuilderID.has_value())
+	const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+	if (textureBuilderID < 0)
 	{
 		DebugCrash("Couldn't get texture builder ID for body \"" + textureAsset.filename + "\".");
 	}
 
-	const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(textureBuilderID);
 	return Int2(ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.width, 0);
 }
 
@@ -881,13 +881,13 @@ Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceDef.originalRaceIndex, trimmed);
 
 	TextureManager &textureManager = game.textureManager;
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(headsFilename.c_str());
-	if (!metadataID.has_value())
+	const TextureFileMetadataID metadataID = textureManager.getMetadataID(headsFilename.c_str());
+	if (metadataID < 0)
 	{
 		DebugCrash("Couldn't get texture file metadata for \"" + headsFilename + "\".");
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 	const int headOffsetIndex = charCreationState.portraitIndex;
 	return textureFileMetadata.getOffset(headOffsetIndex);
 }

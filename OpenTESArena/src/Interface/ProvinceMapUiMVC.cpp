@@ -567,23 +567,23 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(ProvinceDefinitionID
 {
 	DebugAssert(ProvinceMapUiView::provinceHasStaffDungeonIcon(provinceDefID));
 
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
-	if (!paletteID.has_value())
+	const PaletteID paletteID = textureManager.getPaletteID(paletteTextureAsset);
+	if (paletteID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get staff dungeon palette ID for \"%s\".", paletteTextureAsset.filename.c_str());
 		return -1;
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
 	const TextureAsset textureAsset = ProvinceMapUiView::getStaffDungeonIconTextureAsset(provinceDefID);
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-	if (!textureBuilderID.has_value())
+	const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+	if (textureBuilderID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get staff dungeon texture builder ID for \"%s\".", textureAsset.filename.c_str());
 		return -1;
 	}
 
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 	const UiTextureID textureID = renderer.createUiTexture(textureBuilder.width, textureBuilder.height);
 	if (textureID < 0)
 	{

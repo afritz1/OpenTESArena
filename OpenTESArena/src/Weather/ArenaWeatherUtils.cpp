@@ -80,18 +80,17 @@ double ArenaWeatherUtils::getFogDistanceFromWeather(ArenaWeatherType weatherType
 Buffer<Color> ArenaWeatherUtils::makeSkyColors(ArenaWeatherType weatherType, TextureManager &textureManager)
 {
 	// Get the palette name for the given weather.
-	const std::string &paletteName = (weatherType == ArenaWeatherType::Clear) ?
-		ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
+	const std::string &paletteName = (weatherType == ArenaWeatherType::Clear) ? ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
 
 	// The palettes in the data files only cover half of the day, so some added
 	// darkness is needed for the other half.
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
+	const PaletteID paletteID = textureManager.getPaletteID(paletteName.c_str());
+	if (paletteID < 0)
 	{
 		DebugCrash("Couldn't get palette ID for \"" + paletteName + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
 
 	// Fill sky palette with darkness (the first color in the palette is the closest to night).
 	const Color &darkness = palette[0];

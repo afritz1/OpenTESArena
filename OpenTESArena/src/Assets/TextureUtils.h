@@ -46,7 +46,12 @@ public:
 		this->count = count;
 	}
 
-	TextureIdSequence() : TextureIdSequence(-1, -1) { }
+	TextureIdSequence() : TextureIdSequence(-1, 0) { }
+
+	bool isValid() const
+	{
+		return (this->startID >= 0) && (this->count > 0);
+	}
 
 	T getID(int index) const
 	{

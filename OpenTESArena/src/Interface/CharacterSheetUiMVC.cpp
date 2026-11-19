@@ -233,13 +233,13 @@ Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 	const TextureAsset textureAsset = CharacterSheetUiView::getBodyTextureAsset(game);
 
 	TextureManager &textureManager = game.textureManager;
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-	if (!textureBuilderID.has_value())
+	const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+	if (textureBuilderID < 0)
 	{
 		DebugCrash("Couldn't get texture builder ID for body \"" + textureAsset.filename + "\".");
 	}
 
-	const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(textureBuilderID);
 	return Int2(ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.width, 0);
 }
 
@@ -248,13 +248,13 @@ Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 	const TextureAsset headTextureAsset = CharacterSheetUiView::getHeadTextureAsset(game);
 
 	TextureManager &textureManager = game.textureManager;
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(headTextureAsset.filename.c_str());
-	if (!metadataID.has_value())
+	const TextureFileMetadataID metadataID = textureManager.getMetadataID(headTextureAsset.filename.c_str());
+	if (metadataID < 0)
 	{
 		DebugCrashFormat("Couldn't get texture file metadata for \"%s\".", headTextureAsset.filename.c_str());
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 	return textureFileMetadata.getOffset(headTextureAsset.index);
 }
 
@@ -285,13 +285,13 @@ Int2 CharacterSheetUiView::getEquipmentOffset(const TextureAsset &textureAsset, 
 		return Int2();
 	}
 
-	const std::optional<TextureFileMetadataID> textureFileMetadataID = textureManager.tryGetMetadataID(textureAsset.filename.c_str());
-	if (!textureFileMetadataID.has_value())
+	const TextureFileMetadataID textureFileMetadataID = textureManager.getMetadataID(textureAsset.filename.c_str());
+	if (textureFileMetadataID < 0)
 	{
 		return Int2();
 	}
 
-	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*textureFileMetadataID);
+	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(textureFileMetadataID);
 	return metadata.getOffset(textureAsset.index);
 }
 

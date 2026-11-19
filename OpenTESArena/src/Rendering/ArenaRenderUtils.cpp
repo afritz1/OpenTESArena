@@ -489,14 +489,14 @@ ArenaFogState::ArenaFogState()
 void ArenaFogState::init(TextureManager &textureManager)
 {
 	constexpr const char fogTxtFilename[] = "FOG.TXT";
-	const std::optional<TextureBuilderID> fogTxtTextureBuilderID = textureManager.tryGetTextureBuilderID(fogTxtFilename);
-	if (!fogTxtTextureBuilderID.has_value())
+	const TextureBuilderID fogTxtTextureBuilderID = textureManager.getTextureBuilderID(fogTxtFilename);
+	if (fogTxtTextureBuilderID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get fog texture builder ID for \"%s\".", fogTxtFilename);
 		return;
 	}
 
-	const TextureBuilder &fogTxtTextureBuilder = textureManager.getTextureBuilderHandle(*fogTxtTextureBuilderID);
+	const TextureBuilder &fogTxtTextureBuilder = textureManager.getTextureBuilderHandle(fogTxtTextureBuilderID);
 	const Span2D<const uint16_t> srcFogTxtTexels = fogTxtTextureBuilder.getTexels16();
 
 	const int fogTxtTexelCount = srcFogTxtTexels.getWidth() * srcFogTxtTexels.getHeight();
@@ -504,14 +504,14 @@ void ArenaFogState::init(TextureManager &textureManager)
 	std::copy(srcFogTxtTexels.begin(), srcFogTxtTexels.end(), this->fogTxt.begin());
 
 	constexpr const char fogLgtFilename[] = "FOG.LGT";
-	const std::optional<TextureBuilderID> fogLgtTextureBuilderID = textureManager.tryGetTextureBuilderID(fogLgtFilename);
-	if (!fogLgtTextureBuilderID.has_value())
+	const TextureBuilderID fogLgtTextureBuilderID = textureManager.getTextureBuilderID(fogLgtFilename);
+	if (fogLgtTextureBuilderID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get fog light texture builder ID for \"%s\".", fogLgtFilename);
 		return;
 	}
 
-	const TextureBuilder &fogLgtTextureBuilder = textureManager.getTextureBuilderHandle(*fogLgtTextureBuilderID);
+	const TextureBuilder &fogLgtTextureBuilder = textureManager.getTextureBuilderHandle(fogLgtTextureBuilderID);
 	const Span2D<const uint8_t> srcFogLgtTexels = fogLgtTextureBuilder.getTexels8();
 
 	const int fogLgtTexelCount = srcFogLgtTexels.getWidth() * srcFogLgtTexels.getHeight();

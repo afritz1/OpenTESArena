@@ -139,14 +139,14 @@ namespace ArenaAnimUtils
 			return true;
 		}
 
-		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(flatTextureName);
-		if (!metadataID.has_value())
+		const TextureFileMetadataID metadataID = textureManager.getMetadataID(flatTextureName);
+		if (metadataID < 0)
 		{
-			DebugLogWarning("Couldn't get static anim texture file metadata for \"" + std::string(flatTextureName) + "\".");
+			DebugLogWarningFormat("Couldn't get static anim texture file metadata for \"%s\".", flatTextureName);
 			return false;
 		}
 
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 		const int keyframeCount = textureFileMetadata.getTextureCount();
 		const double stateSeconds = static_cast<double>(keyframeCount) * secondsPerFrame;
 		const int stateIndex = outAnimDef->addState(stateName, stateSeconds, isLooping);
@@ -193,14 +193,14 @@ namespace ArenaAnimUtils
 				return false;
 			}
 
-			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(creatureFilename.c_str());
-			if (!metadataID.has_value())
+			const TextureFileMetadataID metadataID = textureManager.getMetadataID(creatureFilename.c_str());
+			if (metadataID < 0)
 			{
-				DebugLogWarning("Couldn't get creature anim texture file metadata for \"" + creatureFilename + "\".");
+				DebugLogWarningFormat("Couldn't get creature anim texture file metadata for \"%s\".", creatureFilename.c_str());
 				return false;
 			}
 
-			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 			for (const int frameIndex : animIndices)
 			{
@@ -302,14 +302,14 @@ namespace ArenaAnimUtils
 
 			// Not all permutations of human filenames exist. If a series is missing, then probably
 			// need to have special behavior.
-			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animName.c_str());
-			if (!metadataID.has_value())
+			const TextureFileMetadataID metadataID = textureManager.getMetadataID(animName.c_str());
+			if (metadataID < 0)
 			{
 				DebugLogWarning("Couldn't get human anim texture file metadata for \"" + animName + "\".");
 				return false;
 			}
 
-			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 			for (const int frameIndex : animIndices)
 			{
@@ -360,26 +360,24 @@ namespace ArenaAnimUtils
 		constexpr int direction = 1;
 		constexpr bool isMirrored = false;
 
-		const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
+		const Span<const std::string> creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
 		const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 
-		DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 		std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
 		if (!trySetDynamicEntityFilenameDirection(creatureFilename, direction))
 		{
-			DebugLogError("Couldn't set creature filename direction \"" +
-				creatureFilename + "\" (" + std::to_string(direction) + ").");
+			DebugLogError("Couldn't set creature filename direction \"" + creatureFilename + "\" (" + std::to_string(direction) + ").");
 			return false;
 		}
 
-		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(creatureFilename.c_str());
-		if (!metadataID.has_value())
+		const TextureFileMetadataID metadataID = textureManager.getMetadataID(creatureFilename.c_str());
+		if (metadataID < 0)
 		{
 			DebugLogWarning("Couldn't get creature attack texture file metadata for \"" + creatureFilename + "\".");
 			return false;
 		}
 
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_ATTACK.c_str(), 0.0, CreatureAttackLoop);
@@ -443,14 +441,14 @@ namespace ArenaAnimUtils
 		}
 
 		animName = String::toUppercase(animName);
-		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animName.c_str());
-		if (!metadataID.has_value())
+		const TextureFileMetadataID metadataID = textureManager.getMetadataID(animName.c_str());
+		if (metadataID < 0)
 		{
 			DebugLogWarning("Couldn't get human attack texture file metadata for \"" + animName + "\".");
 			return false;
 		}
 
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_ATTACK.c_str(), 0.0, HumanAttackLoop);
@@ -491,14 +489,14 @@ namespace ArenaAnimUtils
 			return false;
 		}
 
-		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(creatureFilename.c_str());
-		if (!metadataID.has_value())
+		const TextureFileMetadataID metadataID = textureManager.getMetadataID(creatureFilename.c_str());
+		if (metadataID < 0)
 		{
 			DebugLogWarning("Couldn't get creature death texture file metadata for \"" + creatureFilename + "\".");
 			return false;
 		}
 
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_DEATH.c_str(), 0.0, CreatureDeathLoop);
@@ -528,14 +526,14 @@ namespace ArenaAnimUtils
 
 		// Humans use a single dead body image.
 		const std::string &animName = ArenaAnimUtils::HumanDeathFilename;
-		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animName.c_str());
-		if (!metadataID.has_value())
+		const TextureFileMetadataID metadataID = textureManager.getMetadataID(animName.c_str());
+		if (metadataID < 0)
 		{
 			DebugLogWarning("Couldn't get human death texture file metadata for \"" + animName + "\".");
 			return false;
 		}
 
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_DEATH.c_str(), 0.0, HumanDeathLoop);
@@ -578,14 +576,14 @@ namespace ArenaAnimUtils
 				return false;
 			}
 
-			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(citizenFilename.c_str());
-			if (!metadataID.has_value())
+			const TextureFileMetadataID metadataID = textureManager.getMetadataID(citizenFilename.c_str());
+			if (metadataID < 0)
 			{
 				DebugLogWarning("Couldn't get citizen anim texture file metadata for \"" + citizenFilename + "\".");
 				return false;
 			}
 
-			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+			const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 			const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
 			for (const int frameIndex : animIndices)
 			{
@@ -1352,14 +1350,14 @@ bool ArenaAnimUtils::tryMakePlayerItemDropContainerAnim(const std::string &animF
 	DebugAssert(outAnimDef->stateCount == 0);
 	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
-	if (!metadataID.has_value())
+	const TextureFileMetadataID metadataID = textureManager.getMetadataID(animFilename.c_str());
+	if (metadataID < 0)
 	{
 		DebugLogWarningFormat("Couldn't get player item drop container anim texture file metadata for \"%s\".", animFilename.c_str());
 		return false;
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 	TextureAsset textureAsset(textureFileMetadata.getFilename());
 	const double width = MakeDefaultKeyframeDimension(textureFileMetadata.getWidth(0));
 	const double height = MakeDefaultKeyframeDimension(textureFileMetadata.getHeight(0));
@@ -1376,14 +1374,14 @@ bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLoop
 	DebugAssert(outAnimDef->stateCount == 0);
 	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 
-	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
-	if (!metadataID.has_value())
+	const TextureFileMetadataID metadataID = textureManager.getMetadataID(animFilename.c_str());
+	if (metadataID < 0)
 	{
 		DebugLogWarning("Couldn't get VFX anim texture file metadata for \"" + animFilename + "\".");
 		return false;
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 	const int keyframeCount = textureFileMetadata.getTextureCount();
 	const double stateSeconds = static_cast<double>(keyframeCount) * VfxIdleSecondsPerFrame;
 	const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_IDLE.c_str(), stateSeconds, isLooping);

@@ -1,9 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -35,21 +33,20 @@ private:
 
 	// Helper functions for loading texture files.
 	static bool tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes);
-	static bool tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures,
-		TextureFileMetadata *outMetadata);
+	static bool tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures, TextureFileMetadata *outMetadata);
 public:
 	// Texture ID retrieval functions, loading texture data if not loaded. All required palettes
 	// must be loaded by the caller in advance -- no palettes are loaded in non-palette loader
 	// functions. If the requested file has multiple images but the caller requested only one, the
 	// returned ID will be for the first image. Similarly, if the file has a single image but the
 	// caller expected several, the returned ID group will have only one ID.
-	std::optional<PaletteIdGroup> tryGetPaletteIDs(const char *filename);
-	std::optional<PaletteID> tryGetPaletteID(const char *filename);
-	std::optional<PaletteID> tryGetPaletteID(const TextureAsset &textureAsset);
-	std::optional<TextureBuilderIdGroup> tryGetTextureBuilderIDs(const char *filename);
-	std::optional<TextureBuilderID> tryGetTextureBuilderID(const char *filename);
-	std::optional<TextureBuilderID> tryGetTextureBuilderID(const TextureAsset &textureAsset);
-	std::optional<TextureFileMetadataID> tryGetMetadataID(const char *filename);
+	PaletteIdGroup getPaletteIDs(const char *filename);
+	PaletteID getPaletteID(const char *filename);
+	PaletteID getPaletteID(const TextureAsset &textureAsset);
+	TextureBuilderIdGroup getTextureBuilderIDs(const char *filename);
+	TextureBuilderID getTextureBuilderID(const char *filename);
+	TextureBuilderID getTextureBuilderID(const TextureAsset &textureAsset);
+	TextureFileMetadataID getMetadataID(const char *filename);
 
 	// Texture getter functions, fast look-up. These do not protect against dangling pointers.
 	const Palette &getPaletteHandle(PaletteID id) const;

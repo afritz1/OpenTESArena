@@ -256,18 +256,6 @@ int ArenaLevelUtils::getWildernessServiceSaveFileNumber(int wildX, int wildY)
 	return (wildY << 16) + wildX;
 }
 
-PaletteID ArenaLevelUtils::getGameWorldPaletteID(const std::string &filename, TextureManager &textureManager)
-{
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(filename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugLogErrorFormat("Couldn't get palette ID from \"%s\".", filename.c_str());
-		return -1;
-	}
-
-	return *paletteID;
-}
-
 ObjectTextureID ArenaLevelUtils::allocGameWorldPaletteTexture(PaletteID paletteID, TextureManager &textureManager, Renderer &renderer)
 {
 	const Palette &palette = textureManager.getPaletteHandle(paletteID);
@@ -283,14 +271,14 @@ ObjectTextureID ArenaLevelUtils::allocGameWorldPaletteTexture(PaletteID paletteI
 
 ObjectTextureID ArenaLevelUtils::allocLightTableTexture(const std::string &filename, TextureManager &textureManager, Renderer &renderer)
 {
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
-	if (!textureBuilderID.has_value())
+	const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(filename.c_str());
+	if (textureBuilderID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get light table texture builder ID from \"%s\".", filename.c_str());
 		return -1;
 	}
 
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 	const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
 	if (textureID < 0)
 	{

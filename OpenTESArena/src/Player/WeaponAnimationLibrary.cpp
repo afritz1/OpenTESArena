@@ -16,14 +16,14 @@ namespace
 	void AddWeaponAnimationStates(WeaponAnimationDefinition &animDef, const std::string &animFilename,
 		Span<const ArenaWeaponAnimationStateInfo> animStateInfos, TextureManager &textureManager)
 	{
-		const std::optional<TextureFileMetadataID> textureFileMetadataID = textureManager.tryGetMetadataID(animFilename.c_str());
-		if (!textureFileMetadataID.has_value())
+		const TextureFileMetadataID textureFileMetadataID = textureManager.getMetadataID(animFilename.c_str());
+		if (textureFileMetadataID < 0)
 		{
 			DebugLogErrorFormat("No texture metadata available for \"%s\".", animFilename.c_str());
 			return;
 		}
 
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*textureFileMetadataID);
+		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(textureFileMetadataID);
 
 		for (const ArenaWeaponAnimationStateInfo &animStateInfo : animStateInfos)
 		{

@@ -15,14 +15,14 @@ namespace
 		const TextureAsset paletteTextureAsset = FastTravelUiView::getPaletteTextureAsset();
 		const std::string animFilename = FastTravelUiView::getAnimationFilename();
 
-		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
-		if (!metadataID.has_value())
+		const TextureFileMetadataID metadataID = textureManager.getMetadataID(animFilename.c_str());
+		if (metadataID < 0)
 		{
 			DebugLogErrorFormat("Couldn't get texture file metadata for fast travel animation \"%s\".", animFilename.c_str());
 			return Buffer<UiTextureID>();
 		}
 
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
 		const int textureCount = textureFileMetadata.getTextureCount();
 		if (textureCount == 0)
 		{

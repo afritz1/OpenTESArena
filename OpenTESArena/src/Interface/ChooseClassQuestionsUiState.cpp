@@ -69,17 +69,17 @@ void ChooseClassQuestionsUI::create(Game &game)
 	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
 	const std::string &bgImageTextureFilename = ArenaTextureName::CharacterCreation;
-	const std::optional<TextureBuilderID> bgImageTextureBuilderID = textureManager.tryGetTextureBuilderID(bgImageTextureFilename.c_str());
-	const std::optional<PaletteID> bgImagePaletteID = textureManager.tryGetPaletteID(bgImageTextureFilename.c_str());
-	if (!bgImageTextureBuilderID.has_value() || !bgImagePaletteID.has_value())
+	const TextureBuilderID bgImageTextureBuilderID = textureManager.getTextureBuilderID(bgImageTextureFilename.c_str());
+	const PaletteID bgImagePaletteID = textureManager.getPaletteID(bgImageTextureFilename.c_str());
+	if (bgImageTextureBuilderID < 0 || bgImagePaletteID < 0)
 	{
 		DebugLogErrorFormat("Missing background texture or palette.");
 		return;
 	}
 
-	const TextureBuilder &bgImageTextureBuilder = textureManager.getTextureBuilderHandle(*bgImageTextureBuilderID);
-	state.bgImageTextureBuilderID = *bgImageTextureBuilderID;
-	state.bgImagePaletteID = *bgImagePaletteID;
+	const TextureBuilder &bgImageTextureBuilder = textureManager.getTextureBuilderHandle(bgImageTextureBuilderID);
+	state.bgImageTextureBuilderID = bgImageTextureBuilderID;
+	state.bgImagePaletteID = bgImagePaletteID;
 	state.bgImageTextureID = renderer.createUiTexture(bgImageTextureBuilder.width, bgImageTextureBuilder.height);
 
 	const UiElementInstanceID bgImageElementInstID = uiManager.getElementByName("ChooseClassQuestionsBackground");
@@ -197,8 +197,8 @@ void ChooseClassQuestionsUI::update(double dt)
 		scrollAnimFilename = "SCROLL02.DFA";
 	}
 
-	const std::optional<TextureFileMetadataID> scrollAnimTextureFileMetadataID = textureManager.tryGetMetadataID(scrollAnimFilename);
-	const TextureFileMetadata &scrollAnimTextureFileMetadata = textureManager.getMetadataHandle(*scrollAnimTextureFileMetadataID);
+	const TextureFileMetadataID scrollAnimTextureFileMetadataID = textureManager.getMetadataID(scrollAnimFilename);
+	const TextureFileMetadata &scrollAnimTextureFileMetadata = textureManager.getMetadataHandle(scrollAnimTextureFileMetadataID);
 	const int scrollAnimFrameCount = scrollAnimTextureFileMetadata.getTextureCount();
 	const int scrollAnimFrameIndex = MathUtils::getInterpolatedIndex(scrollAnimFrameCount, scrollAnimSubPercent);
 	const TextureAsset scrollAnimTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
@@ -226,14 +226,14 @@ void ChooseClassQuestionsUI::update(double dt)
 		DebugAssertIndex(vfxSequenceNames, state.vfxClassCategoryID);
 		const char *vfxSequenceName = vfxSequenceNames[state.vfxClassCategoryID];
 
-		const std::optional<TextureFileMetadataID> vfxTextureFileMetadataID = textureManager.tryGetMetadataID(vfxSequenceName);
-		if (!vfxTextureFileMetadataID.has_value())
+		const TextureFileMetadataID vfxTextureFileMetadataID = textureManager.getMetadataID(vfxSequenceName);
+		if (vfxTextureFileMetadataID < 0)
 		{
 			DebugLogErrorFormat("Couldn't get VFX texture sequence %s.", vfxSequenceName);
 			return;
 		}
 
-		const TextureFileMetadata &vfxTextureFileMetadata = textureManager.getMetadataHandle(*vfxTextureFileMetadataID);
+		const TextureFileMetadata &vfxTextureFileMetadata = textureManager.getMetadataHandle(vfxTextureFileMetadataID);
 		const int vfxFrameCount = vfxTextureFileMetadata.getTextureCount();
 		const double vfxTargetSeconds = vfxTextureFileMetadata.getSecondsPerFrame() * vfxFrameCount;
 		const double vfxAnimPercent = std::clamp(state.vfxCurrentSeconds / vfxTargetSeconds, 0.0, 1.0);

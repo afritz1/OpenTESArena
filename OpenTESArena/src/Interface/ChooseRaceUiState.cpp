@@ -210,9 +210,9 @@ void ChooseRaceUI::update(double dt)
 
 		const char *scrollAnimFilename = "TOP.DFA";
 		TextureManager &textureManager = game.textureManager;
-		const std::optional<TextureFileMetadataID> scrollTextureFileMetadataID = textureManager.tryGetMetadataID(scrollAnimFilename);
-		DebugAssert(scrollTextureFileMetadataID.has_value());
-		const TextureFileMetadata &scrollTextureFileMetadata = textureManager.getMetadataHandle(*scrollTextureFileMetadataID);
+		const TextureFileMetadataID scrollTextureFileMetadataID = textureManager.getMetadataID(scrollAnimFilename);
+		DebugAssert(scrollTextureFileMetadataID >= 0);
+		const TextureFileMetadata &scrollTextureFileMetadata = textureManager.getMetadataHandle(scrollTextureFileMetadataID);
 
 		const double scrollProgressPercent = ChooseRaceUI::getOpeningScrollProgressPercent();
 		const int scrollAnimTextureHeight = scrollTextureFileMetadata.getHeight(0);

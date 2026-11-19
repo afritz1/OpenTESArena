@@ -900,14 +900,14 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 
 		TextureManager &textureManager = game.textureManager;
 		const std::string &cinematicFilename = defPtr->animFilename;
-		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
-		if (!metadataID.has_value())
+		const TextureFileMetadataID metadataID = textureManager.getMetadataID(cinematicFilename.c_str());
+		if (metadataID < 0)
 		{
 			DebugLogError("Couldn't get texture file metadata for main quest start cinematic \"" + cinematicFilename + "\".");
 			return;
 		}
 
-		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 		TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
 		textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(game); });

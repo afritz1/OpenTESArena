@@ -18,7 +18,7 @@ SceneManager::SceneManager()
 
 void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 {
-	this->gameWorldPaletteID = ArenaLevelUtils::getGameWorldPaletteID(ArenaPaletteName::Default, textureManager);
+	this->gameWorldPaletteID = textureManager.getPaletteID(ArenaPaletteName::Default);
 	ObjectTextureID gameWorldPaletteTextureID = ArenaLevelUtils::allocGameWorldPaletteTexture(this->gameWorldPaletteID, textureManager, renderer);
 	this->gameWorldPaletteTextureRef.init(gameWorldPaletteTextureID, renderer);
 
@@ -106,14 +106,14 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 		daytimePaletteIndexOffset = std::clamp(static_cast<int>(skyGradientDaytimePercent * static_cast<double>(paletteLength)), 0, paletteLength - 1);
 	}
 
-	const std::optional<PaletteID> skyGradientPaletteID = textureManager.tryGetPaletteID(skyGradientFilename->c_str());
-	if (!skyGradientPaletteID.has_value())
+	const PaletteID skyGradientPaletteID = textureManager.getPaletteID(skyGradientFilename->c_str());
+	if (skyGradientPaletteID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get palette ID for sky gradient \"%s\".", skyGradientFilename->c_str());
 		return;
 	}
 
-	const Palette &skyGradientPalette = textureManager.getPaletteHandle(*skyGradientPaletteID);
+	const Palette &skyGradientPalette = textureManager.getPaletteHandle(skyGradientPaletteID);
 	const Span<const Color> skyGradientPaletteTexels(skyGradientPalette);
 	DebugAssert((this->gameWorldPaletteTextureRef.getWidth() * this->gameWorldPaletteTextureRef.getHeight()) == skyGradientPaletteTexels.getCount());
 

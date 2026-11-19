@@ -38,14 +38,14 @@ namespace
 					const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[keyframeIndex];
 					const TextureAsset &textureAsset = keyframe.textureAsset;
 
-					const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
-					if (!textureBuilderID.has_value())
+					const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+					if (textureBuilderID < 0)
 					{
 						DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
 						continue;
 					}
 
-					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 					constexpr int bytesPerTexel = 1;
 					const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, bytesPerTexel);
 					if (textureID < 0)
