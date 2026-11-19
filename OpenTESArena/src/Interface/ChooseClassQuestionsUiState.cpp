@@ -489,7 +489,7 @@ void ChooseClassQuestionsUI::showInitialPopUp()
 	UiElementInitInfo backButtonElementInitInfo;
 	backButtonElementInitInfo.name = "ChooseClassQuestionsInitialPopUpBackButton";
 	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	backButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	backButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo backButtonInitInfo;

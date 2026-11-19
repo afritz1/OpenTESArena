@@ -161,7 +161,7 @@ void LoadSaveUI::onEntrySelected(int index)
 	UiElementInitInfo popUpBackButtonElementInitInfo;
 	popUpBackButtonElementInitInfo.name = "LoadSavePopUpBackButton";
 	popUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	popUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	popUpBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 
 	UiButtonCallback popUpBackButtonCallback = [](MouseButtonType)
 	{

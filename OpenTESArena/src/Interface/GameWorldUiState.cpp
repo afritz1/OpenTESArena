@@ -1003,7 +1003,7 @@ void GameWorldUI::showTextPopUp(const char *str, const std::string &fontName, Te
 	UiElementInitInfo textPopUpBackButtonElementInitInfo;
 	textPopUpBackButtonElementInitInfo.name = "GameWorldTextPopUpBackButton";
 	textPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	textPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	textPopUpBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	textPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	auto popUpButtonCallback = [callback](MouseButtonType)
@@ -1092,7 +1092,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 	UiElementInitInfo lootPopUpBackButtonElementInitInfo;
 	lootPopUpBackButtonElementInitInfo.name = "GameWorldLootPopUpBackButton";
 	lootPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	lootPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	lootPopUpBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 
 	auto lootPopUpBackButtonCallback = [&state, callback](MouseButtonType)
 	{
@@ -1314,7 +1314,7 @@ void GameWorldUI::showCampModal()
 	UiElementInitInfo campModalBackButtonElementInitInfo;
 	campModalBackButtonElementInitInfo.name = "GameWorldCampModalBackButton";
 	campModalBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	campModalBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	campModalBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 
 	auto campModalBackButtonCallback = [&state](MouseButtonType)
 	{
@@ -1419,7 +1419,7 @@ void GameWorldUI::showCampManualHoursModal()
 	UiElementInitInfo backButtonElementInitInfo;
 	backButtonElementInitInfo.name = "GameWorldCampManualHoursModalBackButton";
 	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	backButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 
 	auto backButtonCallback = [&state](MouseButtonType)
 	{
@@ -1926,7 +1926,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 	UiElementInitInfo backButtonElementInitInfo;
 	backButtonElementInitInfo.name = "GameWorldConversationModalBackButton";
 	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	backButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 
 	UiButtonInitInfo backButtonInitInfo;
 	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
@@ -2437,7 +2437,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	UiElementInitInfo backButtonElementInitInfo;
 	backButtonElementInitInfo.name = "GameWorldConversationModalBackButton";
 	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	backButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 
 	UiButtonInitInfo backButtonInitInfo;
 	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);

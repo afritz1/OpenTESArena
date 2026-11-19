@@ -467,7 +467,7 @@ void CharacterEquipmentUI::showItemDetail(const char *text, Color textColor)
 	UiElementInitInfo backButtonElementInitInfo;
 	backButtonElementInitInfo.name = "CharacterEquipmentItemDetailBackButton";
 	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	backButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	backButtonElementInitInfo.drawOrder = 1;
 
 	auto backButtonCallback = [](MouseButtonType)
@@ -599,7 +599,7 @@ void CharacterEquipmentUI::showDropItemMessageBox(const char *titleText, const s
 	UiElementInitInfo backButtonElementInitInfo;
 	backButtonElementInitInfo.name = "CharacterEquipmentDropItemModalBackButton";
 	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	backButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 
 	UiButtonInitInfo backButtonInitInfo;
 	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);

@@ -280,7 +280,7 @@ void ChooseAttributesUI::create(Game &game)
 	UiElementInitInfo initialPopUpButtonElementInitInfo;
 	initialPopUpButtonElementInitInfo.name = "ChooseAttributesInitialPopUpButton";
 	initialPopUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	initialPopUpButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	initialPopUpButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	initialPopUpButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo initialPopUpButtonInitInfo;
@@ -427,7 +427,7 @@ void ChooseAttributesUI::create(Game &game)
 	UiElementInitInfo remainingPointsPopUpBackButtonElementInitInfo;
 	remainingPointsPopUpBackButtonElementInitInfo.name = "ChooseAttributesRemainingPointsPopUpBackButton";
 	remainingPointsPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	remainingPointsPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	remainingPointsPopUpBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	remainingPointsPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo remainingPointsPopUpBackButtonInitInfo;
@@ -472,7 +472,7 @@ void ChooseAttributesUI::create(Game &game)
 	UiElementInitInfo portraitPopUpBackButtonElementInitInfo;
 	portraitPopUpBackButtonElementInitInfo.name = "ChooseAttributesPortraitPopUpBackButton";
 	portraitPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	portraitPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	portraitPopUpBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	portraitPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo portraitPopUpBackButtonInitInfo;

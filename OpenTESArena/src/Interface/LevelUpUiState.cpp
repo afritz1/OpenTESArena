@@ -210,7 +210,7 @@ void LevelUpUI::create(Game &game)
 	UiElementInitInfo remainingPointsPopUpBackButtonElementInitInfo;
 	remainingPointsPopUpBackButtonElementInitInfo.name = "LevelUpRemainingPointsPopUpBackButton";
 	remainingPointsPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	remainingPointsPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	remainingPointsPopUpBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	remainingPointsPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo remainingPointsPopUpBackButtonInitInfo;

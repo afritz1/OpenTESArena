@@ -711,7 +711,7 @@ void ProvinceMapUI::showTextPopUp(const char *str)
 	UiElementInitInfo textPopUpBackButtonElementInitInfo;
 	textPopUpBackButtonElementInitInfo.name = "ProvinceMapTextPopUpBackButton";
 	textPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	textPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	textPopUpBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	textPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	auto popUpButtonCallback = [](MouseButtonType)

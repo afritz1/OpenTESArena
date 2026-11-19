@@ -95,7 +95,7 @@ void OptionsUI::create(Game &game)
 	UiElementInitInfo backgroundImageElementInitInfo;
 	backgroundImageElementInitInfo.name = "OptionsBackgroundImage";
 	backgroundImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	backgroundImageElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	backgroundImageElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	backgroundImageElementInitInfo.drawOrder = 0;
 	uiManager.createImage(backgroundImageElementInitInfo, state.backgroundTextureID, state.contextInstID, renderer);
 

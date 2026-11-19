@@ -93,7 +93,7 @@ void ChooseRaceUI::create(Game &game)
 	UiElementInitInfo initialPopUpBackButtonElementInitInfo;
 	initialPopUpBackButtonElementInitInfo.name = "PopUpBackButton";
 	initialPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	initialPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	initialPopUpBackButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	initialPopUpBackButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo initialPopUpBackButtonInitInfo;
@@ -554,7 +554,7 @@ void ChooseRaceUI::onProvinceConfirmed1PopUpBackButtonSelected(MouseButtonType m
 	UiElementInitInfo provinceConfirmed2ButtonElementInitInfo;
 	provinceConfirmed2ButtonElementInitInfo.name = "ProvinceConfirmed2PopUpAcceptButton";
 	provinceConfirmed2ButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	provinceConfirmed2ButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	provinceConfirmed2ButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	provinceConfirmed2ButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo provinceConfirmed2ButtonInitInfo;
@@ -613,7 +613,7 @@ void ChooseRaceUI::onProvinceConfirmed2PopUpBackButtonSelected(MouseButtonType m
 	UiElementInitInfo provinceConfirmed3ButtonElementInitInfo;
 	provinceConfirmed3ButtonElementInitInfo.name = "ProvinceConfirmed3PopUpAcceptButton";
 	provinceConfirmed3ButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	provinceConfirmed3ButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	provinceConfirmed3ButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	provinceConfirmed3ButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo provinceConfirmed3ButtonInitInfo;
@@ -672,7 +672,7 @@ void ChooseRaceUI::onProvinceConfirmed3PopUpBackButtonSelected(MouseButtonType m
 	UiElementInitInfo provinceConfirmed4ButtonElementInitInfo;
 	provinceConfirmed4ButtonElementInitInfo.name = "ProvinceConfirmed4PopUpAcceptButton";
 	provinceConfirmed4ButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	provinceConfirmed4ButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	provinceConfirmed4ButtonElementInitInfo.size = ArenaRenderUtils::SCREEN_SIZE;
 	provinceConfirmed4ButtonElementInitInfo.drawOrder = 2;
 
 	UiButtonInitInfo provinceConfirmed4ButtonInitInfo;
