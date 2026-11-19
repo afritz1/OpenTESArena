@@ -252,6 +252,7 @@ public:
 	MapType getExteriorMapType() const; // Only works if active map is nested.
 	ArenaEnvironmentType getEnvironmentType() const; // For enemy encounters.
 	ArenaBuildingType getBuildingType() const; // For enemy encounters.
+	ProvinceDefinitionID getProvinceDefinitionID() const;
 	const ProvinceDefinition &getProvinceDefinition() const;
 	const LocationDefinition &getLocationDefinition() const;
 	int getLocationIndex() const;

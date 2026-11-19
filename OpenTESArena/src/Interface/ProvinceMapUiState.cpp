@@ -617,45 +617,44 @@ void ProvinceMapUI::trySelectLocation(int selectedLocationID)
 	GameState &gameState = game.gameState;
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
-	const ProvinceDefinition &currentProvinceDef = gameState.getProvinceDefinition();
-	const LocationDefinition &currentLocationDef = gameState.getLocationDefinition();
-	const ProvinceDefinition &selectedProvinceDef = ProvinceLibrary::getInstance().getDefinition(state.provinceDefID);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinitionID playerProvinceDefID = gameState.getProvinceDefinitionID();
+	const ProvinceDefinition &playerProvinceDef = provinceLibrary.getDefinition(playerProvinceDefID);
+	const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
+	const ProvinceDefinition &selectedProvinceDef = provinceLibrary.getDefinition(state.provinceDefID);
 	const LocationDefinition &selectedLocationDef = selectedProvinceDef.locations[selectedLocationID];
 
-	const bool matchesPlayerLocation = selectedProvinceDef.matches(currentProvinceDef) && selectedLocationDef.matches(currentLocationDef);
-	if (!matchesPlayerLocation)
+	const bool matchesPlayerLocation = (state.provinceDefID == playerProvinceDefID) && selectedLocationDef.matches(playerLocationDef);
+	if (matchesPlayerLocation)
 	{
-		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
-		{
-			const Int2 localPoint(locationDef.screenX, locationDef.screenY);
-			return ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
-		};
-
-		const Int2 srcGlobalPoint = makeGlobalPoint(currentLocationDef, currentProvinceDef);
-		const Int2 dstGlobalPoint = makeGlobalPoint(selectedLocationDef, selectedProvinceDef);
-		const Date &currentDate = gameState.getDate();
-
-		// Use a copy of the RNG so repeating the travel pop-up doesn't cause different day amounts.
-		ArenaRandom tempRandom = game.arenaRandom;
-
-		const int travelDays = ArenaLocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint, currentDate.getMonth(), gameState.getWorldMapWeathers(), tempRandom, binaryAssetLibrary);
-
-		gameState.setTravelData(ProvinceMapUiTravelData(selectedLocationID, state.provinceDefID, travelDays));
-		state.blinkState.reset();
-		ProvinceMapUI::updateLocationHighlights();
-
-		const std::string travelText = ProvinceMapUiModel::makeTravelText(game, state.provinceDefID, currentLocationDef, currentProvinceDef, selectedLocationID);
-		ProvinceMapUI::showTextPopUp(travelText.c_str());
-	}
-	else
-	{
-		// Cannot travel to the player's current location. Create an error pop-up.
-		const LocationInstance &currentLocationInst = gameState.getLocationInstance();
-		const std::string &currentLocationName = currentLocationInst.getName(currentLocationDef);
-
+		const LocationInstance &playerLocationInst = gameState.getLocationInstance();
+		const std::string &currentLocationName = playerLocationInst.getName(playerLocationDef);
 		const std::string errorText = ProvinceMapUiModel::makeAlreadyAtLocationText(game, currentLocationName);
 		ProvinceMapUI::showTextPopUp(errorText.c_str());
+		return;
 	}
+
+	auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
+	{
+		const Int2 localPoint(locationDef.screenX, locationDef.screenY);
+		return ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
+	};
+
+	const Int2 srcGlobalPoint = makeGlobalPoint(playerLocationDef, playerProvinceDef);
+	const Int2 dstGlobalPoint = makeGlobalPoint(selectedLocationDef, selectedProvinceDef);
+	const Date &currentDate = gameState.getDate();
+
+	// Use a copy of the RNG so repeating the travel pop-up doesn't cause different day amounts.
+	ArenaRandom tempRandom = game.arenaRandom;
+
+	const int travelDays = ArenaLocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint, currentDate.getMonth(), gameState.getWorldMapWeathers(), tempRandom, binaryAssetLibrary);
+
+	gameState.setTravelData(ProvinceMapUiTravelData(selectedLocationID, state.provinceDefID, travelDays));
+	state.blinkState.reset();
+	ProvinceMapUI::updateLocationHighlights();
+
+	const std::string travelText = ProvinceMapUiModel::makeTravelText(game, playerProvinceDefID, playerLocationDef, state.provinceDefID, selectedLocationID);
+	ProvinceMapUI::showTextPopUp(travelText.c_str());
 }
 
 void ProvinceMapUI::beginFastTravel()

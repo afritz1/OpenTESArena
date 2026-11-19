@@ -39,7 +39,7 @@ namespace ProvinceMapUiModel
 	const std::string BackToWorldMapButtonTooltip = "Back to World Map";
 
 	std::string makeTravelText(Game &game, ProvinceDefinitionID srcProvinceDefID, const LocationDefinition &srcLocationDef,
-		const ProvinceDefinition &srcProvinceDef, int dstLocationIndex);
+		ProvinceDefinitionID dstProvinceDefID, int dstLocationIndex);
 	std::string makeAlreadyAtLocationText(Game &game, const std::string &locationName);
 
 	std::string getLocationName(Game &game, ProvinceDefinitionID provinceDefID, int locationID);

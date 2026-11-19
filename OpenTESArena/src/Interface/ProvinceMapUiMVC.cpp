@@ -50,8 +50,8 @@ std::string ProvinceMapUiModel::getLocationName(Game &game, ProvinceDefinitionID
 	return locationInst.getName(locationDef);
 }
 
-std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID srcProvinceDefID, const LocationDefinition &srcLocationDef,
-	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex)
+std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID srcProvinceDefID,
+	const LocationDefinition &srcLocationDef, ProvinceDefinitionID dstProvinceDefID, int dstLocationIndex)
 {
 	GameState &gameState = game.gameState;
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
@@ -59,10 +59,10 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID 
 	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceDefinitionID dstProvinceDefID = srcProvinceDefID;
 	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceFromDefinition(dstProvinceDefID);
 	const LocationInstance &dstLocationInst = dstProvinceInst.locations[dstLocationIndex];
 
+	const ProvinceDefinition &srcProvinceDef = provinceLibrary.getDefinition(srcProvinceDefID);
 	const ProvinceDefinition &dstProvinceDef = provinceLibrary.getDefinition(dstProvinceDefID);
 	const LocationDefinition &dstLocationDef = dstProvinceDef.locations[dstLocationInst.locationDefIndex];
 	const std::string &dstLocationName = dstLocationInst.getName(dstLocationDef);
@@ -83,13 +83,13 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID 
 		return newDate;
 	}();
 
-	const std::string locationFormatText = [&srcProvinceDef, dstLocationIndex, &exeData, &dstProvinceDef, &dstLocationDef, &dstLocationName]()
+	const std::string locationFormatText = [&exeData, &dstProvinceDef, &dstLocationDef, &dstLocationName]()
 	{
-		std::string formatText = [&srcProvinceDef, dstLocationIndex, &exeData, &dstProvinceDef, &dstLocationDef, &dstLocationName]()
+		std::string formatText = [&exeData, &dstProvinceDef, &dstLocationDef, &dstLocationName]()
 		{
 			Span<const std::string> locationFormatTexts = exeData.travel.locationFormatTexts;
 
-			if (srcProvinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
+			if (dstProvinceDef.originalProvinceIndex != ArenaLocationUtils::CENTER_PROVINCE_INDEX)
 			{
 				// Determine whether to use the city format or dungeon format.
 				if (dstLocationDef.type == LocationDefinitionType::City)
@@ -230,10 +230,10 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, ProvinceDefinitionID 
 	{
 		const Rect srcProvinceRect = srcProvinceDef.getGlobalRect();
 		const Rect dstProvinceRect = dstProvinceDef.getGlobalRect();
-		const Int2 srcLocationGlobalPoint = ArenaLocationUtils::getGlobalPoint(
-			Int2(srcLocationDef.screenX, srcLocationDef.screenY), srcProvinceRect);
-		const Int2 dstLocationGlobalPoint = ArenaLocationUtils::getGlobalPoint(
-			Int2(dstLocationDef.screenX, dstLocationDef.screenY), dstProvinceRect);
+		const Int2 srcLocationLocalPoint(srcLocationDef.screenX, srcLocationDef.screenY);
+		const Int2 dstLocationLocalPoint(dstLocationDef.screenX, dstLocationDef.screenY);
+		const Int2 srcLocationGlobalPoint = ArenaLocationUtils::getGlobalPoint(srcLocationLocalPoint, srcProvinceRect);
+		const Int2 dstLocationGlobalPoint = ArenaLocationUtils::getGlobalPoint(dstLocationLocalPoint, dstProvinceRect);
 		return ArenaLocationUtils::getMapDistance(srcLocationGlobalPoint, dstLocationGlobalPoint);
 	}();
 

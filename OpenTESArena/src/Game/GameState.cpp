@@ -630,6 +630,11 @@ WorldMapInstance &GameState::getWorldMapInstance()
 	return this->worldMapInst;
 }
 
+ProvinceDefinitionID GameState::getProvinceDefinitionID() const
+{
+	return this->provinceDefID;
+}
+
 const ProvinceDefinition &GameState::getProvinceDefinition() const
 {
 	return ProvinceLibrary::getInstance().getDefinition(this->provinceDefID);
