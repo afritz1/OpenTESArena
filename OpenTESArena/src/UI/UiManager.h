@@ -117,6 +117,7 @@ public:
 	void setTextBoxColor(UiElementInstanceID elementInstID, Color color);
 	Int2 getTextBoxMinimumDimensions(UiElementInstanceID elementInstID) const;
 	void resizeTextBox(UiElementInstanceID elementInstID, int newWidth, int newHeight, Renderer &renderer);
+	void shrinkTextBoxToFit(UiElementInstanceID elementInstID, Renderer &renderer);
 	void setTextBoxHasCursor(UiElementInstanceID elementInstID, bool hasCursor);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 

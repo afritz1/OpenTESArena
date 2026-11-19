@@ -2981,9 +2981,7 @@ void GameWorldUI::setTriggerText(const char *str)
 	UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(TriggerTextBoxElementName);
 	uiManager.setTextBoxText(textBoxElementInstID, str);
-
-	const Int2 textBoxMinDimensions = uiManager.getTextBoxMinimumDimensions(textBoxElementInstID);
-	uiManager.resizeTextBox(textBoxElementInstID, textBoxMinDimensions.x, textBoxMinDimensions.y, game.renderer);
+	uiManager.shrinkTextBoxToFit(textBoxElementInstID, game.renderer);
 
 	GameWorldUI::setTriggerTextDuration(str);
 }
@@ -2995,9 +2993,7 @@ void GameWorldUI::setActionText(const char *str)
 	UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 	uiManager.setTextBoxText(textBoxElementInstID, str);
-
-	const Int2 textBoxMinDimensions = uiManager.getTextBoxMinimumDimensions(textBoxElementInstID);
-	uiManager.resizeTextBox(textBoxElementInstID, textBoxMinDimensions.x, textBoxMinDimensions.y, game.renderer);
+	uiManager.shrinkTextBoxToFit(textBoxElementInstID, game.renderer);
 
 	GameWorldUI::setActionTextDuration(str);
 }
@@ -3009,9 +3005,7 @@ void GameWorldUI::setEffectText(const char *str)
 	UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
 	uiManager.setTextBoxText(textBoxElementInstID, str);
-
-	const Int2 textBoxMinDimensions = uiManager.getTextBoxMinimumDimensions(textBoxElementInstID);
-	uiManager.resizeTextBox(textBoxElementInstID, textBoxMinDimensions.x, textBoxMinDimensions.y, game.renderer);
+	uiManager.shrinkTextBoxToFit(textBoxElementInstID, game.renderer);
 
 	GameWorldUI::setEffectTextDuration(str);
 }

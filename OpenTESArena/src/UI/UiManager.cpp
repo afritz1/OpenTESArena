@@ -776,6 +776,12 @@ void UiManager::resizeTextBox(UiElementInstanceID elementInstID, int newWidth, i
 	textBox.dirty = true;
 }
 
+void UiManager::shrinkTextBoxToFit(UiElementInstanceID elementInstID, Renderer &renderer)
+{
+	const Int2 minimumDimensions = this->getTextBoxMinimumDimensions(elementInstID);
+	this->resizeTextBox(elementInstID, minimumDimensions.x, minimumDimensions.y, renderer);
+}
+
 void UiManager::setTextBoxHasCursor(UiElementInstanceID elementInstID, bool hasCursor)
 {
 	UiElement &element = this->elements.get(elementInstID);
