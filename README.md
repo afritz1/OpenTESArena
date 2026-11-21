@@ -197,6 +197,18 @@ cd ..
 - Linux: `~/.config/OpenTESArena/options/`
 - macOS: `~/Library/Preferences/OpenTESArena/options/`
 
+## Modding
+
+All of Arena's texture formats are supported. Using a third party tool from UESP to modify them should work.
+
+UI elements in `data/ui/` are a new quality-of-life feature of this engine and allow modifications to the look of the UI.
+
+Music can be replaced by copying a MIDI file into your ARENA install and referencing it in `data/audio/MusicDefinitions.txt`.
+
+After modifying shaders in `data/shaders/`, they must be recompiled to `.spv` using `windows/compile_shaders_glslc.bat` (requires glslc installed).
+
+A scripting engine is not planned until post-1.0.
+
 ## Building OpenTESArena from source
 
 #### Install third-party tools and libraries
