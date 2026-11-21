@@ -740,7 +740,7 @@ void GameWorldUI::update(double dt)
 		const int spellAnimFrameIndex = MathUtils::getInterpolatedIndex(spellAnimDef.textureAssets.getCount(), spellAnimInst.getProgressPercent());
 		DebugAssertIndex(spellAnimDef.textureAssets, spellAnimFrameIndex);
 		const TextureAsset &spellAnimFrameTextureAsset = spellAnimDef.textureAssets[spellAnimFrameIndex];
-		const UiTextureID spellAnimTextureID = uiManager.getOrAddTexture(spellAnimFrameTextureAsset, paletteTextureAsset, textureManager, renderer);
+		const UiTextureID spellAnimTextureID = uiManager.getOrAddSpellAnimationTexture(spellAnimFrameTextureAsset, paletteTextureAsset, textureManager, renderer);
 
 		Int2 spellCastPosition;
 		Int2 spellCastSize;
@@ -966,6 +966,10 @@ void GameWorldUI::onPauseChanged(bool paused)
 	const bool isWeaponVisible = !paused && IsPlayerWeaponVisible(player);
 	const UiElementInstanceID weaponImageElementInstID = uiManager.getElementByName(WeaponImageElementName);
 	uiManager.setElementActive(weaponImageElementInstID, isWeaponVisible);
+
+	const bool isSpellCastVisible = !paused && player.spellAnimInst.isValid();
+	const UiElementInstanceID spellCastImageElementInstID = uiManager.getElementByName(SpellCastImageElementName);
+	uiManager.setElementActive(spellCastImageElementInstID, isSpellCastVisible);
 
 	const bool isCompassVisible = !paused && options.getMisc_ShowCompass() && !gameState.isCamping();
 	GameWorldUI::setCompassVisible(isCompassVisible);

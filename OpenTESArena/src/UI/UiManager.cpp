@@ -81,6 +81,11 @@ GeneratedUiTexture::GeneratedUiTexture()
 	this->textureID = -1;
 }
 
+SpellAnimationUiTexture::SpellAnimationUiTexture()
+{
+	this->textureID = -1;
+}
+
 UiCursorOverrideState::UiCursorOverrideState(UiTextureID textureID, UiPivotType pivotType)
 {
 	DebugAssert(textureID >= 0);
@@ -227,6 +232,90 @@ UiTextureID UiManager::getOrAddTexture(UiTexturePatternType patternType, int wid
 	newTexture.height = height;
 	newTexture.textureID = textureID;
 	this->generatedTextures.emplace_back(std::move(newTexture));
+
+	return textureID;
+}
+
+UiTextureID UiManager::getOrAddSpellAnimationTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer)
+{
+	for (const SpellAnimationUiTexture &texture : this->spellAnimTextures)
+	{
+		if ((texture.textureAsset == textureAsset) && (texture.paletteAsset == paletteAsset))
+		{
+			return texture.textureID;
+		}
+	}
+
+	const std::string &animFilename = textureAsset.filename;
+	const TextureFileMetadataID metadataID = textureManager.getMetadataID(animFilename.c_str());
+	if (metadataID < 0)
+	{
+		DebugLogErrorFormat("Couldn't get texture metadata ID for spell animation \"%s\".", animFilename.c_str());
+		return -1;
+	}
+
+	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
+	const PaletteID paletteID = textureManager.getPaletteID(paletteAsset);
+	if (paletteID < 0)
+	{
+		DebugLogErrorFormat("Couldn't get palette ID for spell animation \"%s\".", paletteAsset.filename.c_str());
+		return false;
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const TextureBuilderID textureBuilderID = textureManager.getTextureBuilderID(textureAsset);
+	if (textureBuilderID < 0)
+	{
+		DebugLogErrorFormat("Couldn't get texture builder ID for spell animation \"%s\".", textureAsset.filename.c_str());
+		return false;
+	}
+
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+
+	// Spell animation files store the left half. Need to mirror the right half.
+	const int metadataWidth = metadata.getWidth(0);
+	const int metadataHeight = metadata.getHeight(0);
+	const int textureWidth = metadataWidth * 2;
+	const int textureHeight = metadataHeight;
+
+	UiTextureID textureID = renderer.createUiTexture(textureWidth, textureHeight);
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate UI texture with dimensions %dx%d for spell animation \"%s\".", textureWidth, textureHeight, animFilename.c_str());
+		return -1;
+	}
+
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock UI texture with dimensions %dx%d for spell animation \"%s\".", textureWidth, textureHeight, animFilename.c_str());
+		return -1;
+	}
+
+	// Some of the original art has a blank pixel column on the right edge.
+	const bool isSpecialCase = textureAsset.filename.find("fire.cfa") != std::string::npos;
+
+	Span2D<uint32_t> lockedTexels = lockedTexture.getTexels32();
+	Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
+	for (int y = 0; y < metadataHeight; y++)
+	{
+		for (int x = 0; x < metadataWidth; x++)
+		{
+			const int srcX = isSpecialCase ? std::min(x, metadataWidth - 2) : x;
+			const uint8_t srcTexel = srcTexels.get(srcX, y);
+			const uint32_t dstTexel = palette[srcTexel].toRGBA();
+			lockedTexels.set(x, y, dstTexel);
+			lockedTexels.set(textureWidth - 1 - x, y, dstTexel);
+		}
+	}
+
+	renderer.unlockUiTexture(textureID);
+
+	SpellAnimationUiTexture newTexture;
+	newTexture.textureAsset = textureAsset;
+	newTexture.paletteAsset = paletteAsset;
+	newTexture.textureID = textureID;
+	this->spellAnimTextures.emplace_back(std::move(newTexture));
 
 	return textureID;
 }

@@ -46,6 +46,15 @@ struct GeneratedUiTexture
 	GeneratedUiTexture();
 };
 
+struct SpellAnimationUiTexture
+{
+	TextureAsset textureAsset;
+	TextureAsset paletteAsset;
+	UiTextureID textureID; // Contains fully populated texture (normal half + mirrored half).
+
+	SpellAnimationUiTexture();
+};
+
 struct UiCursorOverrideState
 {
 	UiTextureID textureID;
@@ -68,6 +77,7 @@ private:
 
 	std::vector<LoadedUiTexture> loadedTextures;
 	std::vector<GeneratedUiTexture> generatedTextures;
+	std::vector<SpellAnimationUiTexture> spellAnimTextures;
 	UiTextureID invalidTextureID; // For empty image elements.
 
 	std::unordered_map<std::string, UiContextBeginCallback> beginContextCallbacks;
@@ -88,6 +98,7 @@ public:
 
 	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID getOrAddTexture(UiTexturePatternType patternType, int width, int height, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID getOrAddSpellAnimationTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
 
 	UiElementInstanceID getElementByName(const char *name) const;
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
