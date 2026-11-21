@@ -653,6 +653,13 @@ struct ExeDataServices
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
+struct ExeDataSpells
+{
+	std::string spellCastAnimations[5];
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataStatus
 {
 	// Status pop-up text (with %s/%d tokens).
@@ -847,6 +854,7 @@ struct ExeData
 	ExeDataQuests quests;
 	ExeDataRaces races;
 	ExeDataServices services;
+	ExeDataSpells spells;
 	ExeDataStatus status;
 	ExeDataThieving thieving;
 	ExeDataTravel travel;

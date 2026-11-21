@@ -1204,6 +1204,22 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	return true;
 }
 
+bool ExeDataSpells::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Spells";
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
+		return false;
+	}
+
+	const int spellCastAnimationsOffset = GetExeAddress(*section, "SpellCastAnimations");
+	initStringArrayNullTerminated(this->spellCastAnimations, exeBytes, spellCastAnimationsOffset);
+
+	return true;
+}
+
 bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Status";
@@ -1508,6 +1524,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->quests.init(exeBytes, keyValueFile);
 	success &= this->races.init(exeBytes, keyValueFile);
 	success &= this->services.init(exeBytes, keyValueFile);
+	success &= this->spells.init(exeBytes, keyValueFile);
 	success &= this->status.init(exeBytes, keyValueFile);
 	success &= this->thieving.init(exeBytes, keyValueFile);
 	success &= this->travel.init(exeBytes, keyValueFile);

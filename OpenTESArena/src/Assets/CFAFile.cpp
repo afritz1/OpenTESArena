@@ -13,7 +13,7 @@
 bool CFAFile::init(const char *filename)
 {
 	Buffer<std::byte> src;
-	if (!VFS::Manager::get().read(filename, &src))
+	if (!VFS::Manager::get().readCaseInsensitive(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;

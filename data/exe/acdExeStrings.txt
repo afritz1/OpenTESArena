@@ -363,6 +363,9 @@ CitizenWhereIsOptionsCity=0x43FD3
 CitizenWhereIsOptionsWilderness=0x44035
 PlayerGoldRemaining=0x4050E
 
+[Spells]
+SpellCastAnimations=0x43749
+
 [Status]
 PopUp=0x4157B
 Date=0x40838

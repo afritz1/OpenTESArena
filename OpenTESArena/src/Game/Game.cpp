@@ -39,6 +39,7 @@
 #include "../Items/ItemMaterialLibrary.h"
 #include "../Player/PlayerInterface.h"
 #include "../Player/PlayerLogic.h"
+#include "../Player/SpellAnimationLibrary.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderBackendType.h"
 #include "../Rendering/RenderCamera.h"
@@ -359,6 +360,7 @@ bool Game::init()
 	ItemConditionLibrary::getInstance().init(exeData);
 	ItemMaterialLibrary::getInstance().init(exeData);
 	ItemLibrary::getInstance().init(exeData);
+	SpellAnimationLibrary::getInstance().init(exeData, this->textureManager);
 	WeaponAnimationLibrary::getInstance().init(exeData, this->textureManager);
 	CreatureDefinitionLibrary::getInstance().init(exeData);
 
