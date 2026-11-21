@@ -44,13 +44,19 @@ void SpellAnimationLibrary::init(const ExeData &exeData, TextureManager &texture
 	this->defs.emplace_back(std::move(smokeDef));
 }
 
-int SpellAnimationLibrary::findDefinitionIndex(SpellAnimationType type)
+const SpellAnimationDefinition &SpellAnimationLibrary::getDefinition(SpellAnimationDefinitionID id) const
+{
+	DebugAssertIndex(this->defs, id);
+	return this->defs[id];
+}
+
+SpellAnimationDefinitionID SpellAnimationLibrary::getDefinitionIdByType(SpellAnimationType type) const
 {
 	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)
 	{
 		if (this->defs[i].type == type)
 		{
-			return i;
+			return static_cast<SpellAnimationDefinitionID>(i);
 		}
 	}
 

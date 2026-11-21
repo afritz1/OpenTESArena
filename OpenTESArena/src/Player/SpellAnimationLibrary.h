@@ -16,5 +16,6 @@ struct SpellAnimationLibrary : Singleton<SpellAnimationLibrary>
 
 	void init(const ExeData &exeData, TextureManager &textureManager);
 
-	int findDefinitionIndex(SpellAnimationType type);
+	const SpellAnimationDefinition &getDefinition(SpellAnimationDefinitionID id) const;
+	SpellAnimationDefinitionID getDefinitionIdByType(SpellAnimationType type) const;
 };

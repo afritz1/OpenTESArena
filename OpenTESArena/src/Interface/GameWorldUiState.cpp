@@ -20,6 +20,7 @@
 #include "../Interface/DialogueManager.h"
 #include "../Math/RandomUtils.h"
 #include "../Player/PlayerLogic.h"
+#include "../Player/SpellAnimationLibrary.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
@@ -54,6 +55,7 @@ namespace
 	constexpr char BoatImageElementName[] = "GameWorldBoatImage";
 
 	constexpr char WeaponImageElementName[] = "GameWorldWeaponImage";
+	constexpr char SpellCastImageElementName[] = "GameWorldSpellCastImage";
 	constexpr char PlayerHurtImageElementName[] = "GameWorldPlayerHurtImage";
 	constexpr char ModernModeReticleImageElementName[] = "GameWorldModernModeReticleImage";
 
@@ -448,7 +450,7 @@ void GameWorldUI::create(Game &game)
 	UiElementInitInfo weaponAnimImageElementInitInfo;
 	weaponAnimImageElementInitInfo.name = WeaponImageElementName;
 	weaponAnimImageElementInitInfo.sizeType = isModernInterface ? UiTransformSizeType::Manual : UiTransformSizeType::Content;
-	weaponAnimImageElementInitInfo.drawOrder = 0;
+	weaponAnimImageElementInitInfo.drawOrder = 2;
 	weaponAnimImageElementInitInfo.renderSpace = isModernInterface ? UiRenderSpace::Native : UiRenderSpace::Classic;
 
 	const WeaponAnimationDefinition &dummyWeaponAnimDef = WeaponAnimationLibrary::getInstance().getDefinition(ArenaItemUtils::FistsWeaponID);
@@ -461,7 +463,7 @@ void GameWorldUI::create(Game &game)
 		UiElementInitInfo keyImageElementInitInfo;
 		keyImageElementInitInfo.name = GetKeyImageElementName(i);
 		keyImageElementInitInfo.position = GameWorldUiView::getKeyPosition(i);
-		keyImageElementInitInfo.drawOrder = 0;
+		keyImageElementInitInfo.drawOrder = 2;
 
 		const UiTextureID keyImageTextureID = state.keyTextureIDs[i];
 		uiManager.createImage(keyImageElementInitInfo, keyImageTextureID, state.contextInstID, renderer);
@@ -486,7 +488,7 @@ void GameWorldUI::create(Game &game)
 	modernModeReticleImageElementInitInfo.name = ModernModeReticleImageElementName;
 	modernModeReticleImageElementInitInfo.position = GameWorldUiView::getInterfaceCenter(game);
 	modernModeReticleImageElementInitInfo.pivotType = UiPivotType::Middle;
-	modernModeReticleImageElementInitInfo.drawOrder = 1;
+	modernModeReticleImageElementInitInfo.drawOrder = 2;
 	const UiElementInstanceID modernModeReticleImageElementInstID = uiManager.createImage(modernModeReticleImageElementInitInfo, state.modernModeReticleTextureID, state.contextInstID, renderer);
 
 	UiElementInitInfo playerHurtImageElementInitInfo;
@@ -725,6 +727,37 @@ void GameWorldUI::update(double dt)
 		uiManager.setTransformPosition(weaponImageElementInstID, weaponPosition);
 		uiManager.setTransformSize(weaponImageElementInstID, weaponSize);
 		uiManager.setImageTexture(weaponImageElementInstID, weaponAnimTextureID);
+	}
+
+	// Spell cast
+	const UiElementInstanceID spellCastImageElementInstID = uiManager.getElementByName(SpellCastImageElementName);
+	const bool isSpellCastVisible = player.spellAnimInst.isValid();
+	uiManager.setElementActive(spellCastImageElementInstID, isSpellCastVisible);
+	if (isSpellCastVisible)
+	{
+		const SpellAnimationDefinition &spellAnimDef = SpellAnimationLibrary::getInstance().getDefinition(player.spellAnimInst.defID);
+		const SpellAnimationInstance &spellAnimInst = player.spellAnimInst;
+		const int spellAnimFrameIndex = MathUtils::getInterpolatedIndex(spellAnimDef.textureAssets.getCount(), spellAnimInst.getProgressPercent());
+		DebugAssertIndex(spellAnimDef.textureAssets, spellAnimFrameIndex);
+		const TextureAsset &spellAnimFrameTextureAsset = spellAnimDef.textureAssets[spellAnimFrameIndex];
+		const UiTextureID spellAnimTextureID = uiManager.getOrAddTexture(spellAnimFrameTextureAsset, paletteTextureAsset, textureManager, renderer);
+
+		Int2 spellCastPosition;
+		Int2 spellCastSize;
+		if (isModernInterface)
+		{
+			spellCastPosition = Int2(ArenaRenderUtils::SCREEN_CENTER.x, ArenaRenderUtils::SCREEN_HEIGHT);
+			spellCastSize = Int2(spellAnimDef.width, spellAnimDef.height);
+		}
+		else
+		{
+			spellCastPosition = Int2(ArenaRenderUtils::SCREEN_CENTER.x, ArenaRenderUtils::SCENE_VIEW_HEIGHT);
+			spellCastSize = Int2(spellAnimDef.width, spellAnimDef.height);
+		}
+
+		uiManager.setTransformPosition(spellCastImageElementInstID, spellCastPosition);
+		uiManager.setTransformSize(spellCastImageElementInstID, spellCastSize);
+		uiManager.setImageTexture(spellCastImageElementInstID, spellAnimTextureID);
 	}
 
 	// Boat
@@ -3308,6 +3341,12 @@ void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
 		return;
 	}
 
+	if (player.castingSpellIndex >= 0)
+	{
+		// Already preparing to cast.
+		return;
+	}
+
 	const int spellPointCost = 10; // @todo original spell costs
 	const bool canPlayerAffordSpellCast = static_cast<int>(player.currentSpellPoints) >= spellPointCost;
 	if (!canPlayerAffordSpellCast)
@@ -3317,22 +3356,31 @@ void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
 
 	player.currentSpellPoints -= spellPointCost;
 
-	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	Random &random = game.random;
+	constexpr int spellProjectileTypeCount = CombatLogic::SPELL_PROJECTILE_TYPE_COUNT;
+	const int spellIndex = random.next(spellProjectileTypeCount);
+	player.castingSpellIndex = spellIndex;
 
-	const int spellIndex = random.next(CombatLogic::SPELL_PROJECTILE_TYPE_COUNT);
-	const WorldDouble3 spellProjectilePosition = player.getEyePosition() - Double3(0.0, 0.20, 0.0);
-
-	Double3 projectileDirection = player.forward;
-	if (!game.options.getGraphics_ModernInterface())
+	// @todo put these into SpellDefinitions eventually
+	constexpr SpellAnimationType spellAnimTypes[spellProjectileTypeCount] =
 	{
-		const InputManager &inputManager = game.inputManager;
-		const Int2 mousePosition = inputManager.getMousePosition();
-		projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition);
-	}
+		SpellAnimationType::Acid,
+		SpellAnimationType::Acid,
+		SpellAnimationType::Shock,
+		SpellAnimationType::Shock,
+		SpellAnimationType::Fire,
+		SpellAnimationType::Fire,
+		SpellAnimationType::Smoke,
+		SpellAnimationType::Smoke,
+		SpellAnimationType::Ice,
+		SpellAnimationType::Ice,
+		SpellAnimationType::Magic,
+		SpellAnimationType::Magic
+	};
 
-	const EntityInitInfo spellProjectileEntityInitInfo = CombatLogic::getSpellProjectileEntityInitInfo(spellIndex, spellProjectilePosition, projectileDirection);
-	gameState.queueEntityInstantiate(spellProjectileEntityInitInfo);
+	DebugAssertIndex(spellAnimTypes, spellIndex);
+	const SpellAnimationType spellAnimType = spellAnimTypes[spellIndex];
+	player.setSpellAnimation(spellAnimType);
 }
 
 void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)

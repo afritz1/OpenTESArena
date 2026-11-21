@@ -6,6 +6,7 @@
 #include "Jolt/Physics/PhysicsSystem.h"
 
 #include "ArenaPlayerUtils.h"
+#include "SpellAnimation.h"
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
 #include "../Entities/EntityInstance.h"
@@ -162,6 +163,9 @@ struct Player
 	WeaponAnimationInstance weaponAnimInst; // Weapon animation is determined from inventory items, otherwise fists.
 	int queuedMeleeSwingDirection; // Non-negative if player is attempting attack this frame.
 
+	SpellAnimationInstance spellAnimInst;
+	int castingSpellIndex; // Non-negative if preparing to cast a spell.
+
 	int level;
 	int experience;
 	PrimaryAttributes primaryAttributes;
@@ -182,6 +186,8 @@ struct Player
 	ItemDefinitionID getEquippedWeaponItemDefID() const;
 	WeaponAnimationDefinitionID getEquippedWeaponAnimationDefID() const;
 	void setWeaponAnimationFromItem(ItemDefinitionID itemDefID);
+
+	void setSpellAnimation(SpellAnimationType animType);
 
 	void addToKeyInventory(int keyID);
 	void removeFromKeyInventory(int keyID);

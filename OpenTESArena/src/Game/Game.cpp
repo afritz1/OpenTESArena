@@ -963,6 +963,7 @@ void Game::loop()
 				this->gameState.tickPlayerStamina(clampedDeltaTime, *this);
 				this->gameState.tickPlayerEffects(clampedDeltaTime, *this);
 				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
+				this->gameState.tickPlayerSpellCast(clampedDeltaTime, *this);
 				this->gameState.tickPlayerLevel(*this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);

@@ -7,6 +7,7 @@
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
 #include "Player.h"
+#include "SpellAnimationLibrary.h"
 #include "WeaponAnimationLibrary.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Audio/MusicLibrary.h"
@@ -295,6 +296,7 @@ Player::Player()
 	this->maxSpellPoints = 0.0;
 	this->currentSpellPoints = 0.0;
 	this->queuedMeleeSwingDirection = -1;
+	this->castingSpellIndex = -1;
 	this->level = 0;
 	this->experience = 0;
 	this->gold = 0;
@@ -326,6 +328,8 @@ void Player::init(const std::string &displayName, bool male, CharacterRaceDefini
 	this->effectsState.clear();
 	this->setWeaponAnimationFromItem(-1);
 	this->queuedMeleeSwingDirection = -1;
+	this->spellAnimInst.clear();
+	this->castingSpellIndex = -1;
 	this->level = 1;
 	this->experience = 0;
 	this->primaryAttributes = primaryAttributes;
@@ -427,6 +431,13 @@ void Player::setWeaponAnimationFromItem(ItemDefinitionID itemDefID)
 	}
 	
 	InitWeaponAnimationInstance(this->weaponAnimInst, weaponAnimDefID);
+}
+
+void Player::setSpellAnimation(SpellAnimationType animType)
+{
+	const SpellAnimationLibrary &spellAnimLibrary = SpellAnimationLibrary::getInstance();
+	const SpellAnimationDefinitionID spellAnimDefID = spellAnimLibrary.getDefinitionIdByType(animType);
+	this->spellAnimInst.init(spellAnimDefID, 0.0);
 }
 
 void Player::addToKeyInventory(int keyID)

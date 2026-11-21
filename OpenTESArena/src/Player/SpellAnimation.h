@@ -28,7 +28,7 @@ using SpellAnimationDefinitionID = int;
 
 struct SpellAnimationInstance
 {
-	static constexpr double TARGET_SECONDS = 1.0;
+	static constexpr double TOTAL_SECONDS = 0.35;
 
 	SpellAnimationDefinitionID defID;
 	double currentSeconds;
@@ -37,7 +37,11 @@ struct SpellAnimationInstance
 
 	void init(SpellAnimationDefinitionID defID, double currentSeconds);
 
+	bool isValid() const;
 	bool isFinished() const;
+	double getProgressPercent() const;
+
+	void clear();
 
 	void update(double dt);
 };

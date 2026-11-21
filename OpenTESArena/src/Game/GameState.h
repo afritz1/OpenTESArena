@@ -323,6 +323,7 @@ public:
 	void tickPlayerEffects(double dt, Game &game);
 	void tickPlayerEffectChanges(const PlayerEffectsState &currentEffectsState, const PlayerEffectsState &prevEffectsState);
 	void tickPlayerAttack(double dt, Game &game);
+	void tickPlayerSpellCast(double dt, Game &game);
 	void tickPlayerLevel(Game &game);
 	void tickVoxels(double dt, Game &game);
 	void tickEntitiesPrePhysicsStep(double dt, Game &game);

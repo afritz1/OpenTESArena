@@ -135,6 +135,15 @@ Palette=PAL.COL
 
 ##################################
 
+# Spell cast
+
+[GameWorldSpellCastImage]
+Type=Image
+Pivot=Bottom
+DrawOrder=1
+
+##################################
+
 [GameWorldBoatImage]
 Type=Image
 Position=160,147

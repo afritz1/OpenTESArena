@@ -21,12 +21,28 @@ void SpellAnimationInstance::init(SpellAnimationDefinitionID defID, double curre
 	this->currentSeconds = currentSeconds;
 }
 
+bool SpellAnimationInstance::isValid() const
+{
+	return this->defID >= 0;
+}
+
 bool SpellAnimationInstance::isFinished() const
 {
-	return this->currentSeconds >= SpellAnimationInstance::TARGET_SECONDS;
+	return this->currentSeconds >= SpellAnimationInstance::TOTAL_SECONDS;
+}
+
+double SpellAnimationInstance::getProgressPercent() const
+{
+	return std::clamp(this->currentSeconds / SpellAnimationInstance::TOTAL_SECONDS, 0.0, 1.0);
+}
+
+void SpellAnimationInstance::clear()
+{
+	this->defID = -1;
+	this->currentSeconds = 0.0;
 }
 
 void SpellAnimationInstance::update(double dt)
 {
-	this->currentSeconds = std::min(this->currentSeconds + dt, SpellAnimationInstance::TARGET_SECONDS);
+	this->currentSeconds = std::min(this->currentSeconds + dt, SpellAnimationInstance::TOTAL_SECONDS);
 }

@@ -1725,6 +1725,39 @@ void GameState::tickPlayerAttack(double dt, Game &game)
 	player.queuedMeleeSwingDirection = -1;
 }
 
+void GameState::tickPlayerSpellCast(double dt, Game &game)
+{
+	Player &player = game.player;
+	SpellAnimationInstance &spellAnimInst = player.spellAnimInst;
+	if (!spellAnimInst.isValid())
+	{
+		return;
+	}
+
+	spellAnimInst.update(dt);
+	if (!spellAnimInst.isFinished())
+	{
+		return;
+	}
+
+	spellAnimInst.clear();
+
+	const WorldDouble3 spellProjectilePosition = player.getEyePosition() - Double3(0.0, 0.20, 0.0);
+
+	Double3 projectileDirection = player.forward;
+	if (!game.options.getGraphics_ModernInterface())
+	{
+		const InputManager &inputManager = game.inputManager;
+		const Int2 mousePosition = inputManager.getMousePosition();
+		projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition);
+	}
+
+	const EntityInitInfo spellProjectileEntityInitInfo = CombatLogic::getSpellProjectileEntityInitInfo(player.castingSpellIndex, spellProjectilePosition, projectileDirection);
+	this->queueEntityInstantiate(spellProjectileEntityInitInfo);
+
+	player.castingSpellIndex = -1;
+}
+
 void GameState::tickPlayerLevel(Game &game)
 {
 	Player &player = game.player;
