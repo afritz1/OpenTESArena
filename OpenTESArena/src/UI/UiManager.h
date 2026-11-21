@@ -105,10 +105,12 @@ public:
 	Rect getElementClipRect(UiElementInstanceID elementInstID) const;
 	void setElementClipRect(UiElementInstanceID elementInstID, Rect clipRect);
 	void setElementDrawOrder(UiElementInstanceID elementInstID, int drawOrder);
+	void setElementRenderSpace(UiElementInstanceID elementInstID, UiRenderSpace renderSpace);
 	std::vector<UiElementInstanceID> getTopMostActiveElementsOfType(UiElementType elementType) const;
 
 	Rect getTransformGlobalRect(UiElementInstanceID elementInstID) const; // Includes local-to-parent transform.
 	void setTransformPosition(UiElementInstanceID elementInstID, Int2 position);
+	void setTransformSizeType(UiElementInstanceID elementInstID, UiTransformSizeType sizeType);
 	void setTransformSize(UiElementInstanceID elementInstID, Int2 size);
 	void setTransformPivot(UiElementInstanceID elementInstID, UiPivotType pivotType);
 

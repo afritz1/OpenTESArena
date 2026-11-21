@@ -135,6 +135,15 @@ Palette=PAL.COL
 
 ##################################
 
+# Weapon
+
+[GameWorldWeaponImage]
+Type=Image
+Pivot=TopLeft
+DrawOrder=2
+
+##################################
+
 # Spell cast
 
 [GameWorldSpellCastImage]

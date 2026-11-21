@@ -447,16 +447,17 @@ void GameWorldUI::create(Game &game)
 	const bool isModernInterface = options.getGraphics_ModernInterface();
 	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
 
-	UiElementInitInfo weaponAnimImageElementInitInfo;
-	weaponAnimImageElementInitInfo.name = WeaponImageElementName;
-	weaponAnimImageElementInitInfo.sizeType = isModernInterface ? UiTransformSizeType::Manual : UiTransformSizeType::Content;
-	weaponAnimImageElementInitInfo.drawOrder = 2;
-	weaponAnimImageElementInitInfo.renderSpace = isModernInterface ? UiRenderSpace::Native : UiRenderSpace::Classic;
+	const UiElementInstanceID weaponAnimImageElementInstID = uiManager.getElementByName(WeaponImageElementName);
+	const UiTransformSizeType weaponAnimImageSizeType = isModernInterface ? UiTransformSizeType::Manual : UiTransformSizeType::Content;
+	const UiRenderSpace weaponAnimImageRenderSpace = isModernInterface ? UiRenderSpace::Native : UiRenderSpace::Classic;
+	uiManager.setTransformSizeType(weaponAnimImageElementInstID, weaponAnimImageSizeType);
+	uiManager.setElementRenderSpace(weaponAnimImageElementInstID, weaponAnimImageRenderSpace);
 
-	const WeaponAnimationDefinition &dummyWeaponAnimDef = WeaponAnimationLibrary::getInstance().getDefinition(ArenaItemUtils::FistsWeaponID);
-	const TextureAsset &dummyWeaponAnimFrameTextureAsset = dummyWeaponAnimDef.frames[0].textureAsset;
-	const UiTextureID dummyWeaponAnimImageTextureID = uiManager.getOrAddTexture(dummyWeaponAnimFrameTextureAsset, paletteTextureAsset, textureManager, renderer);
-	uiManager.createImage(weaponAnimImageElementInitInfo, dummyWeaponAnimImageTextureID, state.contextInstID, renderer);
+	const UiElementInstanceID spellCastAnimImageElementInstID = uiManager.getElementByName(SpellCastImageElementName);
+	const UiTransformSizeType spellAnimImageSizeType = weaponAnimImageSizeType;
+	const UiRenderSpace spellAnimImageRenderSpace = weaponAnimImageRenderSpace;
+	uiManager.setTransformSizeType(spellCastAnimImageElementInstID, spellAnimImageSizeType);
+	uiManager.setElementRenderSpace(spellCastAnimImageElementInstID, spellAnimImageRenderSpace);
 
 	for (int i = 0; i < state.keyTextureIDs.getCount(); i++)
 	{
@@ -678,6 +679,10 @@ void GameWorldUI::update(double dt)
 	const bool isCompassVisible = options.getMisc_ShowCompass() && !gameState.isCamping();
 	GameWorldUI::setCompassVisible(isCompassVisible);
 
+	constexpr int classicViewHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT;
+	const Int2 windowDims = window.getPixelDimensions();
+	const Double2 windowDimsReal(static_cast<double>(windowDims.x), static_cast<double>(windowDims.y));
+
 	// Weapon
 	const UiElementInstanceID weaponImageElementInstID = uiManager.getElementByName(WeaponImageElementName);
 	const bool isWeaponVisible = IsPlayerWeaponVisible(player);
@@ -699,11 +704,6 @@ void GameWorldUI::update(double dt)
 		Int2 weaponSize;
 		if (isModernInterface)
 		{
-			constexpr int classicViewHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT;
-			const Int2 windowDims = window.getPixelDimensions();
-			const Double2 windowDimsReal(
-				static_cast<double>(windowDims.x),
-				static_cast<double>(windowDims.y));
 			const Double2 weaponOffsetPercents(
 				static_cast<double>(weaponAnimFrame.xOffset) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(weaponAnimFrame.yOffset) / static_cast<double>(classicViewHeight));
@@ -741,13 +741,24 @@ void GameWorldUI::update(double dt)
 		DebugAssertIndex(spellAnimDef.textureAssets, spellAnimFrameIndex);
 		const TextureAsset &spellAnimFrameTextureAsset = spellAnimDef.textureAssets[spellAnimFrameIndex];
 		const UiTextureID spellAnimTextureID = uiManager.getOrAddSpellAnimationTexture(spellAnimFrameTextureAsset, paletteTextureAsset, textureManager, renderer);
+		const std::optional<Int2> spellTextureDims = renderer.tryGetUiTextureDims(spellAnimTextureID);
+		DebugAssert(spellTextureDims.has_value());
 
 		Int2 spellCastPosition;
 		Int2 spellCastSize;
 		if (isModernInterface)
 		{
-			spellCastPosition = Int2(ArenaRenderUtils::SCREEN_CENTER.x, ArenaRenderUtils::SCREEN_HEIGHT);
-			spellCastSize = Int2(spellAnimDef.width, spellAnimDef.height);
+			const Double2 spellOffsetPercents(0.5, 1.0); // Bottom of screen.
+			const Double2 spellTextureScreenSizePercents(
+				static_cast<double>(spellTextureDims->x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
+				static_cast<double>(spellTextureDims->y) / static_cast<double>(classicViewHeight));
+
+			spellCastPosition = Int2(
+				static_cast<int>(std::round(spellOffsetPercents.x * windowDimsReal.x)),
+				static_cast<int>(std::round(spellOffsetPercents.y * windowDimsReal.y)));
+			spellCastSize = Int2(
+				static_cast<int>(std::round(spellTextureScreenSizePercents.x * windowDimsReal.x)),
+				static_cast<int>(std::round(spellTextureScreenSizePercents.y * windowDimsReal.y)));
 		}
 		else
 		{

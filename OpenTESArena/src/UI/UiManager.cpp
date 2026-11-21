@@ -423,6 +423,12 @@ void UiManager::setElementDrawOrder(UiElementInstanceID elementInstID, int drawO
 	element.drawOrder = drawOrder;
 }
 
+void UiManager::setElementRenderSpace(UiElementInstanceID elementInstID, UiRenderSpace renderSpace)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	element.renderSpace = renderSpace;
+}
+
 std::vector<UiElementInstanceID> UiManager::getTopMostActiveElementsOfType(UiElementType elementType) const
 {
 	std::vector<UiElementInstanceID> activeInstIDs;
@@ -469,6 +475,13 @@ void UiManager::setTransformPosition(UiElementInstanceID elementInstID, Int2 pos
 	UiElement &element = this->elements.get(elementInstID);
 	UiTransform &transform = this->transforms.get(element.transformInstID);
 	transform.position = position;
+}
+
+void UiManager::setTransformSizeType(UiElementInstanceID elementInstID, UiTransformSizeType sizeType)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	UiTransform &transform = this->transforms.get(element.transformInstID);
+	transform.sizeType = sizeType;
 }
 
 void UiManager::setTransformSize(UiElementInstanceID elementInstID, Int2 size)
