@@ -201,13 +201,13 @@ cd ..
 
 All of Arena's texture formats are supported. Using a third-party tool from UESP to modify them should work.
 
-Translation mods which replace A.EXE/ACD.EXE are difficult to support due to the amount of hardcoded data in Arena. These mods must be accompanied by a custom `aExeStrings.txt`/`acdExeStrings.txt` file in `data/exe/` that contains all the correct byte offsets. Creating one for your desired language is likely time-consuming. Ideally this engine will eventually provide a `data/localizations/` folder with key-value pairs per language for all in-game strings and you would simply use the retail A.EXE/ACD.EXE.
+Translation mods which replace `A.EXE`/`ACD.EXE` are difficult to support due to the amount of hardcoded data in Arena. These mods must be accompanied by a custom `aExeStrings.txt`/`acdExeStrings.txt` file in `data/exe/` that contains all the correct byte offsets. Creating one for your desired language is likely time-consuming. Ideally this engine will eventually provide a `data/localizations/` folder with key-value pairs per language for all in-game strings and you would simply use the retail `A.EXE`/`ACD.EXE`.
 
 UI elements in `data/ui/` are a new quality-of-life feature of this engine and allow modifications to the look of the UI.
 
 Music can be replaced by copying a MIDI file into your ARENA install and referencing it in `data/audio/MusicDefinitions.txt`.
 
-After modifying shaders in `data/shaders/`, they must be recompiled to `.spv` using `windows/compile_shaders_glslc.bat` (requires glslc installed).
+After modifying shaders in `data/shaders/`, they must be compiled to `.spv` using `windows/compile_shaders_glslc.bat` (requires glslc installed).
 
 A scripting engine is not planned until post-1.0.
 
