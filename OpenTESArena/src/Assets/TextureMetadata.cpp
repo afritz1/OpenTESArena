@@ -1,26 +1,25 @@
+#include <algorithm>
+
 #include "TextureMetadata.h"
 
-void TextureMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions)
+void TextureMetadata::init(const std::string &filename, Span<const Int2> dimensions)
 {
-	this->filename = std::move(filename);
-	this->dimensions = std::move(dimensions);
+	this->filename = filename;
+	this->dimensions.init(dimensions.getCount());
+	std::copy(dimensions.begin(), dimensions.end(), this->dimensions.begin());
 }
 
-void TextureMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets)
+void TextureMetadata::init(const std::string &filename, Span<const Int2> dimensions, Span<const Int2> offsets)
 {
-	this->init(std::move(filename), std::move(dimensions));
-	this->offsets = std::move(offsets);
+	this->init(filename, dimensions);
+	this->offsets.init(offsets.getCount());
+	std::copy(offsets.begin(), offsets.end(), this->offsets.begin());
 }
 
-void TextureMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions, double secondsPerFrame)
+void TextureMetadata::init(const std::string &filename, Span<const Int2> dimensions, double secondsPerFrame)
 {
-	this->init(std::move(filename), std::move(dimensions));
+	this->init(filename, dimensions);
 	this->secondsPerFrame = secondsPerFrame;
-}
-
-const std::string &TextureMetadata::getFilename() const
-{
-	return this->filename;
 }
 
 int TextureMetadata::getTextureCount() const
@@ -30,13 +29,13 @@ int TextureMetadata::getTextureCount() const
 
 int TextureMetadata::getWidth(int index) const
 {
-	const Int2 &dims = this->dimensions.get(index);
+	const Int2 dims = this->dimensions.get(index);
 	return dims.x;
 }
 
 int TextureMetadata::getHeight(int index) const
 {
-	const Int2 &dims = this->dimensions.get(index);
+	const Int2 dims = this->dimensions.get(index);
 	return dims.y;
 }
 
@@ -45,19 +44,7 @@ bool TextureMetadata::hasOffsets() const
 	return this->offsets.getCount() > 0;
 }
 
-const Int2 &TextureMetadata::getOffset(int index) const
-{
-	DebugAssert(this->hasOffsets());
-	return this->offsets.get(index);
-}
-
 bool TextureMetadata::isMovie() const
 {
-	return this->secondsPerFrame.has_value();
-}
-
-double TextureMetadata::getSecondsPerFrame() const
-{
-	DebugAssert(this->isMovie());
-	return *this->secondsPerFrame;
+	return this->secondsPerFrame > 0.0;
 }

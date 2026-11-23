@@ -255,7 +255,7 @@ Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 	}
 
 	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
-	return textureMetadata.getOffset(headTextureAsset.index);
+	return textureMetadata.offsets.get(headTextureAsset.index);
 }
 
 Int2 CharacterSheetUiView::getShirtOffset(Game &game)
@@ -292,7 +292,7 @@ Int2 CharacterSheetUiView::getEquipmentOffset(const TextureAsset &textureAsset, 
 	}
 
 	const TextureMetadata &metadata = textureManager.getMetadataHandle(textureMetadataID);
-	return metadata.getOffset(textureAsset.index);
+	return metadata.offsets.get(textureAsset.index);
 }
 
 Int2 CharacterSheetUiView::getHeadArmorOffset(Game &game)

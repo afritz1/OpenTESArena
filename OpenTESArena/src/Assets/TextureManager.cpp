@@ -124,7 +124,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 		
 		if (outMetadata != nullptr)
 		{
-			outMetadata->init(std::string(filename), makeDimensions(surface.getWidth(), surface.getHeight()));
+			outMetadata->init(filename, makeDimensions(surface.getWidth(), surface.getHeight()));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CFA))
@@ -157,7 +157,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 				offsets.set(i, Int2(cfa.getXOffset(), cfa.getYOffset()));
 			}
 
-			outMetadata->init(std::string(filename), std::move(dimensions), std::move(offsets));
+			outMetadata->init(filename, dimensions, offsets);
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CIF))
@@ -190,7 +190,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 				offsets.set(i, Int2(cif.getXOffset(i), cif.getYOffset(i)));
 			}
 
-			outMetadata->init(std::string(filename), std::move(dimensions), std::move(offsets));
+			outMetadata->init(filename, dimensions, offsets);
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_DFA))
@@ -221,7 +221,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 				dimensions.set(i, Int2(dfa.getWidth(), dfa.getHeight()));
 			}
 
-			outMetadata->init(std::string(filename), std::move(dimensions));
+			outMetadata->init(filename, dimensions);
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_FLC) ||
@@ -253,7 +253,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 				dimensions.set(i, Int2(flc.getWidth(), flc.getHeight()));
 			}
 
-			outMetadata->init(std::string(filename), std::move(dimensions), flc.getSecondsPerFrame());
+			outMetadata->init(filename, dimensions, flc.getSecondsPerFrame());
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_IMG) ||
@@ -276,7 +276,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outMetadata != nullptr)
 		{
-			outMetadata->init(std::string(filename), makeDimensions(img.getWidth(), img.getHeight()), makeOffset(img.getXOffset(), img.getYOffset()));
+			outMetadata->init(filename, makeDimensions(img.getWidth(), img.getHeight()), makeOffset(img.getXOffset(), img.getYOffset()));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_LGT))
@@ -299,7 +299,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outMetadata != nullptr)
 		{
-			outMetadata->init(std::string(filename), makeDimensions(LGTFile::ELEMENTS_PER_PALETTE, LGTFile::PALETTE_COUNT));
+			outMetadata->init(filename, makeDimensions(LGTFile::ELEMENTS_PER_PALETTE, LGTFile::PALETTE_COUNT));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_RCI))
@@ -330,7 +330,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 				dimensions.set(i, Int2(RCIFile::WIDTH, RCIFile::HEIGHT));
 			}
 
-			outMetadata->init(std::string(filename), std::move(dimensions));
+			outMetadata->init(filename, dimensions);
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_SET))
@@ -361,7 +361,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 				dimensions.set(i, Int2(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT));
 			}
 
-			outMetadata->init(std::string(filename), std::move(dimensions));
+			outMetadata->init(filename, dimensions);
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_TXT))
@@ -383,7 +383,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 		
 		if (outMetadata != nullptr)
 		{
-			outMetadata->init(std::string(filename), makeDimensions(TXTFile::WIDTH, TXTFile::HEIGHT));
+			outMetadata->init(filename, makeDimensions(TXTFile::WIDTH, TXTFile::HEIGHT));
 		}
 	}
 	else

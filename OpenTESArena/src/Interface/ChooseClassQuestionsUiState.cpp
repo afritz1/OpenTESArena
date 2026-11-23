@@ -235,7 +235,7 @@ void ChooseClassQuestionsUI::update(double dt)
 
 		const TextureMetadata &vfxTextureMetadata = textureManager.getMetadataHandle(vfxTextureMetadataID);
 		const int vfxFrameCount = vfxTextureMetadata.getTextureCount();
-		const double vfxTargetSeconds = vfxTextureMetadata.getSecondsPerFrame() * vfxFrameCount;
+		const double vfxTargetSeconds = vfxTextureMetadata.secondsPerFrame * vfxFrameCount;
 		const double vfxAnimPercent = std::clamp(state.vfxCurrentSeconds / vfxTargetSeconds, 0.0, 1.0);
 		const int vfxTextureIndex = MathUtils::getInterpolatedIndex(vfxFrameCount, vfxAnimPercent);
 		const TextureAsset vfxAnimTextureAsset(vfxSequenceName, vfxTextureIndex);

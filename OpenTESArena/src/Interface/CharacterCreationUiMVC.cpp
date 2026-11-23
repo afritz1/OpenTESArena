@@ -889,7 +889,7 @@ Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 
 	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
 	const int headOffsetIndex = charCreationState.portraitIndex;
-	return textureMetadata.getOffset(headOffsetIndex);
+	return textureMetadata.offsets.get(headOffsetIndex);
 }
 
 Int2 ChooseAttributesUiView::getShirtOffset(Game &game)

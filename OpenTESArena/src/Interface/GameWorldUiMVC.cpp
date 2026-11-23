@@ -885,7 +885,7 @@ Int2 GameWorldUiView::getWeaponAnimationOffset(const std::string &weaponFilename
 	}
 
 	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
-	return textureMetadata.getOffset(frameIndex);
+	return textureMetadata.offsets.get(frameIndex);
 }
 
 Int2 GameWorldUiView::getInterfaceCenter(Game &game)
@@ -1693,7 +1693,7 @@ void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
 	const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 	TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
-	textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { PauseMenuUiController::onNewGameButtonSelected(game); });
+	textCinematicInitInfo.init(textCinematicDefIndex, metadata.secondsPerFrame, [&game]() { PauseMenuUiController::onNewGameButtonSelected(game); });
 	game.setNextContext(TextCinematicUI::ContextName);
 
 	const MusicDefinition *musicDef = MusicUtils::getMainQuestCinematicGoodMusicDefinition(game.random);

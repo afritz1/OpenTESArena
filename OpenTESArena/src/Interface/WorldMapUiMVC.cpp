@@ -309,7 +309,7 @@ Int2 WorldMapUiView::getProvinceNameOffset(int originalProvinceIndex, TextureMan
 	}
 
 	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
-	return textureMetadata.getOffset(originalProvinceIndex);
+	return textureMetadata.offsets.get(originalProvinceIndex);
 }
 
 TextureAsset WorldMapUiView::getPaletteTextureAsset()

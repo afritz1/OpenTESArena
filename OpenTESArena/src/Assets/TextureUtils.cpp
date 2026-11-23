@@ -341,7 +341,7 @@ Buffer<TextureAsset> TextureUtils::makeTextureAssets(const std::string &filename
 	Buffer<TextureAsset> textureAssets(textureCount);
 	for (int i = 0; i < textureCount; i++)
 	{
-		TextureAsset textureAsset(textureMetadata.getFilename(), i);
+		TextureAsset textureAsset(textureMetadata.filename, i);
 		textureAssets.set(i, std::move(textureAsset));
 	}
 

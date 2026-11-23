@@ -159,7 +159,7 @@ namespace ArenaAnimUtils
 		{
 			const double width = MakeStaticKeyframeDimension(textureMetadata.getWidth(i), dimensionModifier);
 			const double height = MakeStaticKeyframeDimension(textureMetadata.getHeight(i), dimensionModifier);
-			TextureAsset textureAsset(textureMetadata.getFilename(), i);
+			TextureAsset textureAsset(textureMetadata.filename, i);
 			outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 		}
 
@@ -212,7 +212,7 @@ namespace ArenaAnimUtils
 				MakeCreatureKeyframeDimensions(creatureIndex, textureMetadata.getWidth(correctedFrameIndex),
 					textureMetadata.getHeight(correctedFrameIndex), exeData, &width, &height);
 
-				TextureAsset textureAsset(textureMetadata.getFilename(), correctedFrameIndex);
+				TextureAsset textureAsset(textureMetadata.filename, correctedFrameIndex);
 				outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 			}
 
@@ -316,7 +316,7 @@ namespace ArenaAnimUtils
 				double width, height;
 				MakeHumanKeyframeDimensions(textureMetadata.getWidth(frameIndex), textureMetadata.getHeight(frameIndex), &width, &height);
 
-				TextureAsset textureAsset(textureMetadata.getFilename(), frameIndex);
+				TextureAsset textureAsset(textureMetadata.filename, frameIndex);
 				outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 			}
 
@@ -389,7 +389,7 @@ namespace ArenaAnimUtils
 			MakeCreatureKeyframeDimensions(creatureIndex, textureMetadata.getWidth(frameIndex),
 				textureMetadata.getHeight(frameIndex), exeData, &width, &height);
 
-			TextureAsset textureAsset(textureMetadata.getFilename(), frameIndex);
+			TextureAsset textureAsset(textureMetadata.filename, frameIndex);
 			outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 		}
 
@@ -460,7 +460,7 @@ namespace ArenaAnimUtils
 			double width, height;
 			MakeHumanKeyframeDimensions(textureMetadata.getWidth(i), textureMetadata.getHeight(i), &width, &height);
 
-			TextureAsset textureAsset(textureMetadata.getFilename(), i);
+			TextureAsset textureAsset(textureMetadata.filename, i);
 			outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 		}
 
@@ -509,7 +509,7 @@ namespace ArenaAnimUtils
 			ArenaAnimUtils::MakeCreatureKeyframeDimensions(creatureIndex, textureMetadata.getWidth(i),
 				textureMetadata.getHeight(i), exeData, &width, &height);
 
-			TextureAsset textureAsset(textureMetadata.getFilename(), i);
+			TextureAsset textureAsset(textureMetadata.filename, i);
 			outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 		}
 
@@ -541,7 +541,7 @@ namespace ArenaAnimUtils
 
 		const double width = MakeDefaultKeyframeDimension(textureMetadata.getWidth(0));
 		const double height = MakeDefaultKeyframeDimension(textureMetadata.getHeight(0));
-		TextureAsset textureAsset(textureMetadata.getFilename());
+		TextureAsset textureAsset(textureMetadata.filename);
 		outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 
 		EntityAnimationDefinitionState &animDefState = outAnimDef->states[stateIndex];
@@ -594,7 +594,7 @@ namespace ArenaAnimUtils
 				MakeCitizenKeyframeDimensions(textureMetadata.getWidth(correctedFrameIndex),
 					textureMetadata.getHeight(correctedFrameIndex), &width, &height);
 
-				TextureAsset textureAsset(textureMetadata.getFilename(), correctedFrameIndex);
+				TextureAsset textureAsset(textureMetadata.filename, correctedFrameIndex);
 				outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 			}
 
@@ -1358,7 +1358,7 @@ bool ArenaAnimUtils::tryMakePlayerItemDropContainerAnim(const std::string &animF
 	}
 
 	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
-	TextureAsset textureAsset(textureMetadata.getFilename());
+	TextureAsset textureAsset(textureMetadata.filename);
 	const double width = MakeDefaultKeyframeDimension(textureMetadata.getWidth(0));
 	const double height = MakeDefaultKeyframeDimension(textureMetadata.getHeight(0));
 	outAnimDef->addState(EntityAnimationUtils::STATE_IDLE.c_str(), 0.0, false);
@@ -1393,7 +1393,7 @@ bool ArenaAnimUtils::tryMakeVfxAnim(const std::string &animFilename, bool isLoop
 		double width, height;
 		MakeVfxKeyframeDimensions(textureMetadata.getWidth(i), textureMetadata.getHeight(i), isAspectCorrected, &width, &height);
 
-		TextureAsset textureAsset(textureMetadata.getFilename(), i);
+		TextureAsset textureAsset(textureMetadata.filename, i);
 		outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 	}
 

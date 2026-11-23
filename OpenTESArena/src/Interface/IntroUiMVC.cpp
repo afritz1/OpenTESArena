@@ -39,7 +39,7 @@ std::string IntroUiModel::prepareStartupContext(Game &game)
 		const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 		CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
-		cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.getSecondsPerFrame(), [&game]() { IntroUiController::onIntroBookFinished(game); });
+		cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.secondsPerFrame, [&game]() { IntroUiController::onIntroBookFinished(game); });
 		return CinematicUI::ContextName;
 	}
 }
@@ -136,7 +136,7 @@ void IntroUiController::onIntroQuoteFinished(Game &game)
 	const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 	CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
-	cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.getSecondsPerFrame(), [&game]() { IntroUiController::onOpeningScrollFinished(game); });
+	cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.secondsPerFrame, [&game]() { IntroUiController::onOpeningScrollFinished(game); });
 	game.setNextContext(CinematicUI::ContextName);
 }
 

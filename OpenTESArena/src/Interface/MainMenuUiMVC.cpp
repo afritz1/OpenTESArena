@@ -535,7 +535,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 	}
 
 	const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
-	const double secondsPerFrame = metadata.getSecondsPerFrame();
+	const double secondsPerFrame = metadata.secondsPerFrame;
 
 	CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
 	cinematicInitInfo.init(paletteFilename, sequenceFilename, secondsPerFrame, changeToNewGameStory);

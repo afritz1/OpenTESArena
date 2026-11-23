@@ -1,17 +1,16 @@
 #pragma once
 
-#include <optional>
 #include <string>
 
 #include "../Math/Vector2.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/Span.h"
 
 // Various non-texel data about a texture file, useful when only worried about how many textures exist
 // at that filename, as well as some header data (dimensions, screen offsets, etc.).
-class TextureMetadata
+struct TextureMetadata
 {
-private:
 	std::string filename;
 	Buffer<Int2> dimensions;
 
@@ -21,20 +20,17 @@ private:
 	Buffer<Int2> offsets;
 
 	// For .FLC/.CEL animations.
-	std::optional<double> secondsPerFrame;
-public:
-	void init(std::string &&filename, Buffer<Int2> &&dimensions);
-	void init(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets);
-	void init(std::string &&filename, Buffer<Int2> &&dimensions, double secondsPerFrame);
+	double secondsPerFrame;
 
-	const std::string &getFilename() const;
+	void init(const std::string &filename, Span<const Int2> dimensions);
+	void init(const std::string &filename, Span<const Int2> dimensions, Span<const Int2> offsets);
+	void init(const std::string &filename, Span<const Int2> dimensions, double secondsPerFrame);
+
 	int getTextureCount() const;
 	int getWidth(int index) const;
 	int getHeight(int index) const;
 
 	bool hasOffsets() const;
-	const Int2 &getOffset(int index) const;
 
 	bool isMovie() const;
-	double getSecondsPerFrame() const;
 };

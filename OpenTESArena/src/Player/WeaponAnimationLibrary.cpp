@@ -38,7 +38,7 @@ namespace
 				const TextureAsset textureAsset = GameWorldUiView::getWeaponAnimTextureAsset(animFilename, frameIndex);
 				const int width = textureMetadata.getWidth(frameIndex);
 				const int height = textureMetadata.getHeight(frameIndex);
-				const Int2 offset = textureMetadata.getOffset(frameIndex);
+				const Int2 offset = textureMetadata.offsets.get(frameIndex);
 				animDef.addFrame(stateIndex, textureAsset, width, height, offset.x, offset.y);
 			}
 		}

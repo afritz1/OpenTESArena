@@ -910,7 +910,7 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 		const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 		TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
-		textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(game); });
+		textCinematicInitInfo.init(textCinematicDefIndex, metadata.secondsPerFrame, [&game]() { ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(game); });
 		game.setNextContext(TextCinematicUI::ContextName);
 
 		// Play dream music.
