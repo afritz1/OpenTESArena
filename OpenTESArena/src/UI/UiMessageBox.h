@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <string>
 
@@ -40,4 +41,64 @@ struct MessageBoxItemsProperties
 		const Color &textColor);
 };
 
-// @todo UiMessageBox ui element
+static constexpr int UI_MESSAGE_BOX_MAX_BUTTONS = 8;
+
+using UiMessageBoxButtonCallback = std::function<void(int buttonIndex)>;
+
+struct UiMessageBoxInitInfo
+{
+	std::string titleText;
+	std::string titleFontName;
+	Color titleTextColor;
+	int titleMinWidth;
+	int titleMinHeight;
+	int titleLineSpacing;
+
+	std::string buttonTexts[UI_MESSAGE_BOX_MAX_BUTTONS];
+	UiMessageBoxButtonCallback buttonCallbacks[UI_MESSAGE_BOX_MAX_BUTTONS];
+	std::string buttonFontName;
+	Color buttonTextColor;
+	int buttonMinHeight;
+	int buttonCount;
+
+	UiTexturePatternType patternType;
+	int paddingWidth;
+	int paddingHeight;
+
+	UiMessageBoxInitInfo();
+};
+
+struct UiMessageBox
+{
+	UiTextureID textureID; // Owned by this message box, must be freed.
+	PaletteID paletteID; // For tab color text.
+
+	std::string titleText;
+	int titleFontDefIndex;
+	Color titleTextColor;
+	int titleMinWidth;
+	int titleMinHeight;
+	int titleLineSpacing;
+
+	std::string buttonTexts[UI_MESSAGE_BOX_MAX_BUTTONS];
+	UiMessageBoxButtonCallback buttonCallbacks[UI_MESSAGE_BOX_MAX_BUTTONS];
+	int buttonFontDefIndex;
+	Color buttonTextColor;
+	int buttonMinHeight;
+	int buttonCount;
+
+	UiTexturePatternType patternType;
+	int paddingWidth; // Extra pixels added to left and right sides.
+	int paddingHeight; // Extra pixels added to top and bottom sides.
+
+	bool dirty;
+
+	UiMessageBox();
+
+	void init(UiTextureID textureID, PaletteID paletteID, const std::string &titleText, int titleFontDefIndex, Color titleTextColor,
+		int titleMinWidth, int titleMinHeight, int titleLineSpacing, Span<const std::string> buttonTexts,
+		Span<const UiMessageBoxButtonCallback> buttonCallbacks, int buttonFontDefIndex, Color buttonTextColor, int buttonMinHeight,
+		int buttonCount, UiTexturePatternType patternType, int paddingWidth, int paddingHeight);
+
+	void free(Renderer &renderer);
+};
