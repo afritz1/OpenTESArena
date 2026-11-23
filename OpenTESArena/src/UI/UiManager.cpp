@@ -247,14 +247,14 @@ UiTextureID UiManager::getOrAddSpellAnimationTexture(const TextureAsset &texture
 	}
 
 	const std::string &animFilename = textureAsset.filename;
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(animFilename.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(animFilename.c_str());
 	if (metadataID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get texture metadata ID for spell animation \"%s\".", animFilename.c_str());
 		return -1;
 	}
 
-	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
+	const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 	const PaletteID paletteID = textureManager.getPaletteID(paletteAsset);
 	if (paletteID < 0)
 	{

@@ -248,14 +248,14 @@ Int2 CharacterSheetUiView::getHeadOffset(Game &game)
 	const TextureAsset headTextureAsset = CharacterSheetUiView::getHeadTextureAsset(game);
 
 	TextureManager &textureManager = game.textureManager;
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(headTextureAsset.filename.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(headTextureAsset.filename.c_str());
 	if (metadataID < 0)
 	{
 		DebugCrashFormat("Couldn't get texture file metadata for \"%s\".", headTextureAsset.filename.c_str());
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
-	return textureFileMetadata.getOffset(headTextureAsset.index);
+	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
+	return textureMetadata.getOffset(headTextureAsset.index);
 }
 
 Int2 CharacterSheetUiView::getShirtOffset(Game &game)
@@ -285,13 +285,13 @@ Int2 CharacterSheetUiView::getEquipmentOffset(const TextureAsset &textureAsset, 
 		return Int2();
 	}
 
-	const TextureFileMetadataID textureFileMetadataID = textureManager.getMetadataID(textureAsset.filename.c_str());
-	if (textureFileMetadataID < 0)
+	const TextureMetadataID textureMetadataID = textureManager.getMetadataID(textureAsset.filename.c_str());
+	if (textureMetadataID < 0)
 	{
 		return Int2();
 	}
 
-	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(textureFileMetadataID);
+	const TextureMetadata &metadata = textureManager.getMetadataHandle(textureMetadataID);
 	return metadata.getOffset(textureAsset.index);
 }
 

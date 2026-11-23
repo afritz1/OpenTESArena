@@ -157,14 +157,14 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	auto addGeneralObjectInst = [this, &textureManager](const Double3 &baseDirection, Span<const TextureAsset> textureAssets, bool emissive, double animSeconds = 0.0)
 	{
 		const TextureAsset &firstTextureAsset = textureAssets[0];
-		const TextureFileMetadataID metadataID = textureManager.getMetadataID(firstTextureAsset.filename.c_str());
+		const TextureMetadataID metadataID = textureManager.getMetadataID(firstTextureAsset.filename.c_str());
 		if (metadataID < 0)
 		{
 			DebugLogError("Couldn't load first texture metadata \"" + firstTextureAsset.filename + "\" for sky object.");
 			return;
 		}
 
-		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
+		const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 		double width, height;
 		SkyUtils::getSkyObjectDimensions(metadata.getWidth(0), metadata.getHeight(0), &width, &height);
 

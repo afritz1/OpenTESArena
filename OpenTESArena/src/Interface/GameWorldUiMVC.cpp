@@ -12,7 +12,7 @@
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/RMDFile.h"
 #include "../Assets/TextAssetLibrary.h"
-#include "../Assets/TextureFileMetadata.h"
+#include "../Assets/TextureMetadata.h"
 #include "../Audio/MusicUtils.h"
 #include "../Collision/RayCastTypes.h"
 #include "../Entities/ArenaCitizenUtils.h"
@@ -737,15 +737,15 @@ Int2 GameWorldUiView::getNoMagicTexturePosition()
 int GameWorldUiView::getKeyTextureCount(TextureManager &textureManager)
 {
 	const TextureAsset textureAsset = GameWorldUiView::getKeyTextureAsset(0);
-	const TextureFileMetadataID textureFileMetadataID = textureManager.getMetadataID(textureAsset.filename.c_str());
-	if (textureFileMetadataID < 0)
+	const TextureMetadataID textureMetadataID = textureManager.getMetadataID(textureAsset.filename.c_str());
+	if (textureMetadataID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get texture file metadata ID for key textures \"%s\".", textureAsset.filename.c_str());
 		return 0;
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(textureFileMetadataID);
-	return textureFileMetadata.getTextureCount();
+	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(textureMetadataID);
+	return textureMetadata.getTextureCount();
 }
 
 Int2 GameWorldUiView::getKeyPosition(int keyIndex)
@@ -878,14 +878,14 @@ Int2 GameWorldUiView::getWeaponAnimationOffset(const std::string &weaponFilename
 {
 	// @todo: this is obsoleted by WeaponAnimationDefinition
 
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(weaponFilename.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(weaponFilename.c_str());
 	if (metadataID < 0)
 	{
 		DebugCrash("Couldn't get weapon animation metadata from \"" + weaponFilename + "\".");
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
-	return textureFileMetadata.getOffset(frameIndex);
+	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
+	return textureMetadata.getOffset(frameIndex);
 }
 
 Int2 GameWorldUiView::getInterfaceCenter(Game &game)
@@ -1683,14 +1683,14 @@ void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
 
 	TextureManager &textureManager = game.textureManager;
 	const std::string &cinematicFilename = defPtr->animFilename;
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(cinematicFilename.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(cinematicFilename.c_str());
 	if (metadataID < 0)
 	{
 		DebugLogError("Couldn't get texture file metadata for death cinematic \"" + cinematicFilename + "\".");
 		return;
 	}
 
-	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
+	const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 	TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
 	textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { PauseMenuUiController::onNewGameButtonSelected(game); });

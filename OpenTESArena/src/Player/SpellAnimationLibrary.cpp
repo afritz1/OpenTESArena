@@ -9,14 +9,14 @@ void SpellAnimationLibrary::init(const ExeData &exeData, TextureManager &texture
 {
 	auto initDef = [&textureManager](const std::string &filename, SpellAnimationType type, SpellAnimationDefinition *outDef)
 	{
-		const TextureFileMetadataID metadataID = textureManager.getMetadataID(filename.c_str());
+		const TextureMetadataID metadataID = textureManager.getMetadataID(filename.c_str());
 		if (metadataID < 0)
 		{
 			DebugLogErrorFormat("Couldn't get metadata ID for spell cast animation \"%s\".", filename.c_str());
 			return;
 		}
 
-		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
+		const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 		const int frameCount = metadata.getTextureCount();
 
 		outDef->type = type;

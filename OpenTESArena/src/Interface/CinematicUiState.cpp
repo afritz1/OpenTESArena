@@ -40,17 +40,17 @@ void CinematicUiState::init(Game &game)
 	Renderer &renderer = game.renderer;	
 	const std::string &sequenceName = this->initInfo.sequenceName;
 	const std::string &paletteName = this->initInfo.paletteName;
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(sequenceName.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(sequenceName.c_str());
 	if (metadataID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get texture file metadata for \"%s\".", sequenceName.c_str());
 		return;
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
+	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
 	const TextureAsset paletteTextureAsset(paletteName);
 
-	const int videoFrameCount = textureFileMetadata.getTextureCount();
+	const int videoFrameCount = textureMetadata.getTextureCount();
 	this->videoTextureIDs.init(videoFrameCount);
 	for (int i = 0; i < videoFrameCount; i++)
 	{

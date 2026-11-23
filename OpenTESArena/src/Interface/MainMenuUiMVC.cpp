@@ -527,14 +527,14 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 	const std::string &sequenceFilename = ArenaTextureSequenceName::OpeningScroll;
 
 	TextureManager &textureManager = game.textureManager;
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(sequenceFilename.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(sequenceFilename.c_str());
 	if (metadataID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get texture file metadata for opening scroll animation \"%s\".", sequenceFilename.c_str());
 		return;
 	}
 
-	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
+	const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 	const double secondsPerFrame = metadata.getSecondsPerFrame();
 
 	CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;

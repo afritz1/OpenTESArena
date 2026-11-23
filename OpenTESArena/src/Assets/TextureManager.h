@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "TextureBuilder.h"
-#include "TextureFileMetadata.h"
+#include "TextureMetadata.h"
 #include "TextureUtils.h"
 #include "../Utilities/Palette.h"
 
@@ -26,14 +26,14 @@ private:
 	// in the order they appear in the file.
 	std::vector<Palette> palettes;
 	std::vector<TextureBuilder> textureBuilders;
-	std::vector<TextureFileMetadata> metadatas;
+	std::vector<TextureMetadata> metadatas;
 
 	// Returns whether the given filename has the given extension.
 	static bool matchesExtension(const char *filename, const char *extension);
 
 	// Helper functions for loading texture files.
 	static bool tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes);
-	static bool tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures, TextureFileMetadata *outMetadata);
+	static bool tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures, TextureMetadata *outMetadata);
 public:
 	// Texture ID retrieval functions, loading texture data if not loaded. All required palettes
 	// must be loaded by the caller in advance -- no palettes are loaded in non-palette loader
@@ -46,12 +46,12 @@ public:
 	TextureBuilderIdGroup getTextureBuilderIDs(const char *filename);
 	TextureBuilderID getTextureBuilderID(const char *filename);
 	TextureBuilderID getTextureBuilderID(const TextureAsset &textureAsset);
-	TextureFileMetadataID getMetadataID(const char *filename);
+	TextureMetadataID getMetadataID(const char *filename);
 
 	// Texture getter functions, fast look-up. These do not protect against dangling pointers.
 	const Palette &getPaletteHandle(PaletteID id) const;
 	const TextureBuilder &getTextureBuilderHandle(TextureBuilderID id) const;
-	const TextureFileMetadata &getMetadataHandle(TextureFileMetadataID id) const;
+	const TextureMetadata &getMetadataHandle(TextureMetadataID id) const;
 
 	int getTotalBytes() const;
 };

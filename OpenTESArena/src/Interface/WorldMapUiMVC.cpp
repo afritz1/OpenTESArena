@@ -302,14 +302,14 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, ProvinceDefinit
 Int2 WorldMapUiView::getProvinceNameOffset(int originalProvinceIndex, TextureManager &textureManager)
 {
 	const std::string provinceNameOffsetFilename = WorldMapUiModel::getProvinceNameOffsetFilename();
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(provinceNameOffsetFilename.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(provinceNameOffsetFilename.c_str());
 	if (metadataID < 0)
 	{
 		DebugCrash("Couldn't get texture file metadata for \"" + provinceNameOffsetFilename + "\".");
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
-	return textureFileMetadata.getOffset(originalProvinceIndex);
+	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
+	return textureMetadata.getOffset(originalProvinceIndex);
 }
 
 TextureAsset WorldMapUiView::getPaletteTextureAsset()

@@ -197,9 +197,9 @@ void ChooseClassQuestionsUI::update(double dt)
 		scrollAnimFilename = "SCROLL02.DFA";
 	}
 
-	const TextureFileMetadataID scrollAnimTextureFileMetadataID = textureManager.getMetadataID(scrollAnimFilename);
-	const TextureFileMetadata &scrollAnimTextureFileMetadata = textureManager.getMetadataHandle(scrollAnimTextureFileMetadataID);
-	const int scrollAnimFrameCount = scrollAnimTextureFileMetadata.getTextureCount();
+	const TextureMetadataID scrollAnimTextureMetadataID = textureManager.getMetadataID(scrollAnimFilename);
+	const TextureMetadata &scrollAnimTextureMetadata = textureManager.getMetadataHandle(scrollAnimTextureMetadataID);
+	const int scrollAnimFrameCount = scrollAnimTextureMetadata.getTextureCount();
 	const int scrollAnimFrameIndex = MathUtils::getInterpolatedIndex(scrollAnimFrameCount, scrollAnimSubPercent);
 	const TextureAsset scrollAnimTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
 	const TextureAsset scrollAnimPaletteAsset(ArenaTextureName::CharacterCreation);
@@ -226,16 +226,16 @@ void ChooseClassQuestionsUI::update(double dt)
 		DebugAssertIndex(vfxSequenceNames, state.vfxClassCategoryID);
 		const char *vfxSequenceName = vfxSequenceNames[state.vfxClassCategoryID];
 
-		const TextureFileMetadataID vfxTextureFileMetadataID = textureManager.getMetadataID(vfxSequenceName);
-		if (vfxTextureFileMetadataID < 0)
+		const TextureMetadataID vfxTextureMetadataID = textureManager.getMetadataID(vfxSequenceName);
+		if (vfxTextureMetadataID < 0)
 		{
 			DebugLogErrorFormat("Couldn't get VFX texture sequence %s.", vfxSequenceName);
 			return;
 		}
 
-		const TextureFileMetadata &vfxTextureFileMetadata = textureManager.getMetadataHandle(vfxTextureFileMetadataID);
-		const int vfxFrameCount = vfxTextureFileMetadata.getTextureCount();
-		const double vfxTargetSeconds = vfxTextureFileMetadata.getSecondsPerFrame() * vfxFrameCount;
+		const TextureMetadata &vfxTextureMetadata = textureManager.getMetadataHandle(vfxTextureMetadataID);
+		const int vfxFrameCount = vfxTextureMetadata.getTextureCount();
+		const double vfxTargetSeconds = vfxTextureMetadata.getSecondsPerFrame() * vfxFrameCount;
 		const double vfxAnimPercent = std::clamp(state.vfxCurrentSeconds / vfxTargetSeconds, 0.0, 1.0);
 		const int vfxTextureIndex = MathUtils::getInterpolatedIndex(vfxFrameCount, vfxAnimPercent);
 		const TextureAsset vfxAnimTextureAsset(vfxSequenceName, vfxTextureIndex);

@@ -29,14 +29,14 @@ std::string IntroUiModel::prepareStartupContext(Game &game)
 		const std::string sequenceFilename = IntroUiView::getIntroBookSequenceFilename();
 
 		TextureManager &textureManager = game.textureManager;
-		const TextureFileMetadataID metadataID = textureManager.getMetadataID(sequenceFilename.c_str());
+		const TextureMetadataID metadataID = textureManager.getMetadataID(sequenceFilename.c_str());
 		if (metadataID < 0)
 		{
 			DebugLogErrorFormat("Couldn't get texture file metadata for start-up cinematic \"%s\".", sequenceFilename.c_str());
 			return std::string();
 		}
 
-		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
+		const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 		CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
 		cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.getSecondsPerFrame(), [&game]() { IntroUiController::onIntroBookFinished(game); });
@@ -126,14 +126,14 @@ void IntroUiController::onIntroQuoteFinished(Game &game)
 	const std::string sequenceFilename = IntroUiView::getOpeningScrollSequenceFilename();
 
 	TextureManager &textureManager = game.textureManager;
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(sequenceFilename.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(sequenceFilename.c_str());
 	if (metadataID < 0)
 	{
 		DebugLogErrorFormat("Couldn't get texture file metadata for opening scroll animation \"%s\".", sequenceFilename.c_str());
 		return;
 	}
 
-	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(metadataID);
+	const TextureMetadata &metadata = textureManager.getMetadataHandle(metadataID);
 
 	CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
 	cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.getSecondsPerFrame(), [&game]() { IntroUiController::onOpeningScrollFinished(game); });

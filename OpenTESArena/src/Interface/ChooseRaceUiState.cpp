@@ -210,19 +210,19 @@ void ChooseRaceUI::update(double dt)
 
 		const char *scrollAnimFilename = "TOP.DFA";
 		TextureManager &textureManager = game.textureManager;
-		const TextureFileMetadataID scrollTextureFileMetadataID = textureManager.getMetadataID(scrollAnimFilename);
-		DebugAssert(scrollTextureFileMetadataID >= 0);
-		const TextureFileMetadata &scrollTextureFileMetadata = textureManager.getMetadataHandle(scrollTextureFileMetadataID);
+		const TextureMetadataID scrollTextureMetadataID = textureManager.getMetadataID(scrollAnimFilename);
+		DebugAssert(scrollTextureMetadataID >= 0);
+		const TextureMetadata &scrollTextureMetadata = textureManager.getMetadataHandle(scrollTextureMetadataID);
 
 		const double scrollProgressPercent = ChooseRaceUI::getOpeningScrollProgressPercent();
-		const int scrollAnimTextureHeight = scrollTextureFileMetadata.getHeight(0);
+		const int scrollAnimTextureHeight = scrollTextureMetadata.getHeight(0);
 		const int startY = -scrollAnimTextureHeight;
 		const int endY = ArenaRenderUtils::SCREEN_HEIGHT;
 		const int currentY = startY + static_cast<int>(static_cast<double>(endY - startY) * scrollProgressPercent);
 		uiManager.setTransformPosition(openingScrollImageElementInstID, Int2(0, currentY));
 
 		const double scrollAnimPercent = std::clamp(std::fmod(state.openingScrollCurrentSeconds, OPENING_SCROLL_ANIM_PERIOD_SECONDS) / OPENING_SCROLL_ANIM_PERIOD_SECONDS, 0.0, 1.0);
-		const int scrollAnimFrameIndex = MathUtils::getInterpolatedIndex(scrollTextureFileMetadata.getTextureCount(), scrollAnimPercent);
+		const int scrollAnimFrameIndex = MathUtils::getInterpolatedIndex(scrollTextureMetadata.getTextureCount(), scrollAnimPercent);
 		const TextureAsset scrollTextureAsset(scrollAnimFilename, scrollAnimFrameIndex);
 		const TextureAsset scrollPaletteAsset(ArenaTextureName::CharacterCreation);
 		const UiTextureID scrollAnimFrameTextureID = uiManager.getOrAddTexture(scrollTextureAsset, scrollPaletteAsset, textureManager, game.renderer);

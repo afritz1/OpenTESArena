@@ -68,9 +68,6 @@ namespace ArenaWeatherUtils
 	ArenaWeatherType getFilteredWeatherType(ArenaWeatherType weatherType,
 		ArenaClimateType climateType);
 
-	// Gets the fog distance associated with the given weather type.
-	double getFogDistanceFromWeather(ArenaWeatherType weatherType);
-
 	// Creates a sky color buffer from the given weather. This covers the entire day and night.
 	Buffer<Color> makeSkyColors(ArenaWeatherType weatherType, TextureManager &textureManager);
 

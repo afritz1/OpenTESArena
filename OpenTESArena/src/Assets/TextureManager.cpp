@@ -86,7 +86,7 @@ bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outP
 	return true;
 }
 
-bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures, TextureFileMetadata *outMetadata)
+bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures, TextureMetadata *outMetadata)
 {
 	// Need at least one non-null out parameter.
 	DebugAssert((outTextures != nullptr) || (outMetadata != nullptr));
@@ -509,7 +509,7 @@ TextureBuilderID TextureManager::getTextureBuilderID(const TextureAsset &texture
 	return ids.getID(index);
 }
 
-TextureFileMetadataID TextureManager::getMetadataID(const char *filename)
+TextureMetadataID TextureManager::getMetadataID(const char *filename)
 {
 	if (String::isNullOrEmpty(filename))
 	{
@@ -521,20 +521,20 @@ TextureFileMetadataID TextureManager::getMetadataID(const char *filename)
 	auto iter = this->metadataIndices.find(filenameStr);
 	if (iter == this->metadataIndices.end())
 	{
-		TextureFileMetadata loadedMetadata;
+		TextureMetadata loadedMetadata;
 		if (!TextureManager::tryLoadTextureData(filename, nullptr, &loadedMetadata))
 		{
 			DebugLogWarningFormat("Couldn't load texture file metadata from \"%s\".", filename);
 			return -1;
 		}
 
-		const TextureFileMetadataID id = static_cast<TextureFileMetadataID>(this->metadatas.size());
+		const TextureMetadataID id = static_cast<TextureMetadataID>(this->metadatas.size());
 		this->metadatas.emplace_back(std::move(loadedMetadata));
 
 		iter = this->metadataIndices.emplace(std::move(filenameStr), id).first;
 	}
 
-	return static_cast<TextureFileMetadataID>(iter->second);
+	return static_cast<TextureMetadataID>(iter->second);
 }
 
 const Palette &TextureManager::getPaletteHandle(PaletteID id) const
@@ -549,7 +549,7 @@ const TextureBuilder &TextureManager::getTextureBuilderHandle(TextureBuilderID i
 	return this->textureBuilders[id];
 }
 
-const TextureFileMetadata &TextureManager::getMetadataHandle(TextureFileMetadataID id) const
+const TextureMetadata &TextureManager::getMetadataHandle(TextureMetadataID id) const
 {
 	DebugAssertIndex(this->metadatas, id);
 	return this->metadatas[id];

@@ -16,14 +16,14 @@ namespace
 	void AddWeaponAnimationStates(WeaponAnimationDefinition &animDef, const std::string &animFilename,
 		Span<const ArenaWeaponAnimationStateInfo> animStateInfos, TextureManager &textureManager)
 	{
-		const TextureFileMetadataID textureFileMetadataID = textureManager.getMetadataID(animFilename.c_str());
-		if (textureFileMetadataID < 0)
+		const TextureMetadataID textureMetadataID = textureManager.getMetadataID(animFilename.c_str());
+		if (textureMetadataID < 0)
 		{
 			DebugLogErrorFormat("No texture metadata available for \"%s\".", animFilename.c_str());
 			return;
 		}
 
-		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(textureFileMetadataID);
+		const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(textureMetadataID);
 
 		for (const ArenaWeaponAnimationStateInfo &animStateInfo : animStateInfos)
 		{
@@ -36,9 +36,9 @@ namespace
 			for (const int frameIndex : frameIndices)
 			{
 				const TextureAsset textureAsset = GameWorldUiView::getWeaponAnimTextureAsset(animFilename, frameIndex);
-				const int width = textureFileMetadata.getWidth(frameIndex);
-				const int height = textureFileMetadata.getHeight(frameIndex);
-				const Int2 offset = textureFileMetadata.getOffset(frameIndex);
+				const int width = textureMetadata.getWidth(frameIndex);
+				const int height = textureMetadata.getHeight(frameIndex);
+				const Int2 offset = textureMetadata.getOffset(frameIndex);
 				animDef.addFrame(stateIndex, textureAsset, width, height, offset.x, offset.y);
 			}
 		}

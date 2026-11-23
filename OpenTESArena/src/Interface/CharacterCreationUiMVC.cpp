@@ -19,8 +19,8 @@
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureBuilder.h"
-#include "../Assets/TextureFileMetadata.h"
 #include "../Assets/TextureManager.h"
+#include "../Assets/TextureMetadata.h"
 #include "../Audio/AudioManager.h"
 #include "../Audio/MusicDefinition.h"
 #include "../Audio/MusicLibrary.h"
@@ -881,15 +881,15 @@ Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceDef.originalRaceIndex, trimmed);
 
 	TextureManager &textureManager = game.textureManager;
-	const TextureFileMetadataID metadataID = textureManager.getMetadataID(headsFilename.c_str());
+	const TextureMetadataID metadataID = textureManager.getMetadataID(headsFilename.c_str());
 	if (metadataID < 0)
 	{
 		DebugCrash("Couldn't get texture file metadata for \"" + headsFilename + "\".");
 	}
 
-	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(metadataID);
+	const TextureMetadata &textureMetadata = textureManager.getMetadataHandle(metadataID);
 	const int headOffsetIndex = charCreationState.portraitIndex;
-	return textureFileMetadata.getOffset(headOffsetIndex);
+	return textureMetadata.getOffset(headOffsetIndex);
 }
 
 Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
