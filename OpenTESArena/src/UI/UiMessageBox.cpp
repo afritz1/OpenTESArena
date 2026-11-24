@@ -43,6 +43,19 @@ UiMessageBoxInitInfo::UiMessageBoxInitInfo()
 	this->paddingHeight = 0;
 }
 
+void UiMessageBoxInitInfo::addButton(const std::string &text, const UiMessageBoxButtonCallback &callback)
+{
+	if (this->buttonCount >= UI_MESSAGE_BOX_MAX_BUTTONS)
+	{
+		DebugLogErrorFormat("Can't add any more message box buttons (text: %s).", text.c_str());
+		return;
+	}
+
+	this->buttonTexts[this->buttonCount] = text;
+	this->buttonCallbacks[this->buttonCount] = callback;
+	this->buttonCount++;
+}
+
 UiMessageBox::UiMessageBox()
 {
 	this->textureID = -1;

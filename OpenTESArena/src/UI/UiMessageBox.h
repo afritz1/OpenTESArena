@@ -43,7 +43,7 @@ struct MessageBoxItemsProperties
 
 static constexpr int UI_MESSAGE_BOX_MAX_BUTTONS = 8;
 
-using UiMessageBoxButtonCallback = std::function<void(int buttonIndex)>;
+using UiMessageBoxButtonCallback = UiButtonCallback;
 
 struct UiMessageBoxInitInfo
 {
@@ -66,6 +66,8 @@ struct UiMessageBoxInitInfo
 	int paddingHeight;
 
 	UiMessageBoxInitInfo();
+
+	void addButton(const std::string &text, const UiMessageBoxButtonCallback &callback);
 };
 
 struct UiMessageBox

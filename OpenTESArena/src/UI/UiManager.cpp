@@ -2144,6 +2144,8 @@ void UiManager::updateLayouts(const Renderer &renderer)
 
 void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &renderer)
 {
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+
 	for (const UiElement &element : this->elements.values)
 	{
 		if (element.type != UiElementType::ImageSliced)
@@ -2201,10 +2203,8 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 		Span2D<uint32_t> texels = lockedTexture.getTexels32();
 		texels.fill(0);
 
-		const FontLibrary &fontLibrary = FontLibrary::getInstance();
-		const FontDefinition &fontDef = fontLibrary.getDefinition(textBox.fontDefIndex);
-
 		const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(textBox.text);
+		const FontDefinition &fontDef = fontLibrary.getDefinition(textBox.fontDefIndex);
 		const Palette *tabColorPalette = (textBox.tabColorPaletteID >= 0) ? &textureManager.getPaletteHandle(textBox.tabColorPaletteID) : nullptr;
 		const TextRenderShadowInfo *shadowInfoPtr = textBox.shadowInfo.has_value() ? &(*textBox.shadowInfo) : nullptr;
 		const bool isCursorVisible = textBox.isCursorVisible();
@@ -2233,7 +2233,6 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 		Span2D<uint32_t> texels = lockedTexture.getTexels32();
 		texels.fill(0);
 
-		const FontLibrary &fontLibrary = FontLibrary::getInstance();
 		const FontDefinition &fontDef = fontLibrary.getDefinition(listBox.fontDefIndex);
 		const int itemHeight = fontDef.characterHeight;
 
@@ -2305,6 +2304,9 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 		Span2D<uint32_t> texels = lockedTexture.getTexels32();
 		texels.fill(0);
 
+		// @todo we ought to cache all these layout sizes in UiMessageBox
+		// - changing any text will cause it to recache them
+
 		const Int2 titleTextureSize = GetMessageBoxTitleTextureSize(messageBox);
 		Span2D<uint32_t> titleTexelsSubSpan(texels.begin(), texels.getWidth(), texels.getHeight(), 0, 0, textureDims.x, titleTextureSize.y);
 		TextureUtils::populateGeneratedTexture(messageBox.patternType, titleTexelsSubSpan, textureManager, renderer);
@@ -2315,6 +2317,23 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 			const int buttonYOffset = GetMessageBoxButtonYOffset(messageBox, i);
 			Span2D<uint32_t> buttonTexelsSubSpan(texels.begin(), texels.getWidth(), texels.getHeight(), 0, buttonYOffset, textureDims.x, buttonTextureSize.y);
 			TextureUtils::populateGeneratedTexture(messageBox.patternType, buttonTexelsSubSpan, textureManager, renderer);
+		}
+
+		const Palette &palette = textureManager.getPaletteHandle(messageBox.paletteID);
+		const TextAlignment textAlignment = TextAlignment::MiddleCenter;
+
+		const FontDefinition &titleFontDef = fontLibrary.getDefinition(messageBox.titleFontDefIndex);
+		const Buffer<std::string_view> titleTextLines = TextRenderUtils::getTextLines(messageBox.titleText);
+		TextRenderUtils::drawTextLines(titleTextLines, titleFontDef, 0, 0, messageBox.titleTextColor, &palette, textAlignment, messageBox.titleLineSpacing, nullptr, false, titleTexelsSubSpan);
+
+		const FontDefinition &buttonFontDef = fontLibrary.getDefinition(messageBox.buttonFontDefIndex);
+		for (int i = 0; i < messageBox.buttonCount; i++)
+		{
+			const Int2 buttonTextureSize = GetMessageBoxButtonTextureSize(messageBox, i);
+			const int buttonYOffset = GetMessageBoxButtonYOffset(messageBox, i);
+			Span2D<uint32_t> buttonTexelsSubSpan(texels.begin(), texels.getWidth(), texels.getHeight(), 0, buttonYOffset, textureDims.x, buttonTextureSize.y);
+			const Buffer<std::string_view> buttonTextLines = TextRenderUtils::getTextLines(messageBox.buttonTexts[i]);
+			TextRenderUtils::drawTextLines(buttonTextLines, buttonFontDef, 0, 0, messageBox.buttonTextColor, &palette, textAlignment, messageBox.titleLineSpacing, nullptr, false, buttonTexelsSubSpan);
 		}
 
 		renderer.unlockUiTexture(messageBoxTextureID);
