@@ -2282,6 +2282,7 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 			continue;
 		}
 
+		const Int2 textureDims = CalculateMessageBoxTextureSize(messageBox, renderer);
 		if (messageBox.textureID >= 0)
 		{
 			if (messageBox.textureID != this->invalidTextureID)
@@ -2290,7 +2291,6 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 			}
 
 			const UiTransform &transform = this->transforms.get(element.transformInstID);
-			const Int2 textureDims = CalculateMessageBoxTextureSize(messageBox, renderer);
 			messageBox.textureID = renderer.createUiTexture(textureDims.x, textureDims.y);
 		}
 
@@ -2305,7 +2305,17 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 		Span2D<uint32_t> texels = lockedTexture.getTexels32();
 		texels.fill(0);
 
-		DebugNotImplemented();
+		const Int2 titleTextureSize = GetMessageBoxTitleTextureSize(messageBox);
+		Span2D<uint32_t> titleTexelsSubSpan(texels.begin(), texels.getWidth(), texels.getHeight(), 0, 0, textureDims.x, titleTextureSize.y);
+		TextureUtils::populateGeneratedTexture(messageBox.patternType, titleTexelsSubSpan, textureManager, renderer);
+
+		for (int i = 0; i < messageBox.buttonCount; i++)
+		{
+			const Int2 buttonTextureSize = GetMessageBoxButtonTextureSize(messageBox, i);
+			const int buttonYOffset = GetMessageBoxButtonYOffset(messageBox, i);
+			Span2D<uint32_t> buttonTexelsSubSpan(texels.begin(), texels.getWidth(), texels.getHeight(), 0, buttonYOffset, textureDims.x, buttonTextureSize.y);
+			TextureUtils::populateGeneratedTexture(messageBox.patternType, buttonTexelsSubSpan, textureManager, renderer);
+		}
 
 		renderer.unlockUiTexture(messageBoxTextureID);
 		messageBox.dirty = false;
