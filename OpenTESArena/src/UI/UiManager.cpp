@@ -13,6 +13,7 @@
 #include "UiManager.h"
 #include "UiRenderSpace.h"
 #include "UiTextBox.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Game/Game.h"
 #include "../Interface/AutomapUiState.h"
 #include "../Interface/CharacterUiState.h"
@@ -60,6 +61,64 @@ namespace
 	Int2 GetListBoxContentSize(const UiListBox &listBox)
 	{
 		return Int2(listBox.textureWidth, listBox.textureHeight);
+	}
+
+	Int2 GetMessageBoxContentSize(const UiMessageBox &messageBox, const Renderer &renderer)
+	{
+		const std::optional<Int2> size = renderer.tryGetUiTextureDims(messageBox.textureID);
+		DebugAssert(size.has_value());
+		return *size;
+	}
+
+	Int2 GetMessageBoxTitleTextureSize(const UiMessageBox &messageBox)
+	{
+		const FontLibrary &fontLibrary = FontLibrary::getInstance();
+		const FontDefinition &fontDef = fontLibrary.getDefinition(messageBox.titleFontDefIndex);
+		const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(messageBox.titleText, fontDef, std::nullopt, messageBox.titleLineSpacing);
+		const int textureWidth = std::max(textureGenInfo.width + (messageBox.paddingWidth * 2), messageBox.titleMinWidth);
+		const int textureHeight = std::max(textureGenInfo.height + (messageBox.paddingHeight * 2), messageBox.titleMinHeight);
+		return Int2(textureWidth, textureHeight);
+	}
+
+	Int2 GetMessageBoxButtonTextureSize(const UiMessageBox &messageBox, int buttonIndex)
+	{
+		const FontLibrary &fontLibrary = FontLibrary::getInstance();
+		const FontDefinition &fontDef = fontLibrary.getDefinition(messageBox.buttonFontDefIndex);
+		DebugAssertIndex(messageBox.buttonTexts, buttonIndex);
+		const std::string &buttonText = messageBox.buttonTexts[buttonIndex];
+		const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(buttonText, fontDef);
+		const int textureWidth = std::max(textureGenInfo.width + (messageBox.paddingWidth * 2), messageBox.titleMinWidth);
+		const int textureHeight = std::max(textureGenInfo.height + (messageBox.paddingHeight * 2), messageBox.buttonMinHeight);
+		return Int2(textureWidth, textureHeight);
+	}
+
+	int GetMessageBoxButtonYOffset(const UiMessageBox &messageBox, int buttonIndex)
+	{
+		int yOffset = GetMessageBoxTitleTextureSize(messageBox).y;
+		for (int i = 0; i < buttonIndex; i++)
+		{
+			yOffset += GetMessageBoxButtonTextureSize(messageBox, i).y;
+		}
+
+		return yOffset;
+	}
+
+	Int2 CalculateMessageBoxTextureSize(const UiMessageBox &messageBox, const Renderer &renderer)
+	{
+		const Int2 titleTextureSize = GetMessageBoxTitleTextureSize(messageBox);
+
+		int maxButtonTextureWidth = 0;
+		int totalButtonTextureHeight = 0;
+		for (int i = 0; i < messageBox.buttonCount; i++)
+		{
+			const Int2 buttonTextureSize = GetMessageBoxButtonTextureSize(messageBox, i);
+			maxButtonTextureWidth = std::max(maxButtonTextureWidth, buttonTextureSize.x);
+			totalButtonTextureHeight += buttonTextureSize.y;
+		}
+
+		const int totalTextureWidth = std::max(titleTextureSize.x, maxButtonTextureWidth);
+		const int totalTextureHeight = titleTextureSize.y + totalButtonTextureHeight;
+		return Int2(totalTextureWidth, totalTextureHeight);
 	}
 }
 
@@ -1279,6 +1338,89 @@ void UiManager::freeListBox(UiElementInstanceID elementInstID, Renderer &rendere
 	this->elements.free(elementInstID);
 }
 
+UiElementInstanceID UiManager::createMessageBox(const UiElementInitInfo &initInfo, const UiMessageBoxInitInfo &messageBoxInitInfo, UiContextInstanceID contextInstID, TextureManager &textureManager, Renderer &renderer)
+{
+	UiContext &context = this->contexts.get(contextInstID);
+	const char *contextName = context.name.c_str();
+
+	const UiElementInstanceID elementInstID = this->elements.alloc();
+	if (elementInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate element for message box (context %s).", contextName);
+		return -1;
+	}
+
+	const UiTransformInstanceID transformInstID = this->transforms.alloc();
+	if (transformInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate transform for message box (context %s).", contextName);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	const UiMessageBoxInstanceID messageBoxInstID = this->messageBoxes.alloc();
+	if (messageBoxInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate message box (context %s).", contextName);
+		this->transforms.free(transformInstID);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	const PaletteID paletteID = textureManager.getPaletteID(ArenaPaletteName::Default); // @todo this might need to be a parameter for choose attributes save/reroll popup
+
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	int titleFontDefIndex = -1;
+	int buttonFontDefIndex = -1;
+	fontLibrary.tryGetDefinitionIndex(messageBoxInitInfo.titleFontName.c_str(), &titleFontDefIndex);
+	fontLibrary.tryGetDefinitionIndex(messageBoxInitInfo.buttonFontName.c_str(), &buttonFontDefIndex);
+
+	UiMessageBox &messageBox = this->messageBoxes.get(messageBoxInstID);
+	messageBox.init(this->invalidTextureID, paletteID, messageBoxInitInfo.titleText, titleFontDefIndex, messageBoxInitInfo.titleTextColor,
+		messageBoxInitInfo.titleMinWidth, messageBoxInitInfo.titleMinHeight, messageBoxInitInfo.titleLineSpacing, messageBoxInitInfo.buttonTexts,
+		messageBoxInitInfo.buttonCallbacks, buttonFontDefIndex, messageBoxInitInfo.buttonTextColor, messageBoxInitInfo.buttonMinHeight,
+		messageBoxInitInfo.buttonCount, messageBoxInitInfo.patternType, messageBoxInitInfo.paddingWidth, messageBoxInitInfo.paddingHeight);
+
+	UiTransform &transform = this->transforms.get(transformInstID);
+	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
+
+	UiElement &element = this->elements.get(elementInstID);
+	element.initMessageBox(initInfo.name.c_str(), contextName, initInfo.clipRect, initInfo.drawOrder, initInfo.renderSpace, transformInstID, messageBoxInstID);
+
+	context.messageBoxElementInstIDs.emplace_back(elementInstID);
+
+	return elementInstID;
+}
+
+void UiManager::freeMessageBox(UiElementInstanceID elementInstID, Renderer &renderer)
+{
+	UiElement *element = this->elements.tryGet(elementInstID);
+	if (element == nullptr)
+	{
+		return;
+	}
+
+	DebugAssert(element->type == UiElementType::MessageBox);
+
+	const UiContextInstanceID contextInstID = this->getContextByName(element->contextName);
+	if (contextInstID >= 0)
+	{
+		UiContext &context = this->contexts.get(contextInstID);
+		const auto iter = std::find(context.messageBoxElementInstIDs.begin(), context.messageBoxElementInstIDs.end(), elementInstID);
+		if (iter != context.messageBoxElementInstIDs.end())
+		{
+			context.messageBoxElementInstIDs.erase(iter);
+		}
+	}
+
+	UiMessageBox &messageBox = this->messageBoxes.get(element->messageBoxInstID);
+	messageBox.free(renderer);
+
+	this->messageBoxes.free(element->messageBoxInstID);
+	this->transforms.free(element->transformInstID);
+	this->elements.free(elementInstID);
+}
+
 UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextInstanceID contextInstID)
 {
 	UiContext &context = this->contexts.get(contextInstID);
@@ -1716,6 +1858,12 @@ void UiManager::clearContextElements(UiContextInstanceID contextInstID, InputMan
 		this->freeListBox(instID, renderer);
 	}
 
+	for (int i = static_cast<int>(context.messageBoxElementInstIDs.size()) - 1; i >= 0; i--)
+	{
+		const UiElementInstanceID instID = context.messageBoxElementInstIDs[i];
+		this->freeMessageBox(instID, renderer);
+	}
+
 	for (int i = static_cast<int>(context.buttonElementInstIDs.size()) - 1; i >= 0; i--)
 	{
 		const UiElementInstanceID instID = context.buttonElementInstIDs[i];
@@ -1932,6 +2080,12 @@ void UiManager::updateLayouts(const Renderer &renderer)
 				transform.size = GetListBoxContentSize(listBox);
 				break;
 			}
+			case UiElementType::MessageBox:
+			{
+				const UiMessageBox &messageBox = this->messageBoxes.get(element.messageBoxInstID);
+				transform.size = GetMessageBoxContentSize(messageBox, renderer);
+				break;
+			}
 			case UiElementType::ImageSliced:
 			case UiElementType::Button:
 				break;
@@ -1960,6 +2114,7 @@ void UiManager::updateLayouts(const Renderer &renderer)
 			case UiElementType::Image:
 			case UiElementType::TextBox:
 			case UiElementType::ListBox:
+			case UiElementType::MessageBox:
 				break;
 			case UiElementType::ImageSliced:
 			{
@@ -2113,6 +2268,48 @@ void UiManager::redrawDirtyComponents(TextureManager &textureManager, Renderer &
 		renderer.unlockUiTexture(listBoxTextureID);
 		listBox.dirty = false;
 	}
+
+	for (UiElement &element : this->elements.values)
+	{
+		if (element.type != UiElementType::MessageBox)
+		{
+			continue;
+		}
+
+		UiMessageBox &messageBox = this->messageBoxes.get(element.messageBoxInstID);
+		if (!messageBox.dirty)
+		{
+			continue;
+		}
+
+		if (messageBox.textureID >= 0)
+		{
+			if (messageBox.textureID != this->invalidTextureID)
+			{
+				renderer.freeUiTexture(messageBox.textureID);
+			}
+
+			const UiTransform &transform = this->transforms.get(element.transformInstID);
+			const Int2 textureDims = CalculateMessageBoxTextureSize(messageBox, renderer);
+			messageBox.textureID = renderer.createUiTexture(textureDims.x, textureDims.y);
+		}
+
+		const UiTextureID messageBoxTextureID = messageBox.textureID;
+		LockedTexture lockedTexture = renderer.lockUiTexture(messageBoxTextureID);
+		if (!lockedTexture.isValid())
+		{
+			DebugLogError("Couldn't lock message box UI texture for updating.");
+			return;
+		}
+
+		Span2D<uint32_t> texels = lockedTexture.getTexels32();
+		texels.fill(0);
+
+		DebugNotImplemented();
+
+		renderer.unlockUiTexture(messageBoxTextureID);
+		messageBox.dirty = false;
+	}
 }
 
 void UiManager::updateDrawList(const Window &window)
@@ -2191,6 +2388,12 @@ void UiManager::updateDrawList(const Window &window)
 		{
 			const UiListBox &listBox = this->listBoxes.get(element->listBoxInstID);
 			textureID = listBox.textureID;
+			break;
+		}
+		case UiElementType::MessageBox:
+		{
+			const UiMessageBox &messageBox = this->messageBoxes.get(element->messageBoxInstID);
+			textureID = messageBox.textureID;
 			break;
 		}
 		case UiElementType::Button:

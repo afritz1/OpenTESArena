@@ -68,6 +68,14 @@ void UiElement::initListBox(const char *name, const char *contextName, Rect clip
 	this->listBoxInstID = instID;
 }
 
+void UiElement::initMessageBox(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiMessageBoxInstanceID instID)
+{
+	this->initInternal(name, contextName, clipRect, drawOrder, renderSpace, transformInstID);
+
+	this->type = UiElementType::MessageBox;
+	this->messageBoxInstID = instID;
+}
+
 void UiElement::initButton(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID)
 {
 	this->initInternal(name, contextName, clipRect, drawOrder, renderSpace, transformInstID);

@@ -45,6 +45,7 @@ struct UiContext
 	std::vector<UiElementInstanceID> imageSlicedElementInstIDs;
 	std::vector<UiElementInstanceID> textBoxElementInstIDs;
 	std::vector<UiElementInstanceID> listBoxElementInstIDs;
+	std::vector<UiElementInstanceID> messageBoxElementInstIDs;
 	std::vector<UiElementInstanceID> buttonElementInstIDs;
 
 	std::vector<InputListenerID> inputActionListenerIDs;

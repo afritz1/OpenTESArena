@@ -14,6 +14,7 @@ using UiImageInstanceID = int;
 using UiImageSlicedInstanceID = int;
 using UiTextBoxInstanceID = int;
 using UiListBoxInstanceID = int;
+using UiMessageBoxInstanceID = int;
 using UiButtonInstanceID = int;
 
 enum class UiElementType
@@ -22,6 +23,7 @@ enum class UiElementType
 	ImageSliced,
 	TextBox,
 	ListBox,
+	MessageBox,
 	Button
 };
 
@@ -59,6 +61,7 @@ struct UiElement
 		UiImageSlicedInstanceID imageSlicedInstID;
 		UiTextBoxInstanceID textBoxInstID;
 		UiListBoxInstanceID listBoxInstID;
+		UiMessageBoxInstanceID messageBoxInstID;
 		UiButtonInstanceID buttonInstID;
 	};
 
@@ -70,5 +73,6 @@ struct UiElement
 	void initImageSliced(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageSlicedInstanceID instID);
 	void initTextBox(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
 	void initListBox(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiListBoxInstanceID instID);
+	void initMessageBox(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiMessageBoxInstanceID instID);
 	void initButton(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
 };

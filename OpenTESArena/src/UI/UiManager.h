@@ -10,6 +10,7 @@
 #include "UiElement.h"
 #include "UiImage.h"
 #include "UiListBox.h"
+#include "UiMessageBox.h"
 #include "UiTextBox.h"
 #include "UiTransform.h"
 #include "../Assets/TextureAsset.h"
@@ -73,6 +74,7 @@ private:
 	KeyValuePool<UiImageSlicedInstanceID, UiImageSliced> imageSliceds;
 	KeyValuePool<UiTextBoxInstanceID, UiTextBox> textBoxes;
 	KeyValuePool<UiListBoxInstanceID, UiListBox> listBoxes;
+	KeyValuePool<UiMessageBoxInstanceID, UiMessageBox> messageBoxes;
 	KeyValuePool<UiButtonInstanceID, UiButton> buttons;
 
 	std::vector<LoadedUiTexture> loadedTextures;
@@ -154,6 +156,9 @@ public:
 	void scrollListBoxDown(UiElementInstanceID elementInstID);
 	void scrollListBoxUp(UiElementInstanceID elementInstID);
 	void freeListBox(UiElementInstanceID elementInstID, Renderer &renderer);
+
+	UiElementInstanceID createMessageBox(const UiElementInitInfo &initInfo, const UiMessageBoxInitInfo &messageBoxInitInfo, UiContextInstanceID contextInstID, TextureManager &textureManager, Renderer &renderer);
+	void freeMessageBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
 	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextInstanceID contextInstID);
 	void freeButton(UiElementInstanceID elementInstID);
