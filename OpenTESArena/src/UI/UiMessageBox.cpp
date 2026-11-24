@@ -34,7 +34,7 @@ UiMessageBoxInitInfo::UiMessageBoxInitInfo()
 	this->titleMinHeight = 0;
 	this->titleLineSpacing = 0;
 
-	std::fill(std::begin(this->buttonCallbacks), std::end(this->buttonCallbacks), [](int) { });
+	std::fill(std::begin(this->buttonCallbacks), std::end(this->buttonCallbacks), [](MouseButtonType) { });
 	this->buttonMinHeight = 0;
 	this->buttonCount = 0;
 
@@ -66,7 +66,7 @@ UiMessageBox::UiMessageBox()
 	this->titleMinHeight = 0;
 	this->titleLineSpacing = 0;
 
-	std::fill(std::begin(this->buttonCallbacks), std::end(this->buttonCallbacks), [](int) { });
+	std::fill(std::begin(this->buttonCallbacks), std::end(this->buttonCallbacks), [](MouseButtonType) { });
 	this->buttonFontDefIndex = -1;
 	this->buttonMinHeight = 0;
 	this->buttonCount = 0;

@@ -6,6 +6,7 @@
 
 #include "TextRenderUtils.h"
 #include "../Assets/TextureUtils.h"
+#include "../Input/PointerTypes.h"
 #include "../Utilities/Color.h"
 
 struct MessageBoxBackgroundProperties
@@ -43,7 +44,7 @@ struct MessageBoxItemsProperties
 
 static constexpr int UI_MESSAGE_BOX_MAX_BUTTONS = 8;
 
-using UiMessageBoxButtonCallback = UiButtonCallback;
+using UiMessageBoxButtonCallback = std::function<void(MouseButtonType mouseButtonType)>;
 
 struct UiMessageBoxInitInfo
 {
